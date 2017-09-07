@@ -542,6 +542,112 @@ static bool cluster_sequence_candidates( v_CS* sequence_candidates )
     return true;
 }
 
+
+static void get_candidate_point( int* cs_point,
+                                 const VORONOI::cell_type* c )
+{
+    *cs_point = c->source_index();
+}
+static void get_candidate_points_along_sequence( int* cs_points,
+
+                                                 const Point* delta,
+                                                 const VORONOI::cell_type* c,
+                                                 int N_remaining,
+
+                                                 const std::vector<Point>& points)
+{
+    FOR_MATCHING_ADJACENT_CELLS()
+    {
+        get_candidate_point(cs_points, c_adjacent);
+        cs_points++;
+    } FOR_MATCHING_ADJACENT_CELLS_END();
+}
+static void get_candidate_points( int* cs_points,
+                                  const CandidateSequence* cs,
+                                  const std::vector<Point>& points )
+{
+    get_candidate_point( &cs_points[0], cs->c0 );
+    get_candidate_point( &cs_points[1], cs->c1 );
+
+    const Point* pt0 = &points[cs->c0->source_index()];
+    const Point* pt1 = &points[cs->c1->source_index()];
+
+    Point delta({ pt1->x - pt0->x,
+                  pt1->y - pt0->y});
+    get_candidate_points_along_sequence(&cs_points[2], &delta, cs->c1, Nwant-2, points);
+}
+
+static bool compare_reverse_along_sequence( const int* cs_points_other,
+
+                                            const Point* delta,
+                                            const VORONOI::cell_type* c,
+                                            int N_remaining,
+
+                                            const std::vector<Point>& points)
+{
+    FOR_MATCHING_ADJACENT_CELLS()
+    {
+        if(*cs_points_other != c_adjacent->source_index())
+            return false;
+        cs_points_other--;
+    } FOR_MATCHING_ADJACENT_CELLS_END();
+
+    return true;
+}
+static bool is_reverse_sequence( const int* cs_points_other,
+                                 const CandidateSequence* cs,
+                                 const std::vector<Point>& points )
+{
+    if( cs->c0->source_index() != cs_points_other[Nwant-1] ) return false;
+    if( cs->c1->source_index() != cs_points_other[Nwant-2] ) return false;
+
+    const Point* pt0 = &points[cs->c0->source_index()];
+    const Point* pt1 = &points[cs->c1->source_index()];
+
+    Point delta({ pt1->x - pt0->x,
+                  pt1->y - pt0->y});
+    return compare_reverse_along_sequence(&cs_points_other[Nwant-3], &delta, cs->c1, Nwant-2, points);
+}
+
+static void filter_bidirectional( v_CS* sequence_candidates,
+                                  const std::vector<Point>& points,
+                                  ClassificationType orientation )
+{
+    // I loop through the candidates list, and try to find a matching other
+    // candidate that is THIS candidate in the opposite order.
+    //
+    // If no such match is found, I throw away the candidate.
+    // If such match IS found, I throw away one of the two
+    int N = sequence_candidates->size();
+    for( int i=0; i<N; i++ )
+    {
+        CandidateSequence* cs0 = &(*sequence_candidates)[i];
+        if(cs0->type != orientation) continue;
+
+        int cs0_points[Nwant];
+        get_candidate_points(cs0_points, cs0, points);
+
+        bool found = false;
+        for( int j=i+1; j<N; j++ )
+        {
+            CandidateSequence* cs1 = &(*sequence_candidates)[j];
+            if(cs1->type != orientation) continue;
+
+            if( !is_reverse_sequence( cs0_points, cs1, points ) )
+                continue;
+
+            // bam. found reverse sequence. Throw away the match
+            cs1->type = OUTLIER;
+            found = true;
+            break;
+        }
+        if( !found )
+            // this candidate doesn't have a match. Throw out self
+            cs0->type = OUTLIER;
+    }
+}
+
+
 // Looks through our classification and determines whether things look valid or
 // not. Makes no changes to anything
 static bool validate_clasification(const v_CS* sequence_candidates)
@@ -646,6 +752,8 @@ int main(int argc, char* argv[])
     if( !cluster_sequence_candidates(&sequence_candidates))
         return 1;
 
+    filter_bidirectional(&sequence_candidates, points, HORIZONTAL);
+    filter_bidirectional(&sequence_candidates, points, VERTICAL);
 
     dump_candidates_sparse( &sequence_candidates, points, "post" );
 
