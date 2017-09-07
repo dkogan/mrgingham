@@ -777,6 +777,55 @@ static void sort_candidates(v_CS* sequence_candidates,
                sequence_comparator );
 }
 
+static CandidateSequence* get_first(v_CS* sequence_candidates,
+                                    ClassificationType orientation)
+{
+    int N = sequence_candidates->size();
+    for( int i=0; i<N; i++ )
+    {
+        CandidateSequence* cs = &(*sequence_candidates)[i];
+        if( cs->type == orientation ) return cs;
+    }
+    return NULL;
+}
+
+static bool filter_bounds(v_CS* sequence_candidates,
+                          ClassificationType orientation,
+                          const std::vector<Point>& points)
+{
+    // I look at the first horizontal sequence and make sure that it consists of
+    // the first points of all the vertical sequences, in order. And vice versa
+    //
+    // This function will mark extra sequences as outliers, and it will return
+    // false if anything is missing
+    ClassificationType orientation_other;
+    if( orientation == HORIZONTAL ) orientation_other = VERTICAL;
+    else                            orientation_other = HORIZONTAL;
+
+    CandidateSequence* cs_ref    = get_first(sequence_candidates, orientation);
+    CandidateSequence* cs_others = get_first(sequence_candidates, orientation_other);
+    if( cs_ref    == NULL ) return false;
+    if( cs_others == NULL ) return false;
+
+    int cs_ref_points[Nwant];
+    get_candidate_points( cs_ref_points, cs_ref, points );
+    int i;
+    for(i=0; i<Nwant; i++, cs_others++)
+    {
+        if( cs_others->type != orientation_other )
+            // no more valid other sequences to follow
+            break;
+
+        if( cs_ref_points[i] != cs_others->c0->source_index() )
+        {
+            // mismatch! One of these sequences is an outlier
+#warning handle this
+            return false;
+        }
+    }
+    return i == Nwant;
+}
+
 int main(int argc, char* argv[])
 {
     if( argc != 2 )
@@ -804,6 +853,11 @@ int main(int argc, char* argv[])
     // This is relatively slow (I'm moving lots of stuff around by value), but
     // I'm likely to not feel it anyway
     sort_candidates(&sequence_candidates, points);
+
+    if( !filter_bounds(&sequence_candidates, HORIZONTAL, points) )
+        return 1;
+    if( !filter_bounds(&sequence_candidates, VERTICAL,   points) )
+        return 1;
 
     dump_candidates_sparse( &sequence_candidates, points, "post" );
 
