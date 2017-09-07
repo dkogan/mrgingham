@@ -352,14 +352,6 @@ static void get_sequence_candidates( // out
 
                 sequence_candidates->push_back( CandidateSequence({c, c_adjacent, delta_mean,
                                                                spacing_angle, spacing_length}) );
-
-#if defined DEBUG && DEBUG
-                printf("pre-classification from %f %f delta_mean %f %f len %f angle %f\n",
-                       (double)(pt->x) / (double)SCALE, (double)(pt->y) / (double)SCALE,
-                       delta_mean.x / (double)SCALE, delta_mean.y / (double)SCALE,
-                       spacing_length / (double)SCALE,
-                       spacing_angle);
-#endif
             }
         } FOR_ALL_ADJACENT_CELLS_END();
     }
@@ -573,8 +565,8 @@ static bool validate_clasification(const v_CS* sequence_candidates)
 
 }
 
-static void dump_candidates( const v_CS* sequence_candidates,
-                             const std::vector<Point>& points )
+static void dump_candidates_detailed( const v_CS* sequence_candidates,
+                                      const std::vector<Point>& points )
 {
     int N = sequence_candidates->size();
     for( int i=0; i<N; i++ )
@@ -589,6 +581,27 @@ static void dump_candidates( const v_CS* sequence_candidates,
         Point delta({ pt1->x - pt0->x,
                       pt1->y - pt0->y});
         dump_intervals_along_sequence( i, &delta, cs->c1, Nwant-2, points);
+    }
+}
+
+static void dump_candidates_sparse(const v_CS* sequence_candidates,
+                                   const std::vector<Point>& points,
+                                   const char* what)
+{
+    // plot with
+    // awk '/post/ {print $3,$13,$4,$6,$7}' | feedgnuplot --dataid --domain --autolegend --square --rangesizeall 3 --with 'vectors size screen 0.01,20 fixed filled'
+    for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
+    {
+        const CandidateSequence* cs = &(*it);
+        const Point*             pt = &points[cs->c0->source_index()];
+
+        printf("%s from %f %f delta_mean %f %f len %f angle %f type %s\n",
+               what,
+               (double)(pt->x) / (double)SCALE, (double)(pt->y) / (double)SCALE,
+               cs->delta_mean.x / (double)SCALE, cs->delta_mean.y / (double)SCALE,
+               cs->spacing_length / (double)SCALE,
+               cs->spacing_angle,
+               type_string(cs->type));
     }
 }
 
@@ -630,28 +643,17 @@ int main(int argc, char* argv[])
     v_CS sequence_candidates;
     get_sequence_candidates(&sequence_candidates, &voronoi, points);
 
-    if( cluster_sequence_candidates(&sequence_candidates))
-    {
+    if( !cluster_sequence_candidates(&sequence_candidates))
+        return 1;
 
-#if defined DEBUG && DEBUG
-        // plot with
-        // awk '/post/ {print $3,$13,$4,$6,$7}' | feedgnuplot --dataid --domain --autolegend --square --rangesizeall 3 --with 'vectors size screen 0.01,20 fixed filled'
-        for( auto it = sequence_candidates.begin(); it != sequence_candidates.end(); it++ )
-        {
-            const CandidateSequence* cs = &(*it);
-            const Point*             pt = &points[cs->c0->source_index()];
 
-            printf("post-classification from %f %f delta_mean %f %f len %f angle %f type %s\n",
-                   (double)(pt->x) / (double)SCALE, (double)(pt->y) / (double)SCALE,
-                   cs->delta_mean.x / (double)SCALE, cs->delta_mean.y / (double)SCALE,
-                   cs->spacing_length / (double)SCALE,
-                   cs->spacing_angle,
-                   type_string(cs->type));
-        }
-#endif
+    dump_candidates_sparse( &sequence_candidates, points, "post" );
 
-        if(validate_clasification(&sequence_candidates))
-            write_output(&sequence_candidates, points);
-    }
+    if(!validate_clasification(&sequence_candidates))
+        return 1;
+
+
+    write_output(&sequence_candidates, points);
+
     return 0;
 }
