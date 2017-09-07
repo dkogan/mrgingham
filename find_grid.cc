@@ -742,6 +742,41 @@ static void write_output( const v_CS* sequence_candidates,
     }
 }
 
+static void sort_candidates(v_CS* sequence_candidates,
+                            const std::vector<Point>& points )
+{
+    // I sort my vertical sequences in order of increasing x
+    //
+    // I sort my horizontal sequences in order of increasing y
+
+
+    struct S{
+        bool operator() ( const CandidateSequence& a,
+                          const CandidateSequence& b) const
+        {
+            if( a.type != b.type )
+            {
+                // HORIZONTAL is 1st, VERTICAL is 2nd, and I don't care about the others
+                if( a.type == HORIZONTAL ) return true;
+                if( b.type == HORIZONTAL ) return false;
+                if( a.type == VERTICAL   ) return true;
+                if( b.type == VERTICAL   ) return false;
+                return a.type < b.type;
+            }
+
+            if( a.type == HORIZONTAL )
+                return _points[a.c0->source_index()].y < _points[b.c0->source_index()].y;
+            return _points[a.c0->source_index()].x < _points[b.c0->source_index()].x;
+        }
+
+        const std::vector<Point>& _points;
+        S(const std::vector<Point>& __points) : _points(__points) {}
+    } sequence_comparator(points);
+
+    std::sort( sequence_candidates->begin(), sequence_candidates->end(),
+               sequence_comparator );
+}
+
 int main(int argc, char* argv[])
 {
     if( argc != 2 )
@@ -766,7 +801,12 @@ int main(int argc, char* argv[])
     filter_bidirectional(&sequence_candidates, points, HORIZONTAL);
     filter_bidirectional(&sequence_candidates, points, VERTICAL);
 
+    // This is relatively slow (I'm moving lots of stuff around by value), but
+    // I'm likely to not feel it anyway
+    sort_candidates(&sequence_candidates, points);
+
     dump_candidates_sparse( &sequence_candidates, points, "post" );
+
 
     if(!validate_clasification(&sequence_candidates))
         return 1;
