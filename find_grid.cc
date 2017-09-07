@@ -71,14 +71,14 @@ struct PointDouble
 
 
 static const VORONOI::cell_type*
-get_adjacent_cell_in_direction( // out,in.
-                                // On entry: desired delta
-                                // On exit:  accepted delta
-                                Point* delta_want,
+get_adjacent_cell_along_line( // out,in.
+                              // On entry: desired delta
+                              // On exit:  accepted delta
+                              Point* delta_want,
 
-                                // in
-                                const VORONOI::cell_type* c,
-                                const std::vector<Point>& points)
+                              // in
+                              const VORONOI::cell_type* c,
+                              const std::vector<Point>& points)
 {
     double delta_want_len       = hypot((double)delta_want->x, (double)delta_want->y);
     double delta_want_len_recip = 1.0 / delta_want_len;
@@ -121,7 +121,7 @@ static bool search_along_line( // out
 
     for(int i=0; i<N_remaining; i++)
     {
-        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_in_direction(&delta_current, c, points);
+        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_along_line(&delta_current, c, points);
         if( c_adjacent == NULL )
             return false;
         c = c_adjacent;
@@ -154,7 +154,7 @@ static void print_along_line( const Point* delta,
 
     for(int i=0; i<N_remaining; i++)
     {
-        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_in_direction(&delta_current, c, points);
+        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_along_line(&delta_current, c, points);
         print_cell_center(c_adjacent, points);
 
         c = c_adjacent;
@@ -192,7 +192,7 @@ static void dump_intervals_along_line( int i_candidate,
 
     for(int i=0; i<N_remaining; i++)
     {
-        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_in_direction(&delta_current, c, points);
+        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_along_line(&delta_current, c, points);
 
         dump_interval(i_candidate, i+1, c, c_adjacent, points);
 
