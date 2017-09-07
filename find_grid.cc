@@ -73,7 +73,8 @@ struct PointDouble
 
 struct HypothesisStatistics
 {
-    Point delta;
+    Point  delta;
+    double length_ratio_last;
 };
 
 static void fill_initial_hypothesis_statistics(// out
@@ -82,7 +83,8 @@ static void fill_initial_hypothesis_statistics(// out
                                                // in
                                                const Point* delta0)
 {
-    stats->delta = *delta0;
+    stats->delta             = *delta0;
+    stats->length_ratio_last = -1.0;
 }
 
 
@@ -104,10 +106,11 @@ static void fill_initial_hypothesis_statistics(// out
 
 // tight bound on angle error, loose bound on length error. This is because
 // perspective distortion can vary the lengths, but NOT the orientations
-#define THRESHOLD_SPACING_LENGTH           (80*SCALE)
-#define THRESHOLD_SPACING_COS              0.996 /* 1 degrees */
-#define THRESHOLD_SPACING_LENGTH_RATIO_MIN 0.8
-#define THRESHOLD_SPACING_LENGTH_RATIO_MAX 1.2
+#define THRESHOLD_SPACING_LENGTH            (80*SCALE)
+#define THRESHOLD_SPACING_COS               0.996 /* 1 degrees */
+#define THRESHOLD_SPACING_LENGTH_RATIO_MIN  0.8
+#define THRESHOLD_SPACING_LENGTH_RATIO_MAX  1.2
+#define THRESHOLD_SPACING_LENGTH_RATIO_DIFF 0.05
 
 static const VORONOI::cell_type*
 get_adjacent_cell_along_line( // out,in.
@@ -117,26 +120,54 @@ get_adjacent_cell_along_line( // out,in.
                               const VORONOI::cell_type* c,
                               const std::vector<Point>& points)
 {
-    double delta_last_len = hypot((double)stats->delta.x, (double)stats->delta.y);
+    // We're given a voronoi cell, and some properties that a potential next
+    // cell in the sequence should match. I look through all the voronoi
+    // neighbors of THIS cell, and return the first one that matches all my
+    // requirements. Multiple neighboring cells COULD match, but I'm assuming
+    // clean data, so this possibility is ignored.
+    //
+    // A matching next cell should have the following properties, all
+    // established by the previous cells in the sequence
+    //
+    // - be located along an expected direction (tight bound on angle)
+    // - should be an expected distance away (loose bound on distance)
+    // - the ratio of successive distances in a sequence should be ~ 1
+    // - this ratio can vary LINEARLY-ish
+    //
+    // The points in a sequence come from projections of equidistantly-spaced
+    // points in a straight line, so the projected DIRECTIONS should match very
+    // well. The distances may not, if the observed object is tilted and is
+    // relatively close to the camera, but each distance
+    double delta_last_length = hypot((double)stats->delta.x, (double)stats->delta.y);
 
     FOR_ALL_ADJACENT_CELLS(c)
     {
-        double delta_len = hypot( (double)delta.x, (double)delta.y );
-        double len_err = delta_last_len - delta_len;
-        if( len_err < -THRESHOLD_SPACING_LENGTH || THRESHOLD_SPACING_LENGTH < len_err )
-            continue;
-
-        double len_ratio = delta_len / delta_last_len;
-        if( len_ratio < THRESHOLD_SPACING_LENGTH_RATIO_MIN || len_ratio > THRESHOLD_SPACING_LENGTH_RATIO_MAX )
-            continue;
+        double delta_length = hypot( (double)delta.x, (double)delta.y );
 
         double cos_err =
             ((double)stats->delta.x * (double)delta.x +
              (double)stats->delta.y * (double)delta.y) /
-            (delta_last_len * delta_len);
+            (delta_last_length * delta_length);
         if( cos_err < THRESHOLD_SPACING_COS )
             continue;
 
+        double length_err = delta_last_length - delta_length;
+        if( length_err < -THRESHOLD_SPACING_LENGTH || THRESHOLD_SPACING_LENGTH < length_err )
+            continue;
+
+        double length_ratio = delta_length / delta_last_length;
+        if( length_ratio < THRESHOLD_SPACING_LENGTH_RATIO_MIN || length_ratio > THRESHOLD_SPACING_LENGTH_RATIO_MAX )
+            continue;
+
+        if( stats->length_ratio_last > 0.0 )
+        {
+            double length_ratio_diff = length_ratio - stats->length_ratio_last;
+            if( length_ratio_diff*length_ratio_diff >
+                THRESHOLD_SPACING_LENGTH_RATIO_DIFF*THRESHOLD_SPACING_LENGTH_RATIO_DIFF)
+                continue;
+        }
+
+        stats->length_ratio_last = length_ratio;
         stats->delta = delta;
         return c_adjacent;
     } FOR_ALL_ADJACENT_CELLS_END();
