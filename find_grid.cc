@@ -70,17 +70,29 @@ struct PointDouble
 #define FOR_ADJACENT_CELLS_END() }} while(0)
 
 
+struct HypothesisStatistics
+{
+    Point delta;
+};
+
+static void fill_initial_hypothesis_statistics(// out
+                                               HypothesisStatistics* stats,
+
+                                               // in
+                                               const Point* delta0)
+{
+    stats->delta = *delta0;
+}
+
 static const VORONOI::cell_type*
 get_adjacent_cell_along_line( // out,in.
-                              // On entry: desired delta
-                              // On exit:  accepted delta
-                              Point* delta_want,
+                              HypothesisStatistics* stats,
 
                               // in
                               const VORONOI::cell_type* c,
                               const std::vector<Point>& points)
 {
-    double delta_want_len       = hypot((double)delta_want->x, (double)delta_want->y);
+    double delta_want_len       = hypot((double)stats->delta.x, (double)stats->delta.y);
     double delta_want_len_recip = 1.0 / delta_want_len;
 
     FOR_ADJACENT_CELLS(c)
@@ -91,14 +103,14 @@ get_adjacent_cell_along_line( // out,in.
             continue;
 
         double cos_err =
-            ((double)delta_want->x * (double)delta.x +
-             (double)delta_want->y * (double)delta.y) *
+            ((double)stats->delta.x * (double)delta.x +
+             (double)stats->delta.y * (double)delta.y) *
             delta_want_len_recip / delta_len;
         if( cos_err < THRESHOLD_ROW_COS )
             continue;
 
 #warning returning only one adjacent cell; there could be multiple
-        *delta_want = delta;
+        stats->delta = delta;
         return c_adjacent;
     } FOR_ADJACENT_CELLS_END();
 
@@ -115,18 +127,20 @@ static bool search_along_line( // out
 
                                const std::vector<Point>& points)
 {
-    Point delta_current = *delta;
+    HypothesisStatistics stats;
+    fill_initial_hypothesis_statistics(&stats, delta);
+
     delta_mean->x = (double)delta->x;
     delta_mean->y = (double)delta->y;
 
     for(int i=0; i<N_remaining; i++)
     {
-        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_along_line(&delta_current, c, points);
+        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_along_line(&stats, c, points);
         if( c_adjacent == NULL )
             return false;
         c = c_adjacent;
-        delta_mean->x += (double)delta_current.x;
-        delta_mean->y += (double)delta_current.y;
+        delta_mean->x += (double)stats.delta.x;
+        delta_mean->y += (double)stats.delta.y;
     }
 
     delta_mean->x /= (double)(N_remaining+1);
@@ -150,11 +164,12 @@ static void print_along_line( const Point* delta,
 
                               const std::vector<Point>& points)
 {
-    Point delta_current = *delta;
+    HypothesisStatistics stats;
+    fill_initial_hypothesis_statistics(&stats, delta);
 
     for(int i=0; i<N_remaining; i++)
     {
-        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_along_line(&delta_current, c, points);
+        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_along_line(&stats, c, points);
         print_cell_center(c_adjacent, points);
 
         c = c_adjacent;
@@ -188,11 +203,12 @@ static void dump_intervals_along_line( int i_candidate,
 
                                        const std::vector<Point>& points)
 {
-    Point delta_current = *delta;
+    HypothesisStatistics stats;
+    fill_initial_hypothesis_statistics(&stats, delta);
 
     for(int i=0; i<N_remaining; i++)
     {
-        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_along_line(&delta_current, c, points);
+        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_along_line(&stats, c, points);
 
         dump_interval(i_candidate, i+1, c, c_adjacent, points);
 
