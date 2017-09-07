@@ -155,11 +155,51 @@ static void print_along_line( const Point* delta,
     for(int i=0; i<N_remaining; i++)
     {
         const VORONOI::cell_type* c_adjacent = get_adjacent_cell_in_direction(&delta_current, c, points);
-        c = c_adjacent;
+        print_cell_center(c_adjacent, points);
 
-        print_cell_center(c, points);
+        c = c_adjacent;
     }
 }
+
+static void dump_interval( const int i_candidate,
+                           const int i_pt,
+                           const VORONOI::cell_type* c0,
+                           const VORONOI::cell_type* c1,
+                           const std::vector<Point>& points )
+{
+    const Point* pt0 = &points[c0->source_index()];
+    const Point* pt1 = &points[c1->source_index()];
+
+    double dx = (double)(pt1->x - pt0->x) / (double)SCALE;
+    double dy = (double)(pt1->y - pt0->y) / (double)SCALE;
+    double length = hypot(dx,dy);
+    double angle  = atan2(dy,dx) * 180.0 / M_PI;
+    printf("candidate %d point %d, from %f %f to %f %f delta %f %f length %f angle %f\n",
+           i_candidate, i_pt,
+           (double)pt0->x / (double)SCALE, (double)pt0->y / (double)SCALE,
+           (double)pt1->x / (double)SCALE, (double)pt1->y / (double)SCALE,
+           dx, dy, length, angle);
+}
+
+static void dump_intervals_along_line( int i_candidate,
+                                       const Point* delta,
+                                       const VORONOI::cell_type* c,
+                                       int N_remaining,
+
+                                       const std::vector<Point>& points)
+{
+    Point delta_current = *delta;
+
+    for(int i=0; i<N_remaining; i++)
+    {
+        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_in_direction(&delta_current, c, points);
+
+        dump_interval(i_candidate, i+1, c, c_adjacent, points);
+
+        c = c_adjacent;
+    }
+}
+
 
 #define CLASSIFICATION_TYPE_LIST(_)             \
     _(UNCLASSIFIED, = 0)                        \
@@ -475,6 +515,25 @@ static bool validate_clasification(const v_CL* line_candidates)
 #warning complete
     return true;
 
+}
+
+static void dump_candidates( const v_CL* line_candidates,
+                             const std::vector<Point>& points )
+{
+    int N = line_candidates->size();
+    for( int i=0; i<N; i++ )
+    {
+        const CandidateLine* cl = &(*line_candidates)[i];
+
+        dump_interval(i, 0, cl->c0, cl->c1, points);
+
+        const Point* pt0 = &points[cl->c0->source_index()];
+        const Point* pt1 = &points[cl->c1->source_index()];
+
+        Point delta({ pt1->x - pt0->x,
+                      pt1->y - pt0->y});
+        dump_intervals_along_line( i, &delta, cl->c1, Nwant-2, points);
+    }
 }
 
 static void write_output( const v_CL* line_candidates,
