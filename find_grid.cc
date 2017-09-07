@@ -52,7 +52,8 @@ struct PointDouble
 #define THRESHOLD_ROW_LENGTH (60*SCALE)
 #define THRESHOLD_ROW_COS    0.996 /* 1 degrees */
 
-#define FOR_ADJACENT_CELLS(c) do {                                      \
+
+#define FOR_ALL_ADJACENT_CELLS(c) do {                                  \
     const Point*        pt = &points[c->source_index()];                \
     const VORONOI::edge_type* const e0 = c->incident_edge();            \
     bool first = true;                                                  \
@@ -67,7 +68,11 @@ struct PointDouble
         Point delta( pt_adjacent->x - pt->x,                            \
                      pt_adjacent->y - pt->y );
 
-#define FOR_ADJACENT_CELLS_END() }} while(0)
+#define FOR_ALL_ADJACENT_CELLS_END() }} while(0)
+
+
+
+
 
 
 struct HypothesisStatistics
@@ -84,6 +89,23 @@ static void fill_initial_hypothesis_statistics(// out
     stats->delta = *delta0;
 }
 
+
+
+
+#define FOR_MATCHING_ADJACENT_CELLS() do {                              \
+    HypothesisStatistics stats;                                         \
+    fill_initial_hypothesis_statistics(&stats, delta);                  \
+    for(int i=0; i<N_remaining; i++)                                    \
+    {                                                                   \
+        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_along_line(&stats, c, points);
+
+
+#define FOR_MATCHING_ADJACENT_CELLS_END() \
+        c = c_adjacent; }} while(0)
+
+
+
+
 static const VORONOI::cell_type*
 get_adjacent_cell_along_line( // out,in.
                               HypothesisStatistics* stats,
@@ -95,7 +117,7 @@ get_adjacent_cell_along_line( // out,in.
     double delta_want_len       = hypot((double)stats->delta.x, (double)stats->delta.y);
     double delta_want_len_recip = 1.0 / delta_want_len;
 
-    FOR_ADJACENT_CELLS(c)
+    FOR_ALL_ADJACENT_CELLS(c)
     {
         double delta_len = hypot( (double)delta.x, (double)delta.y );
         double len_err = delta_want_len - delta_len;
@@ -112,7 +134,7 @@ get_adjacent_cell_along_line( // out,in.
 #warning returning only one adjacent cell; there could be multiple
         stats->delta = delta;
         return c_adjacent;
-    } FOR_ADJACENT_CELLS_END();
+    } FOR_ALL_ADJACENT_CELLS_END();
 
     return NULL;
 }
@@ -127,21 +149,18 @@ static bool search_along_line( // out
 
                                const std::vector<Point>& points)
 {
-    HypothesisStatistics stats;
-    fill_initial_hypothesis_statistics(&stats, delta);
-
     delta_mean->x = (double)delta->x;
     delta_mean->y = (double)delta->y;
 
-    for(int i=0; i<N_remaining; i++)
+
+    FOR_MATCHING_ADJACENT_CELLS()
     {
-        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_along_line(&stats, c, points);
         if( c_adjacent == NULL )
             return false;
-        c = c_adjacent;
         delta_mean->x += (double)stats.delta.x;
         delta_mean->y += (double)stats.delta.y;
     }
+    FOR_MATCHING_ADJACENT_CELLS_END();
 
     delta_mean->x /= (double)(N_remaining+1);
     delta_mean->y /= (double)(N_remaining+1);
@@ -164,16 +183,10 @@ static void print_along_line( const Point* delta,
 
                               const std::vector<Point>& points)
 {
-    HypothesisStatistics stats;
-    fill_initial_hypothesis_statistics(&stats, delta);
-
-    for(int i=0; i<N_remaining; i++)
+    FOR_MATCHING_ADJACENT_CELLS()
     {
-        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_along_line(&stats, c, points);
         print_cell_center(c_adjacent, points);
-
-        c = c_adjacent;
-    }
+    } FOR_MATCHING_ADJACENT_CELLS_END();
 }
 
 static void dump_interval( const int i_candidate,
@@ -203,17 +216,10 @@ static void dump_intervals_along_line( int i_candidate,
 
                                        const std::vector<Point>& points)
 {
-    HypothesisStatistics stats;
-    fill_initial_hypothesis_statistics(&stats, delta);
-
-    for(int i=0; i<N_remaining; i++)
+    FOR_MATCHING_ADJACENT_CELLS()
     {
-        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_along_line(&stats, c, points);
-
         dump_interval(i_candidate, i+1, c, c_adjacent, points);
-
-        c = c_adjacent;
-    }
+    } FOR_MATCHING_ADJACENT_CELLS_END();
 }
 
 
@@ -299,7 +305,7 @@ static void get_line_candidates( // out
     {
         const VORONOI::cell_type* c  = &(*it);
 
-        FOR_ADJACENT_CELLS(c)
+        FOR_ALL_ADJACENT_CELLS(c)
         {
             PointDouble delta_mean;
             if( search_along_line( &delta_mean,
@@ -319,7 +325,7 @@ static void get_line_candidates( // out
                        spacing_angle);
 #endif
             }
-        } FOR_ADJACENT_CELLS_END();
+        } FOR_ALL_ADJACENT_CELLS_END();
     }
 }
 
