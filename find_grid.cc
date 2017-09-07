@@ -609,6 +609,13 @@ static bool is_reverse_sequence( const int* cs_points_other,
     return compare_reverse_along_sequence(&cs_points_other[Nwant-3], &delta, cs->c1, Nwant-2, points);
 }
 
+static bool matches_direction(CandidateSequence* cs,
+                              ClassificationType orientation )
+{
+    if( orientation == HORIZONTAL ) return cs->delta_mean.x > 0.0;
+    return cs->delta_mean.y > 0.0;
+}
+
 static void filter_bidirectional( v_CS* sequence_candidates,
                                   const std::vector<Point>& points,
                                   ClassificationType orientation )
@@ -636,7 +643,11 @@ static void filter_bidirectional( v_CS* sequence_candidates,
             if( !is_reverse_sequence( cs0_points, cs1, points ) )
                 continue;
 
-            // bam. found reverse sequence. Throw away the match
+            // bam. found reverse sequence. Throw away one of the matches. I
+            // keep the one that matches the canonical direction the best ([1,0]
+            // for "horizontal" and [0,1] for "vertical")
+            if( !matches_direction(cs0, orientation) )
+                *cs0 = *cs1;
             cs1->type = OUTLIER;
             found = true;
             break;
