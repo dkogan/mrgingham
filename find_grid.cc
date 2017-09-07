@@ -47,10 +47,6 @@ struct PointDouble
 #define SCALE     1000 /* Voronoi diagram is integer-only, so I scale-up to get
                           more resolution */
 
-// tight bound on angle error, loose bound on length error. This is because
-// perspective distortion can vary the lengths, but NOT the orientations
-#define THRESHOLD_ROW_LENGTH (60*SCALE)
-#define THRESHOLD_ROW_COS    0.996 /* 1 degrees */
 
 
 #define FOR_ALL_ADJACENT_CELLS(c) do {                                  \
@@ -106,6 +102,13 @@ static void fill_initial_hypothesis_statistics(// out
 
 
 
+// tight bound on angle error, loose bound on length error. This is because
+// perspective distortion can vary the lengths, but NOT the orientations
+#define THRESHOLD_SPACING_LENGTH           (60*SCALE)
+#define THRESHOLD_SPACING_COS              0.996 /* 1 degrees */
+#define THRESHOLD_SPACING_LENGTH_RATIO_MIN 0.8
+#define THRESHOLD_SPACING_LENGTH_RATIO_MAX 1.2
+
 static const VORONOI::cell_type*
 get_adjacent_cell_along_line( // out,in.
                               HypothesisStatistics* stats,
@@ -114,24 +117,26 @@ get_adjacent_cell_along_line( // out,in.
                               const VORONOI::cell_type* c,
                               const std::vector<Point>& points)
 {
-    double delta_want_len       = hypot((double)stats->delta.x, (double)stats->delta.y);
-    double delta_want_len_recip = 1.0 / delta_want_len;
+    double delta_last_len = hypot((double)stats->delta.x, (double)stats->delta.y);
 
     FOR_ALL_ADJACENT_CELLS(c)
     {
         double delta_len = hypot( (double)delta.x, (double)delta.y );
-        double len_err = delta_want_len - delta_len;
-        if( len_err < -THRESHOLD_ROW_LENGTH || THRESHOLD_ROW_LENGTH < len_err )
+        double len_err = delta_last_len - delta_len;
+        if( len_err < -THRESHOLD_SPACING_LENGTH || THRESHOLD_SPACING_LENGTH < len_err )
+            continue;
+
+        double len_ratio = delta_len / delta_last_len;
+        if( len_ratio < THRESHOLD_SPACING_LENGTH_RATIO_MIN || len_ratio > THRESHOLD_SPACING_LENGTH_RATIO_MAX )
             continue;
 
         double cos_err =
             ((double)stats->delta.x * (double)delta.x +
-             (double)stats->delta.y * (double)delta.y) *
-            delta_want_len_recip / delta_len;
-        if( cos_err < THRESHOLD_ROW_COS )
+             (double)stats->delta.y * (double)delta.y) /
+            (delta_last_len * delta_len);
+        if( cos_err < THRESHOLD_SPACING_COS )
             continue;
 
-#warning returning only one adjacent cell; there could be multiple
         stats->delta = delta;
         return c_adjacent;
     } FOR_ALL_ADJACENT_CELLS_END();
