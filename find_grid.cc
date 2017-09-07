@@ -95,7 +95,7 @@ static void fill_initial_hypothesis_statistics(// out
     fill_initial_hypothesis_statistics(&stats, delta);                  \
     for(int i=0; i<N_remaining; i++)                                    \
     {                                                                   \
-        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_along_line(&stats, c, points);
+        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_along_sequence(&stats, c, points);
 
 
 #define FOR_MATCHING_ADJACENT_CELLS_END() \
@@ -113,7 +113,7 @@ static void fill_initial_hypothesis_statistics(// out
 #define THRESHOLD_SPACING_LENGTH_RATIO_DIFF 0.05
 
 static const VORONOI::cell_type*
-get_adjacent_cell_along_line( // out,in.
+get_adjacent_cell_along_sequence( // out,in.
                               HypothesisStatistics* stats,
 
                               // in
@@ -175,7 +175,7 @@ get_adjacent_cell_along_line( // out,in.
     return NULL;
 }
 
-static bool search_along_line( // out
+static bool search_along_sequence( // out
                                PointDouble* delta_mean,
 
                                // in
@@ -213,7 +213,7 @@ static void print_cell_center( const VORONOI::cell_type* c,
            (double)pt->y / (double)SCALE);
 }
 
-static void print_along_line( const Point* delta,
+static void print_along_sequence( const Point* delta,
                               const VORONOI::cell_type* c,
                               int N_remaining,
 
@@ -245,7 +245,7 @@ static void dump_interval( const int i_candidate,
            dx, dy, length, angle);
 }
 
-static void dump_intervals_along_line( int i_candidate,
+static void dump_intervals_along_sequence( int i_candidate,
                                        const Point* delta,
                                        const VORONOI::cell_type* c,
                                        int N_remaining,
@@ -330,12 +330,12 @@ static bool read_points( std::vector<Point>* points, const char* file )
     return true;
 }
 
-static void get_line_candidates( // out
-                                 v_CS* line_candidates,
+static void get_sequence_candidates( // out
+                                     v_CS* sequence_candidates,
 
-                                 // in
-                                 const VORONOI* voronoi,
-                                 const std::vector<Point>& points)
+                                     // in
+                                     const VORONOI* voronoi,
+                                     const std::vector<Point>& points)
 {
     for (auto it = voronoi->cells().begin(); it != voronoi->cells().end(); it++ )
     {
@@ -344,13 +344,13 @@ static void get_line_candidates( // out
         FOR_ALL_ADJACENT_CELLS(c)
         {
             PointDouble delta_mean;
-            if( search_along_line( &delta_mean,
+            if( search_along_sequence( &delta_mean,
                                    &delta, c_adjacent, Nwant-2, points) )
             {
                 double spacing_angle  = get_spacing_angle(delta_mean.y, delta_mean.x);
                 double spacing_length = hypot(delta_mean.x, delta_mean.y);
 
-                line_candidates->push_back( CandidateSequence({c, c_adjacent, delta_mean,
+                sequence_candidates->push_back( CandidateSequence({c, c_adjacent, delta_mean,
                                                                spacing_angle, spacing_length}) );
 
 #if defined DEBUG && DEBUG
@@ -424,14 +424,14 @@ static void push_to_bin( CandidateSequence* cs,
 }
 
 static int gather_unclassified(ClassificationBin* bin,
-                               v_CS* line_candidates,
+                               v_CS* sequence_candidates,
                                int bin_index)
 {
     int Nremaining = 0;
 
     *bin = ClassificationBin({});
 
-    for( auto it = line_candidates->begin(); it != line_candidates->end(); it++ )
+    for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
     {
         CandidateSequence* cs = &(*it);
 
@@ -447,10 +447,10 @@ static int gather_unclassified(ClassificationBin* bin,
     return Nremaining;
 }
 
-static void mark_outliers( v_CS* line_candidates,
+static void mark_outliers( v_CS* sequence_candidates,
                            int bin_index )
 {
-    for( auto it = line_candidates->begin(); it != line_candidates->end(); it++ )
+    for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
     {
         CandidateSequence* cs = &(*it);
 
@@ -465,10 +465,10 @@ static void mark_outliers( v_CS* line_candidates,
     }
 }
 
-static void mark_orientation( v_CS* line_candidates,
+static void mark_orientation( v_CS* sequence_candidates,
                               const enum ClassificationType* types )
 {
-    for( auto it = line_candidates->begin(); it != line_candidates->end(); it++ )
+    for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
     {
         CandidateSequence* cs = &(*it);
 
@@ -477,7 +477,7 @@ static void mark_orientation( v_CS* line_candidates,
     }
 }
 
-static bool cluster_line_candidates( v_CS* line_candidates )
+static bool cluster_sequence_candidates( v_CS* sequence_candidates )
 {
     // I looked through all my points, and I have candidate sets of points that
     // are
@@ -496,12 +496,12 @@ static bool cluster_line_candidates( v_CS* line_candidates )
     while(true)
     {
         ClassificationBin* bin = &bins[bin_index];
-        int Nremaining = gather_unclassified( bin, line_candidates, bin_index );
+        int Nremaining = gather_unclassified( bin, sequence_candidates, bin_index );
 
         if( bin->N < Nwant*2 ) // should have enough for both directions
         {
             // this is a bin full of outliers
-            mark_outliers( line_candidates, bin_index );
+            mark_outliers( sequence_candidates, bin_index );
             if( Nremaining == 0)
                 // we threw away all the data, and nothing was good.
                 return false;
@@ -520,7 +520,7 @@ static bool cluster_line_candidates( v_CS* line_candidates )
         if( Nremaining < Nwant*2 ) // should have enough for both directions
         {
             // only stragglers left. Mark them as outliers and call it good.
-            mark_outliers(line_candidates, -1);
+            mark_outliers(sequence_candidates, -1);
             break;
         }
     }
@@ -546,19 +546,19 @@ static bool cluster_line_candidates( v_CS* line_candidates )
     if(bin_orientation[0] == HORIZONTAL && bin_orientation[1] == HORIZONTAL)
         return false;
 
-    mark_orientation( line_candidates, bin_orientation );
+    mark_orientation( sequence_candidates, bin_orientation );
     return true;
 }
 
 // Looks through our classification and determines whether things look valid or
 // not. Makes no changes to anything
-static bool validate_clasification(const v_CS* line_candidates)
+static bool validate_clasification(const v_CS* sequence_candidates)
 {
     // I should have exactly Nwant horizontal lines and Nwant vertical lines
     int Nhorizontal = 0;
     int Nvertical   = 0;
 
-    for( auto it = line_candidates->begin(); it != line_candidates->end(); it++ )
+    for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
     {
         if(      it->type == HORIZONTAL ) Nhorizontal++;
         else if( it->type == VERTICAL   ) Nvertical++;
@@ -573,13 +573,13 @@ static bool validate_clasification(const v_CS* line_candidates)
 
 }
 
-static void dump_candidates( const v_CS* line_candidates,
+static void dump_candidates( const v_CS* sequence_candidates,
                              const std::vector<Point>& points )
 {
-    int N = line_candidates->size();
+    int N = sequence_candidates->size();
     for( int i=0; i<N; i++ )
     {
-        const CandidateSequence* cs = &(*line_candidates)[i];
+        const CandidateSequence* cs = &(*sequence_candidates)[i];
 
         dump_interval(i, 0, cs->c0, cs->c1, points);
 
@@ -588,14 +588,14 @@ static void dump_candidates( const v_CS* line_candidates,
 
         Point delta({ pt1->x - pt0->x,
                       pt1->y - pt0->y});
-        dump_intervals_along_line( i, &delta, cs->c1, Nwant-2, points);
+        dump_intervals_along_sequence( i, &delta, cs->c1, Nwant-2, points);
     }
 }
 
-static void write_output( const v_CS* line_candidates,
+static void write_output( const v_CS* sequence_candidates,
                           const std::vector<Point>& points )
 {
-    for( auto it = line_candidates->begin(); it != line_candidates->end(); it++ )
+    for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
     {
         if( it->type == HORIZONTAL )
         {
@@ -607,7 +607,7 @@ static void write_output( const v_CS* line_candidates,
 
             Point delta({ pt1->x - pt0->x,
                           pt1->y - pt0->y});
-            print_along_line( &delta, it->c1, Nwant-2, points);
+            print_along_sequence( &delta, it->c1, Nwant-2, points);
         }
     }
 }
@@ -627,16 +627,16 @@ int main(int argc, char* argv[])
     VORONOI voronoi;
     construct_voronoi(points.begin(), points.end(), &voronoi);
 
-    v_CS line_candidates;
-    get_line_candidates(&line_candidates, &voronoi, points);
+    v_CS sequence_candidates;
+    get_sequence_candidates(&sequence_candidates, &voronoi, points);
 
-    if( cluster_line_candidates(&line_candidates))
+    if( cluster_sequence_candidates(&sequence_candidates))
     {
 
 #if defined DEBUG && DEBUG
         // plot with
         // awk '/post/ {print $3,$13,$4,$6,$7}' | feedgnuplot --dataid --domain --autolegend --square --rangesizeall 3 --with 'vectors size screen 0.01,20 fixed filled'
-        for( auto it = line_candidates.begin(); it != line_candidates.end(); it++ )
+        for( auto it = sequence_candidates.begin(); it != sequence_candidates.end(); it++ )
         {
             const CandidateSequence* cs = &(*it);
             const Point*             pt = &points[cs->c0->source_index()];
@@ -650,8 +650,8 @@ int main(int argc, char* argv[])
         }
 #endif
 
-        if(validate_clasification(&line_candidates))
-            write_output(&line_candidates, points);
+        if(validate_clasification(&sequence_candidates))
+            write_output(&sequence_candidates, points);
     }
     return 0;
 }
