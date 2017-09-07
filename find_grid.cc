@@ -245,7 +245,7 @@ static const char* type_string(ClassificationType type)
     }
 }
 
-struct CandidateLine
+struct CandidateSequence
 {
     const VORONOI::cell_type* c0;
     const VORONOI::cell_type* c1;
@@ -268,7 +268,7 @@ double get_spacing_angle( double y, double x )
     return angle;
 }
 
-typedef std::vector<CandidateLine> v_CL;
+typedef std::vector<CandidateSequence> v_CS;
 
 static bool read_points( std::vector<Point>* points, const char* file )
 {
@@ -295,7 +295,7 @@ static bool read_points( std::vector<Point>* points, const char* file )
 }
 
 static void get_line_candidates( // out
-                                 v_CL* line_candidates,
+                                 v_CS* line_candidates,
 
                                  // in
                                  const VORONOI* voronoi,
@@ -314,8 +314,8 @@ static void get_line_candidates( // out
                 double spacing_angle  = get_spacing_angle(delta_mean.y, delta_mean.x);
                 double spacing_length = hypot(delta_mean.x, delta_mean.y);
 
-                line_candidates->push_back( CandidateLine({c, c_adjacent, delta_mean,
-                                                           spacing_angle, spacing_length}) );
+                line_candidates->push_back( CandidateSequence({c, c_adjacent, delta_mean,
+                                                               spacing_angle, spacing_length}) );
 
 #if defined DEBUG && DEBUG
                 printf("pre-classification from %f %f delta_mean %f %f len %f angle %f\n",
@@ -338,7 +338,7 @@ struct ClassificationBin
 #define THRESHOLD_BINFIT_LENGTH (120.0*(double)SCALE)
 #define THRESHOLD_BINFIT_ANGLE  40.0
 
-static bool fits_in_bin( const CandidateLine* cl,
+static bool fits_in_bin( const CandidateSequence* cs,
                          const ClassificationBin* bin,
 
                          double threshold_binfit_length,
@@ -351,10 +351,10 @@ static bool fits_in_bin( const CandidateLine* cl,
     double bin_length = hypot(dx,dy);
     double bin_angle  = get_spacing_angle(dy, dx);
 
-    double length_err = cl->spacing_length - bin_length;
+    double length_err = cs->spacing_length - bin_length;
     if(length_err*length_err > threshold_binfit_length*threshold_binfit_length) return false;
 
-    double angle_err = cl->spacing_angle - bin_angle;
+    double angle_err = cs->spacing_angle - bin_angle;
 
     // I want the angular error to be in [-90:90]
     angle_err += 10.0 * 180.0;
@@ -365,30 +365,30 @@ static bool fits_in_bin( const CandidateLine* cl,
     return true;
 }
 
-static void push_to_bin( CandidateLine* cl,
+static void push_to_bin( CandidateSequence* cs,
                          ClassificationBin* bin,
                          int bin_index )
 {
     // I want to accumulate the vector with a consistent absolute direction
     // (angle modu0 180)
-    if(bin->delta_mean_sum.x * cl->delta_mean.x +
-       bin->delta_mean_sum.y * cl->delta_mean.y >= 0.0 )
+    if(bin->delta_mean_sum.x * cs->delta_mean.x +
+       bin->delta_mean_sum.y * cs->delta_mean.y >= 0.0 )
     {
-        bin->delta_mean_sum.x += cl->delta_mean.x;
-        bin->delta_mean_sum.y += cl->delta_mean.y;
+        bin->delta_mean_sum.x += cs->delta_mean.x;
+        bin->delta_mean_sum.y += cs->delta_mean.y;
     }
     else
     {
-        bin->delta_mean_sum.x -= cl->delta_mean.x;
-        bin->delta_mean_sum.y -= cl->delta_mean.y;
+        bin->delta_mean_sum.x -= cs->delta_mean.x;
+        bin->delta_mean_sum.y -= cs->delta_mean.y;
     }
 
-    cl->bin_index_neg = -bin_index - 1;
+    cs->bin_index_neg = -bin_index - 1;
     bin->N++;
 }
 
 static int gather_unclassified(ClassificationBin* bin,
-                               v_CL* line_candidates,
+                               v_CS* line_candidates,
                                int bin_index)
 {
     int Nremaining = 0;
@@ -397,13 +397,13 @@ static int gather_unclassified(ClassificationBin* bin,
 
     for( auto it = line_candidates->begin(); it != line_candidates->end(); it++ )
     {
-        CandidateLine* cl = &(*it);
+        CandidateSequence* cs = &(*it);
 
-        if( cl->type != UNCLASSIFIED )
+        if( cs->type != UNCLASSIFIED )
             continue;
 
-        if( fits_in_bin(cl, bin, THRESHOLD_BINFIT_LENGTH, THRESHOLD_BINFIT_ANGLE) )
-            push_to_bin(cl, bin, bin_index);
+        if( fits_in_bin(cs, bin, THRESHOLD_BINFIT_LENGTH, THRESHOLD_BINFIT_ANGLE) )
+            push_to_bin(cs, bin, bin_index);
         else
             Nremaining++;
     }
@@ -411,37 +411,37 @@ static int gather_unclassified(ClassificationBin* bin,
     return Nremaining;
 }
 
-static void mark_outliers( v_CL* line_candidates,
+static void mark_outliers( v_CS* line_candidates,
                            int bin_index )
 {
     for( auto it = line_candidates->begin(); it != line_candidates->end(); it++ )
     {
-        CandidateLine* cl = &(*it);
+        CandidateSequence* cs = &(*it);
 
         if( // if we're calling everything remaining and outlier
-            bin_index < 0 && cl->type == UNCLASSIFIED ||
+            bin_index < 0 && cs->type == UNCLASSIFIED ||
 
             // or we're looking at THIS bin
-            cl->bin_index_neg == -bin_index - 1 )
+            cs->bin_index_neg == -bin_index - 1 )
         {
-            cl->type = OUTLIER;
+            cs->type = OUTLIER;
         }
     }
 }
 
-static void mark_orientation( v_CL* line_candidates,
+static void mark_orientation( v_CS* line_candidates,
                               const enum ClassificationType* types )
 {
     for( auto it = line_candidates->begin(); it != line_candidates->end(); it++ )
     {
-        CandidateLine* cl = &(*it);
+        CandidateSequence* cs = &(*it);
 
-        if(      cl->bin_index_neg == -1 ) cl->type = types[0];
-        else if( cl->bin_index_neg == -2 ) cl->type = types[1];
+        if(      cs->bin_index_neg == -1 ) cs->type = types[0];
+        else if( cs->bin_index_neg == -2 ) cs->type = types[1];
     }
 }
 
-static bool cluster_line_candidates( v_CL* line_candidates )
+static bool cluster_line_candidates( v_CS* line_candidates )
 {
     // I looked through all my points, and I have candidate sets of points that
     // are
@@ -516,7 +516,7 @@ static bool cluster_line_candidates( v_CL* line_candidates )
 
 // Looks through our classification and determines whether things look valid or
 // not. Makes no changes to anything
-static bool validate_clasification(const v_CL* line_candidates)
+static bool validate_clasification(const v_CS* line_candidates)
 {
     // I should have exactly Nwant horizontal lines and Nwant vertical lines
     int Nhorizontal = 0;
@@ -537,26 +537,26 @@ static bool validate_clasification(const v_CL* line_candidates)
 
 }
 
-static void dump_candidates( const v_CL* line_candidates,
+static void dump_candidates( const v_CS* line_candidates,
                              const std::vector<Point>& points )
 {
     int N = line_candidates->size();
     for( int i=0; i<N; i++ )
     {
-        const CandidateLine* cl = &(*line_candidates)[i];
+        const CandidateSequence* cs = &(*line_candidates)[i];
 
-        dump_interval(i, 0, cl->c0, cl->c1, points);
+        dump_interval(i, 0, cs->c0, cs->c1, points);
 
-        const Point* pt0 = &points[cl->c0->source_index()];
-        const Point* pt1 = &points[cl->c1->source_index()];
+        const Point* pt0 = &points[cs->c0->source_index()];
+        const Point* pt1 = &points[cs->c1->source_index()];
 
         Point delta({ pt1->x - pt0->x,
                       pt1->y - pt0->y});
-        dump_intervals_along_line( i, &delta, cl->c1, Nwant-2, points);
+        dump_intervals_along_line( i, &delta, cs->c1, Nwant-2, points);
     }
 }
 
-static void write_output( const v_CL* line_candidates,
+static void write_output( const v_CS* line_candidates,
                           const std::vector<Point>& points )
 {
     for( auto it = line_candidates->begin(); it != line_candidates->end(); it++ )
@@ -591,7 +591,7 @@ int main(int argc, char* argv[])
     VORONOI voronoi;
     construct_voronoi(points.begin(), points.end(), &voronoi);
 
-    v_CL line_candidates;
+    v_CS line_candidates;
     get_line_candidates(&line_candidates, &voronoi, points);
 
     if( cluster_line_candidates(&line_candidates))
@@ -602,15 +602,15 @@ int main(int argc, char* argv[])
         // awk '/post/ {print $3,$13,$4,$6,$7}' | feedgnuplot --dataid --domain --autolegend --square --rangesizeall 3 --with 'vectors size screen 0.01,20 fixed filled'
         for( auto it = line_candidates.begin(); it != line_candidates.end(); it++ )
         {
-            const CandidateLine* cl = &(*it);
-            const Point*         pt = &points[cl->c0->source_index()];
+            const CandidateSequence* cs = &(*it);
+            const Point*             pt = &points[cs->c0->source_index()];
 
             printf("post-classification from %f %f delta_mean %f %f len %f angle %f type %s\n",
                    (double)(pt->x) / (double)SCALE, (double)(pt->y) / (double)SCALE,
-                   cl->delta_mean.x / (double)SCALE, cl->delta_mean.y / (double)SCALE,
-                   cl->spacing_length / (double)SCALE,
-                   cl->spacing_angle,
-                   type_string(cl->type));
+                   cs->delta_mean.x / (double)SCALE, cs->delta_mean.y / (double)SCALE,
+                   cs->spacing_length / (double)SCALE,
+                   cs->spacing_angle,
+                   type_string(cs->type));
         }
 #endif
 
