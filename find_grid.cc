@@ -334,11 +334,9 @@ static bool fits_in_bin( const CandidateLine* cl,
 
     double angle_err = cl->spacing_angle - bin_angle;
 
+    // I want the angular error to be in [-90:90]
     angle_err += 10.0 * 180.0;
     angle_err = remainder(angle_err, 180.0);
-
-    // if(      angle_err >=  360.0 ) angle_err -= 360.0;
-    // else if( angle_err <= -360.0 ) angle_err += 360.0;
 
     if(angle_err*angle_err > threshold_binfit_angle*threshold_binfit_angle) return false;
 
