@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
     }
 
     std::vector<PointDouble> points_out;
-    bool result = find_grid_from_image_file(points_out, argv[1]);
+    bool result = find_circle_grid_from_image_file(points_out, argv[1]);
 
     if( result )
     {
