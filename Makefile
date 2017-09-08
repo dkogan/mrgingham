@@ -1,4 +1,4 @@
-PROJECT_NAME := mrgrid
+PROJECT_NAME := mrgingham
 ABI_VERSION  := 0
 TAIL_VERSION := 1
 
