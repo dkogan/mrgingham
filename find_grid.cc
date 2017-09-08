@@ -26,14 +26,7 @@ namespace boost { namespace polygon {
 
 
 typedef voronoi_diagram<double> VORONOI;
-struct PointDouble
-{
-    double x,y;
-    PointDouble(double _x, double _y) : x(_x), y(_y) {}
-    PointDouble() {}
-};
-
-
+using namespace mrgingham;
 
 
 #define Nwant     10
@@ -195,16 +188,17 @@ static bool search_along_sequence( // out
     return true;
 }
 
-static void print_cell_center( const VORONOI::cell_type* c,
+static void write_cell_center( std::vector<PointDouble>& points_out,
+                               const VORONOI::cell_type* c,
                                const std::vector<Point>& points )
 {
     const Point* pt = &points[c->source_index()];
-    printf("%f %f\n",
-           (double)pt->x / (double)FIND_GRID_SCALE,
-           (double)pt->y / (double)FIND_GRID_SCALE);
+    points_out.push_back( PointDouble( (double)pt->x / (double)FIND_GRID_SCALE,
+                                       (double)pt->y / (double)FIND_GRID_SCALE) );
 }
 
-static void print_along_sequence( const Point* delta,
+static void write_along_sequence( std::vector<PointDouble>& points_out,
+                                  const Point* delta,
                               const VORONOI::cell_type* c,
                               int N_remaining,
 
@@ -212,7 +206,7 @@ static void print_along_sequence( const Point* delta,
 {
     FOR_MATCHING_ADJACENT_CELLS()
     {
-        print_cell_center(c_adjacent, points);
+        write_cell_center(points_out, c_adjacent, points);
     } FOR_MATCHING_ADJACENT_CELLS_END();
 }
 
@@ -691,22 +685,23 @@ static void dump_candidates_sparse(const v_CS* sequence_candidates,
     }
 }
 
-static void write_output( const v_CS* sequence_candidates,
+static void write_output( std::vector<PointDouble>& points_out,
+                          const v_CS* sequence_candidates,
                           const std::vector<Point>& points )
 {
     for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
     {
         if( it->type == HORIZONTAL )
         {
-            print_cell_center(it->c0, points);
-            print_cell_center(it->c1, points);
+            write_cell_center(points_out, it->c0, points);
+            write_cell_center(points_out, it->c1, points);
 
             const Point* pt0 = &points[it->c0->source_index()];
             const Point* pt1 = &points[it->c1->source_index()];
 
             Point delta({ pt1->x - pt0->x,
                           pt1->y - pt0->y});
-            print_along_sequence( &delta, it->c1, Nwant-2, points);
+            write_along_sequence( points_out, &delta, it->c1, Nwant-2, points);
         }
     }
 }
@@ -798,7 +793,11 @@ static bool filter_bounds(v_CS* sequence_candidates,
 
 
 
-bool find_grid_from_points( const std::vector<Point>& points )
+bool find_grid_from_points( // out
+                           std::vector<PointDouble>& points_out,
+
+                           // in
+                           const std::vector<Point>& points )
 {
     VORONOI voronoi;
     construct_voronoi(points.begin(), points.end(), &voronoi);
@@ -823,6 +822,6 @@ bool find_grid_from_points( const std::vector<Point>& points )
     if(!validate_clasification(&sequence_candidates))
         return false;
 
-    write_output(&sequence_candidates, points);
+    write_output(points_out, &sequence_candidates, points);
     return true;
 }

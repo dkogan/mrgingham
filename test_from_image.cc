@@ -2,42 +2,22 @@
 #include "find_blobs.hh"
 #include <stdio.h>
 
-static bool read_points( std::vector<Point>* points, const char* file )
-{
-    FILE* fp = fopen(file, "r");
-    if( fp == NULL )
-    {
-        fprintf(stderr, "couldn't open '%s'\n", file);
-        return false;
-    }
+using namespace mrgingham;
 
-    while(1)
-    {
-        double x,y;
-        int Nread = fscanf(fp, "%lf %lf", &x, &y);
-        if(Nread != 2)
-            break;
-
-        Point pt( (int)( x * FIND_GRID_SCALE + 0.5 ),
-                  (int)( y * FIND_GRID_SCALE + 0.5 ) );
-        points->push_back(pt);
-    }
-    fclose(fp);
-    return true;
-}
-
-static bool find_grid_from_image_array( const cv::Mat& image )
+static bool find_grid_from_image_array( std::vector<PointDouble>& points_out,
+                                        const cv::Mat& image )
 {
     std::vector<Point> points;
     find_blobs_from_image_array(&points, image);
-    return find_grid_from_points(points);
+    return find_grid_from_points(points_out, points);
 }
 
-static bool find_grid_from_image_file( const char* filename )
+static bool find_grid_from_image_file( std::vector<PointDouble>& points_out,
+                                       const char* filename )
 {
     std::vector<Point> points;
     find_blobs_from_image_file(&points, filename);
-    return find_grid_from_points(points);
+    return find_grid_from_points(points_out, points);
 }
 
 int main(int argc, char* argv[])
@@ -48,5 +28,14 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    return find_grid_from_image_file(argv[1]) ? 0 : 1;
+    std::vector<PointDouble>& points_out;
+    bool result = find_grid_from_image_file(points_out, argv[1]);
+
+    if( result )
+    {
+        for(int i=0; i<points_out.size(); i++)
+            printf("%f %f\n", points_out[i].x, points_out[i].y);
+        return 0;
+    }
+    return 1;
 }

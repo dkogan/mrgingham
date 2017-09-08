@@ -1,6 +1,8 @@
 #include "find_grid.hh"
 #include <stdio.h>
 
+using namespace mrgingham;
+
 static bool read_points( std::vector<Point>* points, const char* file )
 {
     FILE* fp = fopen(file, "r");
@@ -38,5 +40,14 @@ int main(int argc, char* argv[])
     if( !read_points(&points, argv[1]) )
         return 1;
 
-    return find_grid_from_points(points) ? 0 : 1;
+    std::vector<PointDouble>& points_out;
+    bool result = find_grid_from_points(points_out, points);
+
+    if( result )
+    {
+        for(int i=0; i<points_out.size(); i++)
+            printf("%f %f\n", points_out[i].x, points_out[i].y);
+        return 0;
+    }
+    return 1;
 }
