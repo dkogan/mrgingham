@@ -14,6 +14,6 @@ LDLIBS    += $(LDLIBS_CV)
 
 CCXXFLAGS += -Wno-unused-function -Wno-missing-field-initializers
 
-DIST_INCLUDE := mrgingham.hh
+DIST_INCLUDE := mrgingham.hh point.hh
 
 include /usr/include/mrbuild/Makefile.common
