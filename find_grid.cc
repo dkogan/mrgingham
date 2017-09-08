@@ -446,7 +446,7 @@ static bool cluster_sequence_candidates( v_CS* sequence_candidates )
 
     // I should have exactly two clusters in spacing_angle/spacing_length space
     // I make an extra bin for outliers
-    ClassificationBin bins[3] = {};
+    ClassificationBin bins[3];
 
     int bin_index = 0;
     while(true)
