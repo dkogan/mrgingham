@@ -1,4 +1,4 @@
-#include "mrgingham.h"
+#include "mrgingham.hh"
 #include <stdio.h>
 
 using namespace mrgingham;
