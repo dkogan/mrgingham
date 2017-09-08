@@ -5,6 +5,8 @@
 #include "point.hh"
 
 void find_blobs_from_image_array( std::vector<Point>* points,
-                                  const cv::Mat& image );
+                                  const cv::Mat& image,
+                                  bool dodump = false);
 bool find_blobs_from_image_file( std::vector<Point>* points,
-                                 const char* filename );
+                                 const char* filename,
+                                 bool dodump = false);
