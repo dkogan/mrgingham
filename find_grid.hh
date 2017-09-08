@@ -9,8 +9,8 @@
 namespace mrgingham
 {
     bool find_grid_from_points( // out
-                               std::vector<PointDouble>& points_out,
+                               std::vector<mrgingham::PointDouble>& points_out,
 
                                // in
-                               const std::vector<Point>& points );
+                               const std::vector<mrgingham::Point>& points );
 };

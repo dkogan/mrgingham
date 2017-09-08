@@ -1,6 +1,8 @@
 #include "find_blobs.hh"
 #include <stdio.h>
 
+using namespace mrgingham;
+
 int main(int argc, char* argv[])
 {
     if( argc != 2 )

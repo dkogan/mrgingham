@@ -4,6 +4,8 @@
 #include "point.hh"
 #include "find_grid.hh"
 
+using namespace mrgingham;
+
 void find_blobs_from_image_array( std::vector<Point>* points,
                                   const cv::Mat& image,
                                   bool dodump )

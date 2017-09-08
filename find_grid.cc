@@ -5,6 +5,9 @@
 #include "point.hh"
 #include "find_grid.hh"
 
+using namespace mrgingham;
+
+
 // From the boost voronoi-diagram tutorial. Don't ask.
 using boost::polygon::voronoi_diagram;
 namespace boost { namespace polygon {
@@ -26,7 +29,6 @@ namespace boost { namespace polygon {
 
 
 typedef voronoi_diagram<double> VORONOI;
-using namespace mrgingham;
 
 
 #define Nwant     10
@@ -792,12 +794,11 @@ static bool filter_bounds(v_CS* sequence_candidates,
 
 
 
+bool mrgingham::find_grid_from_points( // out
+                                      std::vector<PointDouble>& points_out,
 
-bool find_grid_from_points( // out
-                           std::vector<PointDouble>& points_out,
-
-                           // in
-                           const std::vector<Point>& points )
+                                      // in
+                                      const std::vector<Point>& points )
 {
     VORONOI voronoi;
     construct_voronoi(points.begin(), points.end(), &voronoi);
