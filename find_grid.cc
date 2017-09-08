@@ -3,7 +3,7 @@
 #include <boost/polygon/voronoi.hpp>
 #include <assert.h>
 #include "point.hh"
-#include "find_grid.hh"
+#include "mrgingham.hh"
 
 using namespace mrgingham;
 

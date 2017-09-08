@@ -1,4 +1,4 @@
-#include "find_grid.hh"
+#include "mrgingham.hh"
 #include <stdio.h>
 
 using namespace mrgingham;

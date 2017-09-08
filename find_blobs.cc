@@ -2,7 +2,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "point.hh"
-#include "find_grid.hh"
+#include "mrgingham.hh"
 
 using namespace mrgingham;
 
