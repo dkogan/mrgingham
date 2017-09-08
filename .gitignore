@@ -8,3 +8,5 @@ test_from_points
 test_dump_blobs
 
 core
+
+cscope.*
