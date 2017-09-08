@@ -2,16 +2,11 @@
 #include <vector>
 #include <boost/polygon/voronoi.hpp>
 #include <assert.h>
-
+#include "point.hh"
+#include "find_grid.hh"
 
 // From the boost voronoi-diagram tutorial. Don't ask.
 using boost::polygon::voronoi_diagram;
-struct Point
-{
-    int x,y;
-    Point(int _x, int _y) : x(_x), y(_y) {}
-    Point() {}
-};
 namespace boost { namespace polygon {
         template <>
         struct geometry_concept<Point> {
@@ -39,13 +34,9 @@ struct PointDouble
 };
 
 
-#define DEBUG 1
-
 
 
 #define Nwant     10
-#define SCALE     1000 /* Voronoi diagram is integer-only, so I scale-up to get
-                          more resolution */
 
 
 
@@ -106,7 +97,7 @@ static void fill_initial_hypothesis_statistics(// out
 
 // tight bound on angle error, loose bound on length error. This is because
 // perspective distortion can vary the lengths, but NOT the orientations
-#define THRESHOLD_SPACING_LENGTH            (80*SCALE)
+#define THRESHOLD_SPACING_LENGTH            (80*FIND_GRID_SCALE)
 #define THRESHOLD_SPACING_COS               0.996 /* 1 degrees */
 #define THRESHOLD_SPACING_LENGTH_RATIO_MIN  0.8
 #define THRESHOLD_SPACING_LENGTH_RATIO_MAX  1.2
@@ -209,8 +200,8 @@ static void print_cell_center( const VORONOI::cell_type* c,
 {
     const Point* pt = &points[c->source_index()];
     printf("%f %f\n",
-           (double)pt->x / (double)SCALE,
-           (double)pt->y / (double)SCALE);
+           (double)pt->x / (double)FIND_GRID_SCALE,
+           (double)pt->y / (double)FIND_GRID_SCALE);
 }
 
 static void print_along_sequence( const Point* delta,
@@ -234,14 +225,14 @@ static void dump_interval( const int i_candidate,
     const Point* pt0 = &points[c0->source_index()];
     const Point* pt1 = &points[c1->source_index()];
 
-    double dx = (double)(pt1->x - pt0->x) / (double)SCALE;
-    double dy = (double)(pt1->y - pt0->y) / (double)SCALE;
+    double dx = (double)(pt1->x - pt0->x) / (double)FIND_GRID_SCALE;
+    double dy = (double)(pt1->y - pt0->y) / (double)FIND_GRID_SCALE;
     double length = hypot(dx,dy);
     double angle  = atan2(dy,dx) * 180.0 / M_PI;
     printf("candidate %d point %d, from %f %f to %f %f delta %f %f length %f angle %f\n",
            i_candidate, i_pt,
-           (double)pt0->x / (double)SCALE, (double)pt0->y / (double)SCALE,
-           (double)pt1->x / (double)SCALE, (double)pt1->y / (double)SCALE,
+           (double)pt0->x / (double)FIND_GRID_SCALE, (double)pt0->y / (double)FIND_GRID_SCALE,
+           (double)pt1->x / (double)FIND_GRID_SCALE, (double)pt1->y / (double)FIND_GRID_SCALE,
            dx, dy, length, angle);
 }
 
@@ -306,30 +297,6 @@ double get_spacing_angle( double y, double x )
 
 typedef std::vector<CandidateSequence> v_CS;
 
-static bool read_points( std::vector<Point>* points, const char* file )
-{
-    FILE* fp = fopen(file, "r");
-    if( fp == NULL )
-    {
-        fprintf(stderr, "couldn't open '%s'\n", file);
-        return false;
-    }
-
-    while(1)
-    {
-        double x,y;
-        int Nread = fscanf(fp, "%lf %lf", &x, &y);
-        if(Nread != 2)
-            break;
-
-        Point pt( (int)( x * SCALE + 0.5 ),
-                  (int)( y * SCALE + 0.5 ) );
-        points->push_back(pt);
-    }
-    fclose(fp);
-    return true;
-}
-
 static void get_sequence_candidates( // out
                                      v_CS* sequence_candidates,
 
@@ -351,7 +318,7 @@ static void get_sequence_candidates( // out
                 double spacing_length = hypot(delta_mean.x, delta_mean.y);
 
                 sequence_candidates->push_back( CandidateSequence({c, c_adjacent, delta_mean,
-                                                               spacing_angle, spacing_length}) );
+                                                                   spacing_angle, spacing_length}) );
             }
         } FOR_ALL_ADJACENT_CELLS_END();
     }
@@ -363,7 +330,7 @@ struct ClassificationBin
     int N;
 };
 
-#define THRESHOLD_BINFIT_LENGTH (120.0*(double)SCALE)
+#define THRESHOLD_BINFIT_LENGTH (120.0*(double)FIND_GRID_SCALE)
 #define THRESHOLD_BINFIT_ANGLE  40.0
 
 static bool fits_in_bin( const CandidateSequence* cs,
@@ -447,10 +414,10 @@ static void mark_outliers( v_CS* sequence_candidates,
         CandidateSequence* cs = &(*it);
 
         if( // if we're calling everything remaining and outlier
-            bin_index < 0 && cs->type == UNCLASSIFIED ||
+           (bin_index < 0 && cs->type == UNCLASSIFIED) ||
 
             // or we're looking at THIS bin
-            cs->bin_index_neg == -bin_index - 1 )
+           (cs->bin_index_neg == -bin_index - 1) )
         {
             cs->type = OUTLIER;
         }
@@ -543,12 +510,12 @@ static bool cluster_sequence_candidates( v_CS* sequence_candidates )
 }
 
 
-static void get_candidate_point( int* cs_point,
+static void get_candidate_point( unsigned int* cs_point,
                                  const VORONOI::cell_type* c )
 {
     *cs_point = c->source_index();
 }
-static void get_candidate_points_along_sequence( int* cs_points,
+static void get_candidate_points_along_sequence( unsigned int* cs_points,
 
                                                  const Point* delta,
                                                  const VORONOI::cell_type* c,
@@ -562,7 +529,7 @@ static void get_candidate_points_along_sequence( int* cs_points,
         cs_points++;
     } FOR_MATCHING_ADJACENT_CELLS_END();
 }
-static void get_candidate_points( int* cs_points,
+static void get_candidate_points( unsigned int* cs_points,
                                   const CandidateSequence* cs,
                                   const std::vector<Point>& points )
 {
@@ -577,7 +544,7 @@ static void get_candidate_points( int* cs_points,
     get_candidate_points_along_sequence(&cs_points[2], &delta, cs->c1, Nwant-2, points);
 }
 
-static bool compare_reverse_along_sequence( const int* cs_points_other,
+static bool compare_reverse_along_sequence( const unsigned int* cs_points_other,
 
                                             const Point* delta,
                                             const VORONOI::cell_type* c,
@@ -594,7 +561,7 @@ static bool compare_reverse_along_sequence( const int* cs_points_other,
 
     return true;
 }
-static bool is_reverse_sequence( const int* cs_points_other,
+static bool is_reverse_sequence( const unsigned int* cs_points_other,
                                  const CandidateSequence* cs,
                                  const std::vector<Point>& points )
 {
@@ -631,7 +598,7 @@ static void filter_bidirectional( v_CS* sequence_candidates,
         CandidateSequence* cs0 = &(*sequence_candidates)[i];
         if(cs0->type != orientation) continue;
 
-        int cs0_points[Nwant];
+        unsigned int cs0_points[Nwant];
         get_candidate_points(cs0_points, cs0, points);
 
         bool found = false;
@@ -677,6 +644,8 @@ static bool validate_clasification(const v_CS* sequence_candidates)
 
 
     // OK then. The horizontal lines should each
+
+    // I'm tired. Let's call this good enough for now
 #warning complete
     return true;
 
@@ -714,9 +683,9 @@ static void dump_candidates_sparse(const v_CS* sequence_candidates,
 
         printf("%s from %f %f delta_mean %f %f len %f angle %f type %s\n",
                what,
-               (double)(pt->x) / (double)SCALE, (double)(pt->y) / (double)SCALE,
-               cs->delta_mean.x / (double)SCALE, cs->delta_mean.y / (double)SCALE,
-               cs->spacing_length / (double)SCALE,
+               (double)(pt->x) / (double)FIND_GRID_SCALE, (double)(pt->y) / (double)FIND_GRID_SCALE,
+               cs->delta_mean.x / (double)FIND_GRID_SCALE, cs->delta_mean.y / (double)FIND_GRID_SCALE,
+               cs->spacing_length / (double)FIND_GRID_SCALE,
                cs->spacing_angle,
                type_string(cs->type));
     }
@@ -807,7 +776,7 @@ static bool filter_bounds(v_CS* sequence_candidates,
     if( cs_ref    == NULL ) return false;
     if( cs_others == NULL ) return false;
 
-    int cs_ref_points[Nwant];
+    unsigned int cs_ref_points[Nwant];
     get_candidate_points( cs_ref_points, cs_ref, points );
     int i;
     for(i=0; i<Nwant; i++, cs_others++)
@@ -826,18 +795,11 @@ static bool filter_bounds(v_CS* sequence_candidates,
     return i == Nwant;
 }
 
-int main(int argc, char* argv[])
+
+
+
+bool find_grid_from_points( const std::vector<Point>& points )
 {
-    if( argc != 2 )
-    {
-        fprintf(stderr, "need arg on cmdline\n");
-        return 1;
-    }
-
-    std::vector<Point> points;
-    if( !read_points(&points, argv[1]) )
-        return 1;
-
     VORONOI voronoi;
     construct_voronoi(points.begin(), points.end(), &voronoi);
 
@@ -845,7 +807,7 @@ int main(int argc, char* argv[])
     get_sequence_candidates(&sequence_candidates, &voronoi, points);
 
     if( !cluster_sequence_candidates(&sequence_candidates))
-        return 1;
+        return false;
 
     filter_bidirectional(&sequence_candidates, points, HORIZONTAL);
     filter_bidirectional(&sequence_candidates, points, VERTICAL);
@@ -855,18 +817,12 @@ int main(int argc, char* argv[])
     sort_candidates(&sequence_candidates, points);
 
     if( !filter_bounds(&sequence_candidates, HORIZONTAL, points) )
-        return 1;
+        return false;
     if( !filter_bounds(&sequence_candidates, VERTICAL,   points) )
-        return 1;
-
-    dump_candidates_sparse( &sequence_candidates, points, "post" );
-
-
+        return false;
     if(!validate_clasification(&sequence_candidates))
-        return 1;
-
+        return false;
 
     write_output(&sequence_candidates, points);
-
-    return 0;
+    return true;
 }
