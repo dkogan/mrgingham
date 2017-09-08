@@ -1,0 +1,9 @@
+*.o
+*.so*
+*.d
+*~
+
+test_from_image
+test_from_points
+
+core
