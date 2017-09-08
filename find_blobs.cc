@@ -3,6 +3,7 @@
 
 #include "point.hh"
 #include "mrgingham.hh"
+#include "mrgingham_internal.h"
 
 using namespace mrgingham;
 

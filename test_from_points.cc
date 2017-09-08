@@ -1,4 +1,5 @@
 #include "mrgingham.hh"
+#include "mrgingham_internal.h"
 #include <stdio.h>
 
 using namespace mrgingham;
