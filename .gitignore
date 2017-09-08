@@ -3,8 +3,8 @@
 *.d
 *~
 
-test_from_image
-test_from_points
+mrgingham_test_from_image
+mrgingham_test_from_points
 test_dump_blobs
 
 core

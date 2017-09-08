@@ -2,7 +2,8 @@ PROJECT_NAME := mrgingham
 ABI_VERSION  := 0
 TAIL_VERSION := 1
 
-BIN_SOURCES := test_*.cc
+BIN_SOURCES := mrgingham_test_from_image mrgingham_test_from_points
+BIN_SOURCES += test_dump_blobs
 LIB_SOURCES := find_grid.cc find_blobs.cc mrgingham.cc
 
 CXXFLAGS_CV := $(shell pkg-config --cflags opencv)
