@@ -4,8 +4,7 @@ TAIL_VERSION := 1
 
 
 DIST_BIN := mrgingham_test_from_image mrgingham_test_from_points
-BIN_SOURCES := $(DIST_BIN,%=%.cc) test_dump_blobs.cc
-
+BIN_SOURCES := $(DIST_BIN:%=%.cc) test_dump_blobs.cc
 LIB_SOURCES := find_grid.cc find_blobs.cc mrgingham.cc
 
 CXXFLAGS_CV := $(shell pkg-config --cflags opencv)
