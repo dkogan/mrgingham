@@ -15,7 +15,7 @@ void find_blobs_from_image_array( std::vector<Point>* points,
     blobDetectorParams.minArea             = 40;
     blobDetectorParams.maxArea             = 80000;
     blobDetectorParams.minDistBetweenBlobs = 15;
-    blobDetectorParams.blobColor           = 255; // white-on-black dots
+    blobDetectorParams.blobColor           = 0; // black-on-white dots
 
 
     cv::SimpleBlobDetector blobDetector(blobDetectorParams);

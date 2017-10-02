@@ -4,6 +4,10 @@
 #include <vector>
 #include "point.hh"
 
+
+// I look for white-on-black dots
+
+
 namespace mrgingham
 {
     bool find_circle_grid_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
