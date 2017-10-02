@@ -14,7 +14,7 @@ BuildRequires:  boost-devel
 BuildRequires:  mrbuild
 
 %description
-OLCD tracker.
+Library to find a grid of points; used for calibration routines
 
 %package devel
 Requires:       %{name}%{_isa} = %{version}-%{release}
