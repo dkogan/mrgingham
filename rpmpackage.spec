@@ -11,6 +11,7 @@ Source0:        https://github.jpl.nasa.gov/maritime-robotics/mrgingham/archive/
 
 BuildRequires:  opencv-devel
 BuildRequires:  boost-devel
+BuildRequires:  mrbuild
 
 %description
 OLCD tracker.
