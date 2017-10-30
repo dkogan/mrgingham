@@ -23,6 +23,6 @@
  * @param    w         image width
  * @param    h         image height
  */
-void ChESS_response_5(      int16_t* restrict response,
-                      const uint8_t* restrict image,
+void ChESS_response_5(      int16_t* response,
+                      const uint8_t* image,
                       int w, int h );
