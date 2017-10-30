@@ -1,3 +1,17 @@
+/*
+    This is the reference implementation from this paper:
+
+      https://arxiv.org/abs/1301.5491
+
+    Dima made a few modifications.
+
+    Obtained from here:
+
+      http://www-sigproc.eng.cam.ac.uk/Main/SB476Chess
+
+    There's a more full-featured GPL-licensed implementation on that page
+*/
+
 /**
  * The ChESS corner detection algorithm
  *
@@ -22,9 +36,8 @@
  * IN THE SOFTWARE.
  */
 
-#include <stddef.h>	// size_t
 #include <stdint.h>
-#include <stdlib.h>	// abs
+#include <stdlib.h>
 
 /**
  * Perform the ChESS corner detection algorithm with a 5 px sampling radius
@@ -34,7 +47,9 @@
  * @param	image	input image
  * @param	response	output response image
  */
-void corner_detect5(const size_t w, const size_t h, const uint8_t image[w * h], int16_t response[w * h])
+void ChESS_response_5(int w, int h,
+                      const uint8_t* restrict image,
+                      int16_t* restrict response)
 {
 	int x, y;
 	// funny bounds due to sampling ring radius (5) and border of previously applied blur (2)
