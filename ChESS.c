@@ -1,15 +1,15 @@
 /*
-    This is the reference implementation from this paper:
+  This is the reference implementation from this paper:
 
-      https://arxiv.org/abs/1301.5491
+  https://arxiv.org/abs/1301.5491
 
-    Dima made a few modifications.
+  Dima made a few modifications.
 
-    Obtained from here:
+  Obtained from here:
 
-      http://www-sigproc.eng.cam.ac.uk/Main/SB476Chess
+  http://www-sigproc.eng.cam.ac.uk/Main/SB476Chess
 
-    There's a more full-featured GPL-licensed implementation on that page
+  There's a more full-featured GPL-licensed implementation on that page
 */
 
 /**
@@ -42,58 +42,58 @@
 /**
  * Perform the ChESS corner detection algorithm with a 5 px sampling radius
  *
- * @param	w	image width
- * @param	h	image height
- * @param	image	input image
- * @param	response	output response image
+ * @param    w         image width
+ * @param    h         image height
+ * @param    image     input image
+ * @param    response  output response image
  */
 void ChESS_response_5(int w, int h,
                       const uint8_t* restrict image,
                       int16_t* restrict response)
 {
-	int x, y;
-	// funny bounds due to sampling ring radius (5) and border of previously applied blur (2)
-	for (y = 7; y < h - 7; y++)
-		for (x = 7; x < w - 7; x++) {
-			const unsigned offset = x + y * w;
-			uint8_t circular_sample[16];
+    int x, y;
+    // funny bounds due to sampling ring radius (5) and border of previously applied blur (2)
+    for (y = 7; y < h - 7; y++)
+        for (x = 7; x < w - 7; x++) {
+            const unsigned offset = x + y * w;
+            uint8_t circular_sample[16];
 
-			circular_sample[2] = image[offset - 2 - 5 * w];
-			circular_sample[1] = image[offset - 5 * w];
-			circular_sample[0] = image[offset + 2 - 5 * w];
-			circular_sample[8] = image[offset - 2 + 5 * w];
-			circular_sample[9] = image[offset + 5 * w];
-			circular_sample[10] = image[offset + 2 + 5 * w];
-			circular_sample[3] = image[offset - 4 - 4 * w];
-			circular_sample[15] = image[offset + 4 - 4 * w];
-			circular_sample[7] = image[offset - 4 + 4 * w];
-			circular_sample[11] = image[offset + 4 + 4 * w];
-			circular_sample[4] = image[offset - 5 - 2 * w];
-			circular_sample[14] = image[offset + 5 - 2 * w];
-			circular_sample[6] = image[offset - 5 + 2 * w];
-			circular_sample[12] = image[offset + 5 + 2 * w];
-			circular_sample[5] = image[offset - 5];
-			circular_sample[13] = image[offset + 5];
+            circular_sample[2] = image[offset - 2 - 5 * w];
+            circular_sample[1] = image[offset - 5 * w];
+            circular_sample[0] = image[offset + 2 - 5 * w];
+            circular_sample[8] = image[offset - 2 + 5 * w];
+            circular_sample[9] = image[offset + 5 * w];
+            circular_sample[10] = image[offset + 2 + 5 * w];
+            circular_sample[3] = image[offset - 4 - 4 * w];
+            circular_sample[15] = image[offset + 4 - 4 * w];
+            circular_sample[7] = image[offset - 4 + 4 * w];
+            circular_sample[11] = image[offset + 4 + 4 * w];
+            circular_sample[4] = image[offset - 5 - 2 * w];
+            circular_sample[14] = image[offset + 5 - 2 * w];
+            circular_sample[6] = image[offset - 5 + 2 * w];
+            circular_sample[12] = image[offset + 5 + 2 * w];
+            circular_sample[5] = image[offset - 5];
+            circular_sample[13] = image[offset + 5];
 
-			// purely horizontal local_mean samples
-			uint16_t local_mean = (image[offset - 1] + image[offset] + image[offset + 1]) * 16 / 3;
+            // purely horizontal local_mean samples
+            uint16_t local_mean = (image[offset - 1] + image[offset] + image[offset + 1]) * 16 / 3;
 
-			uint16_t sum_response = 0;
-			uint16_t diff_response = 0;
-			uint16_t mean = 0;
+            uint16_t sum_response = 0;
+            uint16_t diff_response = 0;
+            uint16_t mean = 0;
 
-			int sub_idx;
-			for (sub_idx = 0; sub_idx < 4; ++sub_idx) {
-				uint8_t a = circular_sample[sub_idx];
-				uint8_t b = circular_sample[sub_idx + 4];
-				uint8_t c = circular_sample[sub_idx + 8];
-				uint8_t d = circular_sample[sub_idx + 12];
+            int sub_idx;
+            for (sub_idx = 0; sub_idx < 4; ++sub_idx) {
+                uint8_t a = circular_sample[sub_idx];
+                uint8_t b = circular_sample[sub_idx + 4];
+                uint8_t c = circular_sample[sub_idx + 8];
+                uint8_t d = circular_sample[sub_idx + 12];
 
-				sum_response += abs(a - b + c - d);
-				diff_response += abs(a - c) + abs(b - d);
-				mean += a + b + c + d;
-			}
+                sum_response += abs(a - b + c - d);
+                diff_response += abs(a - c) + abs(b - d);
+                mean += a + b + c + d;
+            }
 
-			response[offset] = sum_response - diff_response - abs(mean - local_mean);
-		}
+            response[offset] = sum_response - diff_response - abs(mean - local_mean);
+        }
 }
