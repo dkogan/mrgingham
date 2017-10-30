@@ -42,14 +42,14 @@
 /**
  * Perform the ChESS corner detection algorithm with a 5 px sampling radius
  *
+ * @param    response  output response image
+ * @param    image     input image
  * @param    w         image width
  * @param    h         image height
- * @param    image     input image
- * @param    response  output response image
  */
-void ChESS_response_5(int w, int h,
+void ChESS_response_5(      int16_t* restrict response,
                       const uint8_t* restrict image,
-                      int16_t* restrict response)
+                      int w, int h )
 {
     int x, y;
     // funny bounds due to sampling ring radius (5) and border of previously applied blur (2)
