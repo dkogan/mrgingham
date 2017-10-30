@@ -9,7 +9,7 @@
 
 
 // these all output the points scaled by FIND_GRID_SCALE
-void find_blobs_from_image_array( std::vector<mrgingham::Point>* points,
+bool find_blobs_from_image_array( std::vector<mrgingham::Point>* points,
                                   const cv::Mat& image,
                                   bool dodump = false);
 bool find_blobs_from_image_file( std::vector<mrgingham::Point>* points,

@@ -2,12 +2,11 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "point.hh"
-#include "mrgingham.hh"
 #include "mrgingham_internal.h"
 
 using namespace mrgingham;
 
-void find_blobs_from_image_array( std::vector<Point>* points,
+bool find_blobs_from_image_array( std::vector<Point>* points,
                                   const cv::Mat& image,
                                   bool dodump )
 {
@@ -37,6 +36,8 @@ void find_blobs_from_image_array( std::vector<Point>* points,
                                      (int)(it->pt.y * FIND_GRID_SCALE + 0.5)));
         }
     }
+
+    return true;
 }
 
 bool find_blobs_from_image_file( std::vector<Point>* points,
@@ -47,6 +48,5 @@ bool find_blobs_from_image_file( std::vector<Point>* points,
     if( image.data == NULL )
         return false;
 
-    find_blobs_from_image_array( points, image, dodump );
-    return true;
+    return find_blobs_from_image_array( points, image, dodump );
 }
