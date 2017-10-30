@@ -5,7 +5,7 @@ TAIL_VERSION := 1
 
 DIST_BIN := mrgingham_test_from_image mrgingham_test_from_points
 BIN_SOURCES := $(DIST_BIN:%=%.cc) test_dump_blobs.cc
-LIB_SOURCES := find_grid.cc find_blobs.cc mrgingham.cc ChESS.c
+LIB_SOURCES := find_grid.cc find_blobs.cc find_chessboard_corners.cc mrgingham.cc ChESS.c
 
 CXXFLAGS_CV := $(shell pkg-config --cflags opencv)
 LDLIBS_CV   := $(shell pkg-config --libs   opencv)
