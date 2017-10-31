@@ -269,6 +269,17 @@ bool find_chessboard_corners_from_image_array( std::vector<Point>* points,
 
     ChESS_response_5( responseData, imageData, w, h );
 
+    // {
+    //     cv::Mat out;
+    //     cv::normalize(response, out, 0, 255, cv::NORM_MINMAX);
+    //     cv::imwrite("/tmp/response.jpg", out);
+    // }
+    //
+    // for( int y = 0; y < h; y++ )
+    //     for( int x = 0; x < w; x++ )
+    //         printf("%d %d %d\n", x, y, responseData[x+y*w] );
+
+
     // I set all responses <0 to "0". These are not valid as candidates, and
     // I'll use "0" to mean "visited" in the upcoming connectivity search
     for( int xy = 0; xy < w*h; xy++ )
