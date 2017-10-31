@@ -9,15 +9,43 @@ extern "C"
 #include "ChESS.h"
 }
 
-// comment this!
+// The various tunable parameters
+
+// When we find a connected component of high-enough corner responses, the peak
+// must have a response at least this strong for the component to be accepted
+#define RESPONSE_MIN_PEAK_THRESHOLD         200
+
+// Corner responses must be at least this strong to be included into our
+// connected component
+#define RESPONSE_MIN_THRESHOLD              20
+
+// Corner responses must be at least this strong to be included into our
+// connected component. This is based on the maximum response we have so far
+// encountered in our component
+#define RESPONSE_MIN_THRESHOLD_RATIO_OF_MAX(response_max) (((uint16_t)(response_max)) >> 4)
+
+// When looking at a candidate corner (peak of a connected component), we look
+// at the variance of the intensities of the pixels in a region around the
+// candidate corner. This has to be "relatively high". If we somehow end up
+// looking at a region inside a chessboard square instead of on a corner, then
+// the region will be relatively flat (same color), and the variance will be too
+// low. These parameters set the size of this search window and the threshold
+// for the standard deviation (sqrt(variance))
 #define CONSTANCY_WINDOW_R                  5
 #define STDEV_THRESHOLD                     25
-#define VARIANCE_THRESHOLD                  (STDEV_THRESHOLD*STDEV_THRESHOLD)
+
+// The main functions here allow a pyramid downsampling of the image before any
+// processing. This downsampling applies a gaussian blur before first. After the
+// downsampling we ALSO apply a box blur (because our detector works better with
+// less detail). This sets the radius of this extra box blur. Setting to 0
+// should disable this extra blur
 #define PYR_EXTRA_BLUR_R                    1
 
-#define RESPONSE_MIN_PEAK_THRESHOLD         200
-#define RESPONSE_MIN_THRESHOLD              20
-#define RESPONSE_MIN_THRESHOLD_RATIO_OF_MAX(xmax) (((uint16_t)(xmax)) >> 4)
+
+
+
+#define VARIANCE_THRESHOLD                  (STDEV_THRESHOLD*STDEV_THRESHOLD)
+
 
 using namespace mrgingham;
 
@@ -189,7 +217,8 @@ static void follow_connected_component(struct xylist_t* l,
 
                                        const uint8_t* image,
                                        std::vector<Point>* points,
-                                       bool dodump )
+                                       bool dodump,
+                                       uint16_t coord_scale)
 {
     struct connected_component_t c = connected_component_init();
 
@@ -210,8 +239,8 @@ static void follow_connected_component(struct xylist_t* l,
 
     if( connected_component_is_valid(&c, w,h,image) )
     {
-        double x = (double)c.sum_w_x / (double)c.sum_w;
-        double y = (double)c.sum_w_y / (double)c.sum_w;
+        double x = (double)c.sum_w_x / (double)c.sum_w * (double)coord_scale;
+        double y = (double)c.sum_w_y / (double)c.sum_w * (double)coord_scale;
 
         if( dodump )
             printf("%f %f\n", x, y);
@@ -225,7 +254,8 @@ static void process_connected_components(int w, int h, int16_t* d,
 
                                          const uint8_t* image,
                                          std::vector<Point>* points,
-                                         bool dodump )
+                                         bool dodump,
+                                         uint16_t coord_scale)
 {
     struct xylist_t l = xylist_alloc();
 
@@ -237,14 +267,44 @@ static void process_connected_components(int w, int h, int16_t* d,
 
             xylist_reset_with(&l, x, y);
             follow_connected_component(&l, w,h,d,
-                                       image, points, dodump);
+                                       image, points, dodump, coord_scale);
         }
 }
 
 bool find_chessboard_corners_from_image_array( std::vector<Point>* points,
-                                               const cv::Mat& image,
+                                               const cv::Mat& image_input,
+
+                                               // set to 0 to just use the image
+                                               int image_pyramid_level,
                                                bool dodump )
 {
+    if( image_pyramid_level < 0 ||
+
+        // 10 is an arbitrary high number
+        image_pyramid_level > 10 )
+    {
+        fprintf(stderr, "%s:%d in %s(): Got an unreasonable image_pyramid_level = %d."
+                " Sorry.\n", __FILE__, __LINE__, __func__, image_pyramid_level);
+        return false;
+    }
+
+    cv::Mat image = image_input;
+    cv::Mat image_pyrdown;
+    for( int i=0; i<image_pyramid_level; i++)
+    {
+        cv::pyrDown(image_pyramid_level, image_pyrdown);
+
+        // I want to apply an extra blur after each pyrDown. The corner detector
+        // doesn't need a lot of detail, and extra detail can just break things
+        cv::blur(image_pyrdown, image_pyrdown,
+                 cv::Size(1 + 2*PYR_EXTRA_BLUR_R,
+                          1 + 2*PYR_EXTRA_BLUR_R));
+
+        image = image_pyrdown;
+    }
+
+
+
     if( !image.isContinuous() )
     {
         fprintf(stderr, "%s:%d in %s(): I can only handle continuous arrays (stride == width) currently."
@@ -269,6 +329,7 @@ bool find_chessboard_corners_from_image_array( std::vector<Point>* points,
 
     ChESS_response_5( responseData, imageData, w, h );
 
+    // useful debugging code:
     // {
     //     cv::Mat out;
     //     cv::normalize(response, out, 0, 255, cv::NORM_MINMAX);
@@ -295,12 +356,16 @@ bool find_chessboard_corners_from_image_array( std::vector<Point>* points,
     // This serves both to throw away duplicate nearby points at the same corner
     // and to provide sub-pixel-interpolation for the corner location
     process_connected_components(w, h, responseData,
-                                 (uint8_t*)image.data, points, dodump);
+                                 (uint8_t*)image.data, points, dodump,
+                                 1U << image_pyramid_level);
     return true;
 }
 
 bool find_chessboard_corners_from_image_file( std::vector<Point>* points,
                                               const char* filename,
+
+                                              // set to 0 to just use the image
+                                              int image_pyramid_level,
                                               bool dodump )
 {
     cv::Mat image = cv::imread(filename, CV_LOAD_IMAGE_GRAYSCALE);
@@ -311,5 +376,5 @@ bool find_chessboard_corners_from_image_file( std::vector<Point>* points,
         return false;
     }
 
-    return find_chessboard_corners_from_image_array( points, image, dodump );
+    return find_chessboard_corners_from_image_array( points, image, image_pyramid_level, dodump );
 }

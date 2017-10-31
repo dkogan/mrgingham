@@ -5,13 +5,24 @@ using namespace mrgingham;
 
 int main(int argc, char* argv[])
 {
-    if( argc != 2 )
+    const char* usage = "Usage: %s image_pyramid_level imagefilename\n";
+
+    if( argc != 3 )
     {
-        fprintf(stderr, "missing arg: need image filename on the cmdline\n");
+        fprintf(stderr, usage, argv[0]);
         return 1;
     }
 
+    int image_pyramid_level = atoi(argv[1]);
+    if( image_pyramid_level < 0 || image_pyramid_level > 10)
+    {
+        fprintf(stderr, usage, argv[0]);
+        return 1;
+    }
+
+    const char* filename = argv[2];
+
     std::vector<Point> points;
-    find_chessboard_corners_from_image_file(&points, argv[1], true);
+    find_chessboard_corners_from_image_file(&points, filename, image_pyramid_level, true);
     return 0;
 }

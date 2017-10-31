@@ -13,7 +13,7 @@ CCXXFLAGS += $(CXXFLAGS_CV)
 LDLIBS    += $(LDLIBS_CV)
 
 CFLAGS    += -std=gnu99
-CCXXFLAGS += -Wno-unused-function -Wno-missing-field-initializers
+CCXXFLAGS += -Wno-unused-function -Wno-missing-field-initializers -Wno-unused-parameter
 
 DIST_INCLUDE := mrgingham.hh point.hh
 
