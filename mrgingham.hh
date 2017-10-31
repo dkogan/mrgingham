@@ -14,6 +14,10 @@ namespace mrgingham
                                             const cv::Mat& image );
     bool find_circle_grid_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
                                            const char* filename );
+    bool find_chessboard_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
+                                           const cv::Mat& image );
+    bool find_chessboard_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
+                                          const char* filename );
     bool find_grid_from_points( std::vector<mrgingham::PointDouble>& points_out,
                                 const std::vector<mrgingham::Point>& points );
 };

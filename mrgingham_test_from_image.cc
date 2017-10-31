@@ -5,14 +5,31 @@ using namespace mrgingham;
 
 int main(int argc, char* argv[])
 {
-    if( argc != 2 )
+    const char* usage = "Usage: %s blobs|chessboard imagefile\n";
+
+    if( argc != 3 )
     {
-        fprintf(stderr, "missing arg: need image filename on the cmdline\n");
+        fprintf(stderr, usage, argv[0]);
+        return 1;
+    }
+
+    bool doblobs;
+    if(      strcmp(argv[1], "blobs") == 0 )
+        doblobs = true;
+    else if( strcmp(argv[1], "chessboard") == 0 )
+        doblobs = false;
+    else
+    {
+        fprintf(stderr, usage, argv[0]);
         return 1;
     }
 
     std::vector<PointDouble> points_out;
-    bool result = find_circle_grid_from_image_file(points_out, argv[1]);
+    bool result;
+    if(doblobs)
+        result = find_circle_grid_from_image_file(points_out, argv[2]);
+    else
+        result = find_chessboard_from_image_file (points_out, argv[2]);
 
     if( result )
     {

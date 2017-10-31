@@ -44,9 +44,13 @@ bool find_blobs_from_image_file( std::vector<Point>* points,
                                  const char* filename,
                                  bool dodump )
 {
-    cv::Mat image = cv::imread(filename, CV_LOAD_IMAGE_COLOR);
+    cv::Mat image = cv::imread(filename, CV_LOAD_IMAGE_GRAYSCALE);
     if( image.data == NULL )
+    {
+        fprintf(stderr, "%s:%d in %s(): Couldn't open image '%s'."
+                " Sorry.\n", __FILE__, __LINE__, __func__, filename);
         return false;
+    }
 
     return find_blobs_from_image_array( points, image, dodump );
 }
