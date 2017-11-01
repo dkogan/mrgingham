@@ -292,7 +292,7 @@ bool find_chessboard_corners_from_image_array( std::vector<Point>* points,
     cv::Mat image_pyrdown;
     for( int i=0; i<image_pyramid_level; i++)
     {
-        cv::pyrDown(image_pyramid_level, image_pyrdown);
+        cv::pyrDown(image, image_pyrdown);
 
         // I want to apply an extra blur after each pyrDown. The corner detector
         // doesn't need a lot of detail, and extra detail can just break things
