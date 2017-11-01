@@ -125,7 +125,6 @@ int main(int argc, char* argv[])
                            1 + 2*blur_radius));
     }
 
-
     std::vector<PointDouble> points_out;
     bool result;
     if(doblobs)

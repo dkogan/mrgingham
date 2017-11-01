@@ -309,7 +309,7 @@ static void get_sequence_candidates( // out
         {
             PointDouble delta_mean;
             if( search_along_sequence( &delta_mean,
-                                   &delta, c_adjacent, Nwant-2, points) )
+                                       &delta, c_adjacent, Nwant-2, points) )
             {
                 double spacing_angle  = get_spacing_angle(delta_mean.y, delta_mean.x);
                 double spacing_length = hypot(delta_mean.x, delta_mean.y);
