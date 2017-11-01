@@ -32,6 +32,7 @@ namespace boost { namespace polygon {
 typedef voronoi_diagram<double> VORONOI;
 
 
+// hard-coding 10x10 grids
 #define Nwant     10
 
 
@@ -114,18 +115,21 @@ get_adjacent_cell_along_sequence( // out,in.
     // clean data, so this possibility is ignored.
     //
     // A matching next cell should have the following properties, all
-    // established by the previous cells in the sequence
+    // established by the previous cells in the sequence. The next cell should
+    // match all of these:
     //
-    // - be located along an expected direction (tight bound on angle)
-    // - should be an expected distance away (loose bound on distance)
-    // - the ratio of successive distances in a sequence should be ~ 1
-    // - this ratio can vary LINEARLY-ish
+    // - located along an expected direction (tight bound on angle)
+    //
+    // - should be an expected distance away (loose bound on absolute distance)
+    //
+    // - the ratio of successive distances in a sequence should be constant-ish
     //
     // The points in a sequence come from projections of equidistantly-spaced
     // points in a straight line, so the projected DIRECTIONS should match very
     // well. The distances may not, if the observed object is tilted and is
-    // relatively close to the camera, but each distance
-    double delta_last_length = hypot((double)stats->delta.x, (double)stats->delta.y);
+    // relatively close to the camera, but each successive distance will vary ~
+    // geometrically due to perspective effects, or it the distances will all be
+    // roughly constant, which is still geometric, technically
 
     FOR_ALL_ADJACENT_CELLS(c)
     {
@@ -806,6 +810,30 @@ bool mrgingham::find_grid_from_points( // out
 
     v_CS sequence_candidates;
     get_sequence_candidates(&sequence_candidates, &voronoi, points);
+
+
+    // useful for debugging:
+
+    // dump_candidates_sparse(&sequence_candidates, points);
+    // exit(1);
+
+    // fprintf(stderr, "got %zd points:\n", points.size());
+    // for(unsigned int i=0; i<points.size(); i++)
+    // {
+    //     const Point& pt = points[i];
+    //     fprintf(stderr, "%f %f\n",
+    //             (double)pt.x/(double)FIND_GRID_SCALE,
+    //             (double)pt.y/(double)FIND_GRID_SCALE);
+    // }
+    // fprintf(stderr, "\ngot %zd sequence candidates. They start at:\n", sequence_candidates.size());
+    // for(unsigned int i=0; i<sequence_candidates.size(); i++)
+    // {
+    //     const Point& pt = points[sequence_candidates[i].c0->source_index()];
+    //     fprintf(stderr, "%f %f\n",
+    //             (double)pt.x/(double)FIND_GRID_SCALE,
+    //             (double)pt.y/(double)FIND_GRID_SCALE);
+    // }
+    // exit(1);
 
     if( !cluster_sequence_candidates(&sequence_candidates))
         return false;
