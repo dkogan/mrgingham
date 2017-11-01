@@ -76,6 +76,13 @@ computing the mean of the position of the points in each candidate neighborhood,
 weighted by the detector response. There're a few outlier-detection things too,
 and the whole thing works very well so far.
 
+As noted earlier, I look for a hard-coded 10x10 grid. Here that means 10x10
+/internal corners/, meaning an 11x11 chessboard. It probably doesn't matter, but
+if the outer squares have a different width than the inner squares, the detector
+is less likely to fail. This would ensure that we see exactly 10 points in a row
+with the expected spacing, not 12. I haven't tried with an even 10x10 board, so
+I don't know if this is a real issue.
+
 ** Build
 This uses the standard mrbuild build system:
 [https://github.jpl.nasa.gov/maritime-robotics/mrbuild]. Packages are available
