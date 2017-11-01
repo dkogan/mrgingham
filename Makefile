@@ -1,5 +1,5 @@
 PROJECT_NAME := mrgingham
-ABI_VERSION  := 0
+ABI_VERSION  := 1
 TAIL_VERSION := 1
 
 
