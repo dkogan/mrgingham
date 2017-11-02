@@ -61,8 +61,10 @@ typedef voronoi_diagram<double> VORONOI;
 
 struct HypothesisStatistics
 {
-    Point  delta;
-    double length_ratio_last;
+    Point  delta_last;
+
+    double length_ratio_sum;
+    int    length_ratio_N;
 };
 
 static void fill_initial_hypothesis_statistics(// out
@@ -71,8 +73,9 @@ static void fill_initial_hypothesis_statistics(// out
                                                // in
                                                const Point* delta0)
 {
-    stats->delta             = *delta0;
-    stats->length_ratio_last = -1.0;
+    stats->delta_last       = *delta0;
+    stats->length_ratio_sum = 0.0;
+    stats->length_ratio_N   = 0;
 }
 
 
@@ -94,11 +97,11 @@ static void fill_initial_hypothesis_statistics(// out
 
 // tight bound on angle error, loose bound on length error. This is because
 // perspective distortion can vary the lengths, but NOT the orientations
-#define THRESHOLD_SPACING_LENGTH            (80*FIND_GRID_SCALE)
-#define THRESHOLD_SPACING_COS               0.996 /* 5 degrees */
-#define THRESHOLD_SPACING_LENGTH_RATIO_MIN  0.8
-#define THRESHOLD_SPACING_LENGTH_RATIO_MAX  1.2
-#define THRESHOLD_SPACING_LENGTH_RATIO_DIFF 0.08
+#define THRESHOLD_SPACING_LENGTH                 (80*FIND_GRID_SCALE)
+#define THRESHOLD_SPACING_COS                    0.996 /* 5 degrees */
+#define THRESHOLD_SPACING_LENGTH_RATIO_MIN       0.7
+#define THRESHOLD_SPACING_LENGTH_RATIO_MAX       1.4
+#define THRESHOLD_SPACING_LENGTH_RATIO_DEVIATION 0.08
 
 static const VORONOI::cell_type*
 get_adjacent_cell_along_sequence( // out,in.
@@ -131,36 +134,52 @@ get_adjacent_cell_along_sequence( // out,in.
     // geometrically due to perspective effects, or it the distances will all be
     // roughly constant, which is still geometric, technically
 
+    const Point& delta_last = stats->delta_last;
+
+    double delta_last_length = hypot((double)delta_last.x, (double)delta_last.y);
+
     FOR_ALL_ADJACENT_CELLS(c)
     {
         double delta_length = hypot( (double)delta.x, (double)delta.y );
 
         double cos_err =
-            ((double)stats->delta.x * (double)delta.x +
-             (double)stats->delta.y * (double)delta.y) /
+            ((double)delta_last.x * (double)delta.x +
+             (double)delta_last.y * (double)delta.y) /
             (delta_last_length * delta_length);
         if( cos_err < THRESHOLD_SPACING_COS )
             continue;
 
         double length_err = delta_last_length - delta_length;
-        if( length_err < -THRESHOLD_SPACING_LENGTH || THRESHOLD_SPACING_LENGTH < length_err )
+        if( length_err < -THRESHOLD_SPACING_LENGTH ||
+            length_err >  THRESHOLD_SPACING_LENGTH )
             continue;
 
         double length_ratio = delta_length / delta_last_length;
-        if( length_ratio < THRESHOLD_SPACING_LENGTH_RATIO_MIN || length_ratio > THRESHOLD_SPACING_LENGTH_RATIO_MAX )
+        if( length_ratio < THRESHOLD_SPACING_LENGTH_RATIO_MIN ||
+            length_ratio > THRESHOLD_SPACING_LENGTH_RATIO_MAX )
             continue;
 
-        if( stats->length_ratio_last > 0.0 )
+        // I compute the mean and look at the deviation from the CURRENT mean. I
+        // ignore the first few points, since the mean is unstable then. This is
+        // OK, however, since I'm going to find and analyze the same sequence in
+        // the reverse order, and this will cover the other end
+        if( stats->length_ratio_N > 2 )
         {
-            double length_ratio_diff = length_ratio - stats->length_ratio_last;
-            if( length_ratio_diff*length_ratio_diff >
-                THRESHOLD_SPACING_LENGTH_RATIO_DIFF*THRESHOLD_SPACING_LENGTH_RATIO_DIFF)
+            double length_ratio_mean = stats->length_ratio_sum / (double)stats->length_ratio_N;
+
+            double length_ratio_deviation = length_ratio - length_ratio_mean;
+            if( length_ratio_deviation < -THRESHOLD_SPACING_LENGTH_RATIO_DEVIATION ||
+                length_ratio_deviation >  THRESHOLD_SPACING_LENGTH_RATIO_DEVIATION )
                 continue;
         }
 
-        stats->length_ratio_last = length_ratio;
-        stats->delta = delta;
+        stats->length_ratio_sum += length_ratio;
+        stats->length_ratio_N++;
+
+        stats->delta_last        = delta;
+
         return c_adjacent;
+
     } FOR_ALL_ADJACENT_CELLS_END();
 
     return NULL;
@@ -184,8 +203,8 @@ static bool search_along_sequence( // out
     {
         if( c_adjacent == NULL )
             return false;
-        delta_mean->x += (double)stats.delta.x;
-        delta_mean->y += (double)stats.delta.y;
+        delta_mean->x += (double)stats.delta_last.x;
+        delta_mean->y += (double)stats.delta_last.y;
     }
     FOR_MATCHING_ADJACENT_CELLS_END();
 
