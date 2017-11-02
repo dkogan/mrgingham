@@ -18,11 +18,11 @@ $ mrgingham_test_from_image --chessboard --clahe --level 1 /tmp/image.jpg |
 
 * DESCRIPTION
 Both chessboard and a non-offset grid of circles are supported. Chessboard are
-the /strongly/ preferred choice, since the circles are not and cannot produce
-accurate results: we care about the center point, which we are not directly
-observing. Thus with closeup and oblique views, the reported circle center and
-the real circle center could be very far away from each other. Because of this,
-more work was put into the chessboard detector. Use that one. Really.
+the /strongly/ preferred choice, since the circles cannot produce accurate
+results: we care about the center point, which we are not directly observing.
+Thus with closeup and oblique views, the reported circle center and the real
+circle center could be very far away from each other. Because of this, more work
+was put into the chessboard detector. Use that one. Really.
 
 These are both nominally supported by OpenCV, but those implementations are slow
 and not at all robust, in my experience. In fact, they're so non-robust, that I
@@ -85,18 +85,18 @@ I don't know if this is a real issue.
 
 ** Build
 This uses the standard mrbuild build system:
-[https://github.jpl.nasa.gov/maritime-robotics/mrbuild]. Packages are available
+https://github.jpl.nasa.gov/maritime-robotics/mrbuild. Packages are available
 for our currently-standard distro: Centos 7, although building this for other
-distros should present no challenges. Debian will be supported in the near
-future, probably.
+distros should present no challenges. I'll probably build packages for Debian in
+the near future.
 
 ** API
 The user-facing functions live in =mrgingham.hh=. Everything is in C++, mostly
 because some of the underlying libraries are in C++. All functions return a
 =bool= to indicate success/failure. All functions put the destination arguments
 /first/. All functions return the output points in
-=std::vector<mrgingham::PointDouble=& points_out>, an ordered list of
-corresponding points. The inputs are one of
+=std::vector<mrgingham::PointDouble& points_out>=, an ordered list of found
+points. The inputs are one of
 
 - An image filename
 - An OpenCV matrix: =cv::Mat& image=
