@@ -110,6 +110,11 @@ int main(int argc, char* argv[])
 
 
     cv::Mat image = cv::imread(filename, CV_LOAD_IMAGE_GRAYSCALE);
+    if( image.data == NULL )
+    {
+        fprintf(stderr, "Couldn't open image '%s'\n", filename);
+        return 1;
+    }
 
     if( doclahe )
     {
