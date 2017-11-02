@@ -691,18 +691,16 @@ static void dump_candidates_detailed( const v_CS* sequence_candidates,
 }
 
 static void dump_candidates_sparse(const v_CS* sequence_candidates,
-                                   const std::vector<Point>& points,
-                                   const char* what)
+                                   const std::vector<Point>& points)
 {
     // plot with
-    // awk '/post/ {print $3,$13,$4,$6,$7}' | feedgnuplot --dataid --domain --autolegend --square --rangesizeall 3 --with 'vectors size screen 0.01,20 fixed filled'
+    // awk '{print $2,$12,$3,$5,$6}' | feedgnuplot --dataid --domain --autolegend --square --rangesizeall 3 --with 'vectors size screen 0.01,20 fixed filled'
     for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
     {
         const CandidateSequence* cs = &(*it);
         const Point*             pt = &points[cs->c0->source_index()];
 
-        printf("%s from %f %f delta_mean %f %f len %f angle %f type %s\n",
-               what,
+        printf("from %f %f delta_mean %f %f len %f angle %f type %s\n",
                (double)(pt->x) / (double)FIND_GRID_SCALE, (double)(pt->y) / (double)FIND_GRID_SCALE,
                cs->delta_mean.x / (double)FIND_GRID_SCALE, cs->delta_mean.y / (double)FIND_GRID_SCALE,
                cs->spacing_length / (double)FIND_GRID_SCALE,
