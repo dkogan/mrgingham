@@ -26,7 +26,8 @@ int main(int argc, char* argv[])
         "  --level l   applies a downsampling to the image before processing it (after\n"
         "  --clahe and --blur, if given) to the image before processing. Level 0 means\n"
         "  'use the original image'. Level > 0 means downsample by 2**level. Level < 0\n"
-        "  means 'try several different levels until we find one that works'.\n";
+        "  means 'try several different levels until we find one that works. This is the'.\n"
+        "  default.\n";
 
     struct option opts[] = {
         { "blobs",      no_argument,       NULL, 'B' },
