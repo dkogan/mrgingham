@@ -11,7 +11,8 @@ using namespace mrgingham;
 int main(int argc, char* argv[])
 {
     const char* usage =
-        "Usage: %s [--clahe] [--blur radius] [--level l] --blobs|--chessboard imagefile\n"
+        "Usage: %s [--clahe] [--blur radius] [--save-preprocessed imagefile_out]\n"
+        "                                   [--level l] --blobs|--chessboard imagefile\n"
         "\n"
         "  --blobs or --chessboard are required; these tell the tool what to do.\n"
         "\n"
@@ -22,6 +23,8 @@ int main(int argc, char* argv[])
         "  --blur radius   applies a blur (after --clahe, if given) to the image before\n"
         "  processing\n"
         "\n"
+        "  --save-preprocessed saves the post-clahe post-blur image to the given file\n"
+        "\n"
 
         "  --level l   applies a downsampling to the image before processing it (after\n"
         "  --clahe and --blur, if given) to the image before processing. Level 0 means\n"
@@ -30,21 +33,23 @@ int main(int argc, char* argv[])
         "  default.\n";
 
     struct option opts[] = {
-        { "blobs",      no_argument,       NULL, 'B' },
-        { "chessboard", no_argument,       NULL, 'C' },
-        { "blur",       required_argument, NULL, 'b' },
-        { "clahe",      no_argument,       NULL, 'c' },
-        { "level",      required_argument, NULL, 'l' },
-        { "help",       no_argument,       NULL, 'h' },
+        { "blobs",             no_argument,       NULL, 'B' },
+        { "chessboard",        no_argument,       NULL, 'C' },
+        { "blur",              required_argument, NULL, 'b' },
+        { "clahe",             no_argument,       NULL, 'c' },
+        { "save-preprocessed", required_argument, NULL, 's' },
+        { "level",             required_argument, NULL, 'l' },
+        { "help",              no_argument,       NULL, 'h' },
         {}
     };
 
 
-    bool have_doblobs        = false;
-    bool doblobs             = false; // to pacify compiler
-    bool doclahe             = false;
-    int  blur_radius         = -1;
-    int  image_pyramid_level = -1;
+    bool        have_doblobs        = false;
+    bool        doblobs             = false; // to pacify compiler
+    bool        doclahe             = false;
+    int         blur_radius         = -1;
+    int         image_pyramid_level = -1;
+    const char* save_preprocessed   = NULL;
 
     int opt;
     do
@@ -84,6 +89,10 @@ int main(int argc, char* argv[])
                 return 1;
 
             }
+            break;
+
+        case 's':
+            save_preprocessed = optarg;
             break;
 
         case 'l':
@@ -130,6 +139,9 @@ int main(int argc, char* argv[])
                   cv::Size(1 + 2*blur_radius,
                            1 + 2*blur_radius));
     }
+
+    if(save_preprocessed)
+        cv::imwrite(save_preprocessed, image);
 
     std::vector<PointDouble> points_out;
     bool result;
