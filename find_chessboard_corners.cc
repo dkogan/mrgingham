@@ -271,6 +271,7 @@ static void process_connected_components(int w, int h, int16_t* d,
         }
 }
 
+__attribute__((visibility("default")))
 bool find_chessboard_corners_from_image_array( std::vector<Point>* points,
                                                const cv::Mat& image_input,
 
@@ -361,6 +362,7 @@ bool find_chessboard_corners_from_image_array( std::vector<Point>* points,
     return true;
 }
 
+__attribute__((visibility("default")))
 bool find_chessboard_corners_from_image_file( std::vector<Point>* points,
                                               const char* filename,
 

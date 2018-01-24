@@ -7,6 +7,7 @@
 
 namespace mrgingham
 {
+    __attribute__((visibility("default")))
     bool find_circle_grid_from_image_array( std::vector<PointDouble>& points_out,
                                             const cv::Mat& image )
     {
@@ -15,6 +16,7 @@ namespace mrgingham
         return find_grid_from_points(points_out, points);
     }
 
+    __attribute__((visibility("default")))
     bool find_circle_grid_from_image_file( std::vector<PointDouble>& points_out,
                                            const char* filename )
     {
@@ -35,6 +37,7 @@ namespace mrgingham
 
     }
 
+    __attribute__((visibility("default")))
     bool find_chessboard_from_image_array( std::vector<PointDouble>& points_out,
                                            const cv::Mat& image,
                                            int image_pyramid_level )
@@ -57,6 +60,7 @@ namespace mrgingham
         return false;
     }
 
+    __attribute__((visibility("default")))
     bool find_chessboard_from_image_file( std::vector<PointDouble>& points_out,
                                           const char* filename,
                                           int image_pyramid_level )

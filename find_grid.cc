@@ -816,6 +816,7 @@ static bool filter_bounds(v_CS* sequence_candidates,
 
 
 
+__attribute__((visibility("default")))
 bool mrgingham::find_grid_from_points( // out
                                       std::vector<PointDouble>& points_out,
 

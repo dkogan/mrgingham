@@ -6,6 +6,7 @@
 
 using namespace mrgingham;
 
+__attribute__((visibility("default")))
 bool find_blobs_from_image_array( std::vector<Point>* points,
                                   const cv::Mat& image,
                                   bool dodump )
@@ -40,6 +41,7 @@ bool find_blobs_from_image_array( std::vector<Point>* points,
     return true;
 }
 
+__attribute__((visibility("default")))
 bool find_blobs_from_image_file( std::vector<Point>* points,
                                  const char* filename,
                                  bool dodump )
