@@ -86,9 +86,7 @@ I don't know if this is a real issue.
 ** Build
 This uses the standard mrbuild build system:
 https://github.jpl.nasa.gov/maritime-robotics/mrbuild. Packages are available
-for our currently-standard distro: Centos 7, although building this for other
-distros should present no challenges. I'll probably build packages for Debian in
-the near future.
+for Debian and CentOS 7.
 
 ** API
 The user-facing functions live in =mrgingham.hh=. Everything is in C++, mostly
