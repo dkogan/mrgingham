@@ -2,7 +2,7 @@
 This is a library for finding calibration boards in observed camera images:
 
 #+BEGIN_EXAMPLE
-$ mrgingham_test_from_image --chessboard --clahe --level 1 /tmp/image.jpg
+$ mrgingham_from_image --chessboard --clahe --level 1 /tmp/image.jpg
 
 1385.433000 1471.719000
 1483.597000 1469.825000
@@ -10,7 +10,7 @@ $ mrgingham_test_from_image --chessboard --clahe --level 1 /tmp/image.jpg
 ...
 
 
-$ mrgingham_test_from_image --chessboard --clahe --level 1 /tmp/image.jpg |
+$ mrgingham_from_image --chessboard --clahe --level 1 /tmp/image.jpg |
   feedgnuplot --domain --lines --points --image /tmp/image.jpg
 
 [ image pops up with the detected grid plotted on top ]
@@ -140,10 +140,10 @@ The arguments should be clear. The only one that needs an explanation is
 ** Test applications
 There're several included applications that exercise the library:
 
-- =mrgingham_test_from_image= takes in an image (with some optional manipulation
+- =mrgingham_from_image= takes in an image (with some optional manipulation
   given on the cmdline), finds the grid, and returns it on stdout
 
-- =mrgingham_test_from_points= takes in a file that contains an unordered set of
+- =mrgingham_from_points= takes in a file that contains an unordered set of
   points with outliers. It the finds the grid, and returns it on stdout
 
 - =test_dump_chessboard_corners= is a lower-level tool that just finds the
