@@ -10,12 +10,12 @@ LIB_SOURCES := find_grid.cc find_blobs.cc find_chessboard_corners.cc mrgingham.c
 CXXFLAGS_CV := $(shell pkg-config --cflags opencv)
 LDLIBS_CV   := $(shell pkg-config --libs   opencv)
 CCXXFLAGS += $(CXXFLAGS_CV)
-LDLIBS    += $(LDLIBS_CV)
+LDLIBS    += $(LDLIBS_CV) -lpthread
 
 $(addsuffix .o,$(basename $(LIB_SOURCES))): CCXXFLAGS += -fvisibility=hidden
 
 CFLAGS    += -std=gnu99
-CCXXFLAGS += -Wno-unused-function -Wno-missing-field-initializers -Wno-unused-parameter
+CCXXFLAGS += -Wno-unused-function -Wno-missing-field-initializers -Wno-unused-parameter -Wno-strict-aliasing -Wno-int-to-pointer-cast
 
 DIST_INCLUDE := mrgingham.hh point.hh
 

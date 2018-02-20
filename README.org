@@ -2,15 +2,17 @@
 This is a library for finding calibration boards in observed camera images:
 
 #+BEGIN_EXAMPLE
-$ mrgingham_from_image --chessboard --clahe --level 1 /tmp/image.jpg
+$ mrgingham_from_image --chessboard --clahe --level 1 /tmp/image*.jpg
 
-1385.433000 1471.719000
-1483.597000 1469.825000
-1582.086000 1467.561000
+# filename x y
+/tmp/image1.jpg - -
+/tmp/image2.jpg 1385.433000 1471.719000
+/tmp/image2.jpg 1483.597000 1469.825000
+/tmp/image2.jpg 1582.086000 1467.561000
 ...
 
-
 $ mrgingham_from_image --chessboard --clahe --level 1 /tmp/image.jpg |
+  vnlog-filter -p x,y |
   feedgnuplot --domain --lines --points --image /tmp/image.jpg
 
 [ image pops up with the detected grid plotted on top ]
@@ -140,8 +142,9 @@ The arguments should be clear. The only one that needs an explanation is
 ** Test applications
 There're several included applications that exercise the library:
 
-- =mrgingham_from_image= takes in an image (with some optional manipulation
-  given on the cmdline), finds the grid, and returns it on stdout
+- =mrgingham_from_image= takes in images as globs (with some optional
+  manipulation given on the cmdline), finds the grids, and returns them on
+  stdout, as a vnlog
 
 - =mrgingham_from_points= takes in a file that contains an unordered set of
   points with outliers. It the finds the grid, and returns it on stdout
