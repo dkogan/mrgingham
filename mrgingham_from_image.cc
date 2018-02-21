@@ -89,7 +89,7 @@ static void* worker( void* _ijob )
 int main(int argc, char* argv[])
 {
     const char* usage =
-        "Usage: %s [--clahe] [--blur radius]\n"
+        "Usage: %s [--jobs N] [--clahe] [--blur radius]\n"
         "                   [--level l] --blobs|--chessboard imageglobs imageglobs ...\n"
         "\n"
         "  --blobs or --chessboard are required; these tell the tool what to do.\n"
