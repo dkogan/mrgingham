@@ -152,6 +152,7 @@ int main(int argc, char* argv[])
         case 'C':
             if( have_doblobs )
             {
+                fprintf(stderr, "doubly-specified --blobs/--chessboard\n");
                 fprintf(stderr, usage, argv[0]);
                 return 1;
 
@@ -168,6 +169,7 @@ int main(int argc, char* argv[])
             blur_radius = atoi(optarg);
             if(blur_radius <= 0)
             {
+                fprintf(stderr, "blur_radius < 0\n");
                 fprintf(stderr, usage, argv[0]);
                 return 1;
 
@@ -183,13 +185,22 @@ int main(int argc, char* argv[])
             break;
 
         case '?':
+            fprintf(stderr, "Unknown option\n");
             fprintf(stderr, usage, argv[0]);
             return 1;
         }
     }  while( opt != -1 );
 
-    if( !have_doblobs || optind < argc-1)
+    if( !have_doblobs)
     {
+        fprintf(stderr, "Need to know if --blobs or --chessboard\n");
+        fprintf(stderr, usage, argv[0]);
+        return 1;
+    }
+    fprintf(stderr, "%d %d\n", optind, argc);
+    if( optind > argc-1)
+    {
+        fprintf(stderr, "Not enough arguments: need image globs\n");
         fprintf(stderr, usage, argv[0]);
         return 1;
     }
