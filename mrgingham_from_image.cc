@@ -197,7 +197,6 @@ int main(int argc, char* argv[])
         fprintf(stderr, usage, argv[0]);
         return 1;
     }
-    fprintf(stderr, "%d %d\n", optind, argc);
     if( optind > argc-1)
     {
         fprintf(stderr, "Not enough arguments: need image globs\n");
