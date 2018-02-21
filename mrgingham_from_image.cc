@@ -218,7 +218,7 @@ int main(int argc, char* argv[])
     int doappend = 0;
     for( int iopt_glob = optind; iopt_glob<argc; iopt_glob++ )
     {
-        const char* imageglob = argv[argc-1];
+        const char* imageglob = argv[iopt_glob];
         int globresult =
             glob(imageglob,
                  doappend |
