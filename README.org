@@ -85,6 +85,8 @@ is less likely to fail. This would ensure that we see exactly 10 points in a row
 with the expected spacing, not 12. I haven't tried with an even 10x10 board, so
 I don't know if this is a real issue.
 
+The recommended pattern can be printed from this file: [[chessboard.pdf]]
+
 ** Build
 This uses the standard mrbuild build system:
 https://github.jpl.nasa.gov/maritime-robotics/mrbuild. Packages are available
