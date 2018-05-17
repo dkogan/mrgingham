@@ -236,6 +236,32 @@ static void write_along_sequence( std::vector<PointDouble>& points_out,
     } FOR_MATCHING_ADJACENT_CELLS_END();
 }
 
+static void dump_voronoi( const VORONOI* voronoi,
+                          const std::vector<Point>& points )
+{
+    // plot with 'feedgnuplot --domain --dataid --with 'lines linecolor 0' --square --maxcurves 100000'
+    int i_edge = 0;
+
+    for (auto it = voronoi->cells().begin(); it != voronoi->cells().end(); it++ )
+    {
+        const VORONOI::cell_type* c = &(*it);
+
+        const Point*        pt0 = &points[c->source_index()];
+        const VORONOI::edge_type* const e0 = c->incident_edge();
+        bool first = true;
+        for(const VORONOI::edge_type* e = e0;
+            e0 != NULL && (e != e0 || first);
+            e = e->next(), first=false)
+        {
+            const VORONOI::cell_type* c_adjacent = e->twin()->cell();
+            const Point* pt1 = &points[c_adjacent->source_index()];
+            printf("%d %d %d\n", pt0->x, i_edge, pt0->y);
+            printf("%d %d %d\n", pt1->x, i_edge, pt1->y);
+            i_edge++;
+        }
+    }
+}
+
 static void dump_interval( const int i_candidate,
                            const int i_pt,
                            const VORONOI::cell_type* c0,
@@ -825,6 +851,9 @@ bool mrgingham::find_grid_from_points( // out
 {
     VORONOI voronoi;
     construct_voronoi(points.begin(), points.end(), &voronoi);
+
+    // dump_voronoi(&voronoi, points);
+    // exit(1);
 
     v_CS sequence_candidates;
     get_sequence_candidates(&sequence_candidates, &voronoi, points);
