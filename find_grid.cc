@@ -101,7 +101,7 @@ static void fill_initial_hypothesis_statistics(// out
 #define THRESHOLD_SPACING_COS                    0.996 /* 5 degrees */
 #define THRESHOLD_SPACING_LENGTH_RATIO_MIN       0.7
 #define THRESHOLD_SPACING_LENGTH_RATIO_MAX       1.4
-#define THRESHOLD_SPACING_LENGTH_RATIO_DEVIATION 0.08
+#define THRESHOLD_SPACING_LENGTH_RATIO_DEVIATION 0.15
 
 static const VORONOI::cell_type*
 get_adjacent_cell_along_sequence( // out,in.
