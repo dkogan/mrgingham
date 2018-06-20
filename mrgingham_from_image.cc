@@ -239,6 +239,11 @@ int main(int argc, char* argv[])
     }
 
 
+    printf("## generated with");
+    for(int i=0; i<argc; i++)
+        printf(" %s", argv[i]);
+    printf("\n");
+
     printf("# filename x y\n");
 
     // I'm done with the preliminaries. I now spawn the child threads. Note that
