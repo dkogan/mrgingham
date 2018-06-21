@@ -6,7 +6,8 @@
 
 
 
-// these all output the points scaled by FIND_GRID_SCALE
+// these all output the points scaled by FIND_GRID_SCALE in points[]. The debug
+// dumping with dodump=true does NOT scale by FIND_GRID_SCALE
 bool find_chessboard_corners_from_image_array( std::vector<mrgingham::Point>* points,
                                                const cv::Mat& image,
 
