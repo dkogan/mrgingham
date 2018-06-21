@@ -34,13 +34,6 @@ extern "C"
 #define CONSTANCY_WINDOW_R                  5
 #define STDEV_THRESHOLD                     25
 
-// The main functions here allow a pyramid downsampling of the image before any
-// processing. This downsampling applies a gaussian blur before first. After the
-// downsampling we ALSO apply a box blur (because our detector works better with
-// less detail). This sets the radius of this extra box blur. Setting to 0
-// should disable this extra blur
-#define PYR_EXTRA_BLUR_R                    1
-
 
 
 
@@ -289,42 +282,39 @@ bool find_chessboard_corners_from_image_array( std::vector<Point>* points,
         return false;
     }
 
-    cv::Mat image = image_input;
-    cv::Mat image_pyrdown;
-    for( int i=0; i<image_pyramid_level; i++)
+    const cv::Mat* image;
+    cv::Mat _image;
+
+    if(image_pyramid_level == 0)
+        image = &image_input;
+    else
     {
-        cv::pyrDown(image, image_pyrdown);
 
-        // I want to apply an extra blur after each pyrDown. The corner detector
-        // doesn't need a lot of detail, and extra detail can just break things
-        cv::blur(image_pyrdown, image_pyrdown,
-                 cv::Size(1 + 2*PYR_EXTRA_BLUR_R,
-                          1 + 2*PYR_EXTRA_BLUR_R));
-
-        image = image_pyrdown;
+        double scale = 1.0 / ((double)(1 << image_pyramid_level));
+        cv::resize( image_input, _image, cv::Size(), scale, scale, cv::INTER_LINEAR );
+        image = &_image;
     }
 
 
-
-    if( !image.isContinuous() )
+    if( !image->isContinuous() )
     {
         fprintf(stderr, "%s:%d in %s(): I can only handle continuous arrays (stride == width) currently."
                 " Sorry.\n", __FILE__, __LINE__, __func__);
         return false;
     }
 
-    if( image.type() != CV_8U )
+    if( image->type() != CV_8U )
     {
         fprintf(stderr, "%s:%d in %s(): I can only handle CV_8U arrays currently."
                 " Sorry.\n", __FILE__, __LINE__, __func__);
         return false;
     }
 
-    const int w = image.cols;
-    const int h = image.rows;
+    const int w = image->cols;
+    const int h = image->rows;
     cv::Mat response( h, w, CV_16S );
 
-    uint8_t* imageData    = image.data;
+    uint8_t* imageData    = image->data;
     int16_t* responseData = (int16_t*)response.data;
 
 
@@ -357,7 +347,7 @@ bool find_chessboard_corners_from_image_array( std::vector<Point>* points,
     // This serves both to throw away duplicate nearby points at the same corner
     // and to provide sub-pixel-interpolation for the corner location
     process_connected_components(w, h, responseData,
-                                 (uint8_t*)image.data, points, dodump,
+                                 (uint8_t*)image->data, points, dodump,
                                  1U << image_pyramid_level);
     return true;
 }
