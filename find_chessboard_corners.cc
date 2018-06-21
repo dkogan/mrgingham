@@ -232,8 +232,19 @@ static void follow_connected_component(struct xylist_t* l,
 
     if( connected_component_is_valid(&c, w,h,image) )
     {
-        double x = (double)c.sum_w_x / (double)c.sum_w * (double)coord_scale;
-        double y = (double)c.sum_w_y / (double)c.sum_w * (double)coord_scale;
+        double x = (double)c.sum_w_x / (double)c.sum_w;
+        double y = (double)c.sum_w_y / (double)c.sum_w;
+
+        // My (x,y) coords here are based on a downsampled image, and I want to
+        // up-sample them. An NxN image consists of a grid of NxN cells. The
+        // MIDDLE of each cell is indexed by integer coords. Thus the top-left
+        // corner of the image is at the top-left corner of the top-left cell at
+        // coords (-0.5,-0.5) at ANY resolution. So (-0.5,-0.5) is a fixed point
+        // of the scaling, not (0,0). Thus to change the scaling, I translate to
+        // a coord system with its origin at (-0.5,-0.5), scale, and then
+        // translate back
+        x = (x + 0.5) * (double)coord_scale - 0.5;
+        y = (y + 0.5) * (double)coord_scale - 0.5;
 
         if( dodump )
             printf("%f %f\n", x, y);
