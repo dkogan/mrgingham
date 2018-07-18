@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
         "  --jobs N  will parallelize the processing N-ways. -j is a synonym. This is like\n"
         "  GNU make, except you're required to explicitly specify a job count.\n"
         "\n"
-        "  The images are given as (multiple) globs.The output is a vnlog with columns\n"
+        "  The images are given as (multiple) globs. The output is a vnlog with columns\n"
         "  filename,x,y. All filenames matched in the glob will appear in the output.\n"
         "  Images for which no chessboard pattern was found appear as a single record\n"
         "  with null x and y.\n";
