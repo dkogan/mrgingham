@@ -11,7 +11,6 @@ Source0:        https://github.com/dkogan/mrgingham/archive/%{version}.tar.gz#/%
 
 BuildRequires:  opencv-devel
 BuildRequires:  boost-devel
-BuildRequires:  mrbuild
 
 %description
 Library to find a grid of points; used for calibration routines
