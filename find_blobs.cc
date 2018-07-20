@@ -18,10 +18,11 @@ bool find_blobs_from_image_array( std::vector<Point>* points,
     blobDetectorParams.blobColor           = 0; // black-on-white dots
 
 
-    cv::SimpleBlobDetector blobDetector(blobDetectorParams);
+    cv::SimpleBlobDetector* blobDetector =
+        cv::SimpleBlobDetector::create(blobDetectorParams);
 
     std::vector<cv::KeyPoint> keypoints;
-    blobDetector.detect(image, keypoints);
+    blobDetector->detect(image, keypoints);
 
     for(std::vector<cv::KeyPoint>::iterator it = keypoints.begin();
         it != keypoints.end();
