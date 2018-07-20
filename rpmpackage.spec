@@ -5,9 +5,9 @@ Version:        xxx
 Release:        1%{?dist}
 Summary:        Dot (or grid) finder for camera calibrations
 
-License:        proprietary
-URL:            https://github.jpl.nasa.gov/maritime-robotics/mrgingham/
-Source0:        https://github.jpl.nasa.gov/maritime-robotics/mrgingham/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
+License:        LGPL-2.1+
+URL:            https://github.com/dkogan/mrgingham/
+Source0:        https://github.com/dkogan/mrgingham/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
 
 BuildRequires:  opencv-devel
 BuildRequires:  boost-devel

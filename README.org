@@ -87,11 +87,6 @@ I don't know if this is a real issue.
 
 The recommended pattern can be printed from this file: [[chessboard.pdf]]
 
-** Build
-This uses the standard mrbuild build system:
-https://github.jpl.nasa.gov/maritime-robotics/mrbuild. Packages are available
-for Debian and CentOS 7.
-
 ** API
 The user-facing functions live in =mrgingham.hh=. Everything is in C++, mostly
 because some of the underlying libraries are in C++. All functions return a
@@ -167,5 +162,15 @@ and reports which ones produced no data. Currently I don't ship any actual data.
 I will at some point.
 
 * MAINTAINER
-This is maintained by Dima Kogan <Dmitriy.Kogan@jpl.nasa.gov>. Please let Dima
-know if something is unclear/broken/missing.
+This is maintained by Dima Kogan <dima@secretsauce.net>. Please let Dima know if
+something is unclear/broken/missing.
+* LICENSE AND COPYRIGHT
+
+This library is free software; you can redistribute it and/or modify it under
+the terms of the GNU Lesser General Public License as published by the Free
+Software Foundation; either version 2.1 of the License, or (at your option) any
+later version.
+
+Copyright 2017-2018 California Institute of Technology
+
+Copyright 2017-2018 Dima Kogan (=dima@secretsauce.net=)
