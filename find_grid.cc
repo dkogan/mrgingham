@@ -239,9 +239,10 @@ static void write_along_sequence( std::vector<PointDouble>& points_out,
 static void dump_voronoi( const VORONOI* voronoi,
                           const std::vector<Point>& points )
 {
-    // plot with 'feedgnuplot --domain --dataid --with 'lines linecolor 0' --square --maxcurves 100000'
+    // plot with 'feedgnuplot --domain --dataid --with 'lines linecolor 0' --square --maxcurves 100000 --image blah.png'
     int i_edge = 0;
 
+    printf("# x id_edge y\n");
     for (auto it = voronoi->cells().begin(); it != voronoi->cells().end(); it++ )
     {
         const VORONOI::cell_type* c = &(*it);
@@ -255,8 +256,8 @@ static void dump_voronoi( const VORONOI* voronoi,
         {
             const VORONOI::cell_type* c_adjacent = e->twin()->cell();
             const Point* pt1 = &points[c_adjacent->source_index()];
-            printf("%d %d %d\n", pt0->x, i_edge, pt0->y);
-            printf("%d %d %d\n", pt1->x, i_edge, pt1->y);
+            printf("%f %d %f\n", pt0->x/(double)FIND_GRID_SCALE, i_edge, pt0->y/(double)FIND_GRID_SCALE);
+            printf("%f %d %f\n", pt1->x/(double)FIND_GRID_SCALE, i_edge, pt1->y/(double)FIND_GRID_SCALE);
             i_edge++;
         }
     }
