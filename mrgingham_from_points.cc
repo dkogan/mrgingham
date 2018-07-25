@@ -1,6 +1,7 @@
 #include "mrgingham.hh"
 #include "mrgingham_internal.h"
 #include <stdio.h>
+#include <getopt.h>
 
 using namespace mrgingham;
 
@@ -31,11 +32,40 @@ static bool read_points( std::vector<Point>* points, const char* file )
 
 int main(int argc, char* argv[])
 {
-    if( argc != 2 )
+    const char* usage =
+        "Usage: %s points.vnl\n"
+        "\n"
+        "Given a set of pre-detected points, this tool finds a chessboard grid, and returns\n"
+        "the ordered coordinates of this grid on standard output. The pre-detected points\n"
+        "can come from something like test_dump_chessboard_corners.\n";
+
+    struct option opts[] = {
+        { "help",              no_argument,       NULL, 'h' },
+        {}
+    };
+
+
+    int opt;
+    do
     {
-        fprintf(stderr, "missing arg: need filename that contains ascii points\n");
-        return 1;
-    }
+        // "h" means -h does something
+        opt = getopt_long(argc, argv, "h", opts, NULL);
+        switch(opt)
+        {
+        case -1:
+            break;
+
+        case 'h':
+            printf(usage, argv[0]);
+            return 0;
+
+        case '?':
+            fprintf(stderr, "Unknown option\n");
+            fprintf(stderr, usage, argv[0]);
+            return 1;
+        }
+    } while( opt != -1 );
+
 
     std::vector<Point> points;
     if( !read_points(&points, argv[1]) )
