@@ -275,7 +275,7 @@ static void process_connected_components(int w, int h, int16_t* d,
         }
 }
 
-#define DUMP_FILENAME_CONNECTED_COMPONENT "/tmp/mrgingham-connected-component.vnl"
+#define DUMP_FILENAME_CONNECTED_COMPONENT "/tmp/mrgingham-1-connected-component.vnl"
 __attribute__((visibility("default")))
 bool find_chessboard_corners_from_image_array( std::vector<Point>* points,
                                                const cv::Mat& image_input,

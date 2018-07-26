@@ -238,7 +238,7 @@ static void write_along_sequence( std::vector<PointDouble>& points_out,
 }
 
 // dumps the voronoi diagram to a self-plotting vnlog
-#define DUMP_FILENAME_VORONOI "/tmp/mrgingham-voronoi.vnl"
+#define DUMP_FILENAME_VORONOI "/tmp/mrgingham-2-voronoi.vnl"
 static void dump_voronoi( const VORONOI* voronoi,
                           const std::vector<Point>& points )
 {
@@ -716,8 +716,8 @@ static bool validate_clasification(const v_CS* sequence_candidates)
 
 // dumps a terse self-plotting vnlog visualization of sequence candidates, and a
 // more detailed vnlog containing more data
-#define DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE "/tmp/mrgingham-candidates.vnl"
-#define DUMP_FILENAME_SEQUENCE_CANDIDATES_DENSE  "/tmp/mrgingham-candidates-detailed.vnl"
+#define DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE "/tmp/mrgingham-3-candidates.vnl"
+#define DUMP_FILENAME_SEQUENCE_CANDIDATES_DENSE  "/tmp/mrgingham-3-candidates-detailed.vnl"
 static void dump_candidates(const v_CS* sequence_candidates,
                             const std::vector<Point>& points)
 {
