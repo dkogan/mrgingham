@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
             fprintf(stderr, usage, argv[0]);
             return 1;
         }
-    }  while( opt != -1 );
+    } while( opt != -1 );
 
     if( !have_doblobs)
     {
