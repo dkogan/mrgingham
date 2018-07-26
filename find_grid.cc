@@ -716,12 +716,22 @@ static bool validate_clasification(const v_CS* sequence_candidates)
 
 // dumps a terse self-plotting vnlog visualization of sequence candidates, and a
 // more detailed vnlog containing more data
-#define DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE "/tmp/mrgingham-3-candidates.vnl"
-#define DUMP_FILENAME_SEQUENCE_CANDIDATES_DENSE  "/tmp/mrgingham-3-candidates-detailed.vnl"
+#define DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE_BEFORE "/tmp/mrgingham-3-candidates.vnl"
+#define DUMP_FILENAME_SEQUENCE_CANDIDATES_DENSE_BEFORE  "/tmp/mrgingham-3-candidates-detailed.vnl"
+#define DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE_AFTER  "/tmp/mrgingham-4-candidates.vnl"
+#define DUMP_FILENAME_SEQUENCE_CANDIDATES_DENSE_AFTER   "/tmp/mrgingham-4-candidates-detailed.vnl"
 static void dump_candidates(const v_CS* sequence_candidates,
-                            const std::vector<Point>& points)
+                            const std::vector<Point>& points,
+                            bool post_filter)
 {
-    FILE* fp = fopen(DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE, "w");
+    const char* dump_filename_sequence_candidates_sparse = post_filter ?
+        DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE_AFTER :
+        DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE_BEFORE;
+    const char* dump_filename_sequence_candidates_dense = post_filter ?
+        DUMP_FILENAME_SEQUENCE_CANDIDATES_DENSE_AFTER :
+        DUMP_FILENAME_SEQUENCE_CANDIDATES_DENSE_BEFORE;
+
+    FILE* fp = fopen(dump_filename_sequence_candidates_sparse, "w");
     assert(fp);
 
     // the kernel limits the #! line to 127 characters, so I abbreviate
@@ -742,15 +752,16 @@ static void dump_candidates(const v_CS* sequence_candidates,
                 cs->delta_mean.y / (double)FIND_GRID_SCALE);
     }
     fclose(fp);
-    chmod(DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE,
+    chmod(dump_filename_sequence_candidates_sparse,
           S_IRUSR | S_IRGRP | S_IROTH |
           S_IWUSR | S_IWGRP |
           S_IXUSR | S_IXGRP | S_IXOTH);
-    fprintf(stderr, "Wrote self-plotting sequence-candidate dump to " DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE "\n");
+    fprintf(stderr, "Wrote self-plotting sequence-candidate dump to %s\n",
+            dump_filename_sequence_candidates_sparse);
 
 
     // detailed
-    fp = fopen(DUMP_FILENAME_SEQUENCE_CANDIDATES_DENSE, "w");
+    fp = fopen(dump_filename_sequence_candidates_dense, "w");
     assert(fp);
 
     fprintf(fp, "# candidateid pointid fromx fromy tox toy deltax deltay len angle\n");
@@ -769,7 +780,8 @@ static void dump_candidates(const v_CS* sequence_candidates,
         dump_intervals_along_sequence( fp, i, &delta, cs->c1, Nwant-2, points);
     }
     fclose(fp);
-    fprintf(stderr, "Wrote detailed sequence-candidate dump to " DUMP_FILENAME_SEQUENCE_CANDIDATES_DENSE "\n");
+    fprintf(stderr, "Wrote detailed sequence-candidate dump to %s\n",
+            dump_filename_sequence_candidates_dense);
 }
 
 static void write_output( std::vector<PointDouble>& points_out,
@@ -899,7 +911,7 @@ bool mrgingham::find_grid_from_points( // out
 
     if(debug)
     {
-        dump_candidates(&sequence_candidates, points);
+        dump_candidates(&sequence_candidates, points, false);
 
         fprintf(stderr, "got %zd points\n", points.size());
         fprintf(stderr, "got %zd sequence candidates\n", sequence_candidates.size());
@@ -914,6 +926,9 @@ bool mrgingham::find_grid_from_points( // out
 
     filter_bidirectional(&sequence_candidates, points, HORIZONTAL);
     filter_bidirectional(&sequence_candidates, points, VERTICAL);
+
+    if(debug)
+        dump_candidates(&sequence_candidates, points, true);
 
     // This is relatively slow (I'm moving lots of stuff around by value), but
     // I'm likely to not feel it anyway
