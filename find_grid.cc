@@ -1,3 +1,4 @@
+#include <sys/stat.h>
 #include <stdio.h>
 #include <vector>
 #include <boost/polygon/voronoi.hpp>
@@ -236,13 +237,19 @@ static void write_along_sequence( std::vector<PointDouble>& points_out,
     } FOR_MATCHING_ADJACENT_CELLS_END();
 }
 
+// dumps the voronoi diagram to a self-plotting vnlog
+#define DUMP_FILENAME_VORONOI "/tmp/mrgingham-voronoi.vnl"
 static void dump_voronoi( const VORONOI* voronoi,
                           const std::vector<Point>& points )
 {
-    // plot with 'feedgnuplot --domain --dataid --with 'lines linecolor 0' --square --maxcurves 100000 --image blah.png'
-    int i_edge = 0;
+    FILE* fp = fopen(DUMP_FILENAME_VORONOI, "w");
+    assert(fp);
 
-    printf("# x id_edge y\n");
+    // the kernel limits the #! line to 127 characters, so I abbreviate
+    fprintf(fp, "#!/usr/bin/feedgnuplot --domain --dataid --with 'lines linecolor 0' --square --maxcurves 100000 --set 'yrange rev'\n");
+    fprintf(fp, "# x id_edge y\n");
+
+    int i_edge = 0;
     for (auto it = voronoi->cells().begin(); it != voronoi->cells().end(); it++ )
     {
         const VORONOI::cell_type* c = &(*it);
@@ -256,14 +263,21 @@ static void dump_voronoi( const VORONOI* voronoi,
         {
             const VORONOI::cell_type* c_adjacent = e->twin()->cell();
             const Point* pt1 = &points[c_adjacent->source_index()];
-            printf("%f %d %f\n", pt0->x/(double)FIND_GRID_SCALE, i_edge, pt0->y/(double)FIND_GRID_SCALE);
-            printf("%f %d %f\n", pt1->x/(double)FIND_GRID_SCALE, i_edge, pt1->y/(double)FIND_GRID_SCALE);
+            fprintf(fp, "%f %d %f\n", pt0->x/(double)FIND_GRID_SCALE, i_edge, pt0->y/(double)FIND_GRID_SCALE);
+            fprintf(fp, "%f %d %f\n", pt1->x/(double)FIND_GRID_SCALE, i_edge, pt1->y/(double)FIND_GRID_SCALE);
             i_edge++;
         }
     }
+    fclose(fp);
+    chmod(DUMP_FILENAME_VORONOI,
+          S_IRUSR | S_IRGRP | S_IROTH |
+          S_IWUSR | S_IWGRP |
+          S_IXUSR | S_IXGRP | S_IXOTH);
+    fprintf(stderr, "Wrote self-plotting voronoi diagram to " DUMP_FILENAME_VORONOI "\n");
 }
 
-static void dump_interval( const int i_candidate,
+static void dump_interval( FILE* fp,
+                           const int i_candidate,
                            const int i_pt,
                            const VORONOI::cell_type* c0,
                            const VORONOI::cell_type* c1,
@@ -276,23 +290,25 @@ static void dump_interval( const int i_candidate,
     double dy = (double)(pt1->y - pt0->y) / (double)FIND_GRID_SCALE;
     double length = hypot(dx,dy);
     double angle  = atan2(dy,dx) * 180.0 / M_PI;
-    printf("candidate %d point %d, from %f %f to %f %f delta %f %f length %f angle %f\n",
+    fprintf(fp,
+            "%d %d %f %f %f %f %f %f %f %f\n",
            i_candidate, i_pt,
            (double)pt0->x / (double)FIND_GRID_SCALE, (double)pt0->y / (double)FIND_GRID_SCALE,
            (double)pt1->x / (double)FIND_GRID_SCALE, (double)pt1->y / (double)FIND_GRID_SCALE,
            dx, dy, length, angle);
 }
 
-static void dump_intervals_along_sequence( int i_candidate,
-                                       const Point* delta,
-                                       const VORONOI::cell_type* c,
-                                       int N_remaining,
+static void dump_intervals_along_sequence( FILE* fp,
+                                           int i_candidate,
+                                           const Point* delta,
+                                           const VORONOI::cell_type* c,
+                                           int N_remaining,
 
-                                       const std::vector<Point>& points)
+                                           const std::vector<Point>& points)
 {
     FOR_MATCHING_ADJACENT_CELLS()
     {
-        dump_interval(i_candidate, i+1, c, c_adjacent, points);
+        dump_interval(fp, i_candidate, i+1, c, c_adjacent, points);
     } FOR_MATCHING_ADJACENT_CELLS_END();
 }
 
@@ -698,42 +714,62 @@ static bool validate_clasification(const v_CS* sequence_candidates)
 
 }
 
-static void dump_candidates_detailed( const v_CS* sequence_candidates,
-                                      const std::vector<Point>& points )
+// dumps a terse self-plotting vnlog visualization of sequence candidates, and a
+// more detailed vnlog containing more data
+#define DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE "/tmp/mrgingham-candidates.vnl"
+#define DUMP_FILENAME_SEQUENCE_CANDIDATES_DENSE  "/tmp/mrgingham-candidates-detailed.vnl"
+static void dump_candidates(const v_CS* sequence_candidates,
+                            const std::vector<Point>& points)
 {
+    FILE* fp = fopen(DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE, "w");
+    assert(fp);
+
+    // the kernel limits the #! line to 127 characters, so I abbreviate
+    fprintf(fp, "#!/usr/bin/feedgnuplot --dataid --dom --auto --square --rangesizea 3 --w 'vec size screen 0.01,20 fixed fill' --set 'yr rev'\n");
+    fprintf(fp, "# fromx type fromy deltax deltay\n");
+
+    for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
+    {
+        const CandidateSequence* cs = &(*it);
+        const Point*             pt = &points[cs->c0->source_index()];
+
+        fprintf(fp,
+                "%f %s %f %f %f\n",
+                (double)(pt->x) / (double)FIND_GRID_SCALE,
+                type_string(cs->type),
+                (double)(pt->y) / (double)FIND_GRID_SCALE,
+                cs->delta_mean.x / (double)FIND_GRID_SCALE,
+                cs->delta_mean.y / (double)FIND_GRID_SCALE);
+    }
+    fclose(fp);
+    chmod(DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE,
+          S_IRUSR | S_IRGRP | S_IROTH |
+          S_IWUSR | S_IWGRP |
+          S_IXUSR | S_IXGRP | S_IXOTH);
+    fprintf(stderr, "Wrote self-plotting sequence-candidate dump to " DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE "\n");
+
+
+    // detailed
+    fp = fopen(DUMP_FILENAME_SEQUENCE_CANDIDATES_DENSE, "w");
+    assert(fp);
+
+    fprintf(fp, "# candidateid pointid fromx fromy tox toy deltax deltay len angle\n");
     int N = sequence_candidates->size();
     for( int i=0; i<N; i++ )
     {
         const CandidateSequence* cs = &(*sequence_candidates)[i];
 
-        dump_interval(i, 0, cs->c0, cs->c1, points);
+        dump_interval(fp, i, 0, cs->c0, cs->c1, points);
 
         const Point* pt0 = &points[cs->c0->source_index()];
         const Point* pt1 = &points[cs->c1->source_index()];
 
         Point delta({ pt1->x - pt0->x,
                       pt1->y - pt0->y});
-        dump_intervals_along_sequence( i, &delta, cs->c1, Nwant-2, points);
+        dump_intervals_along_sequence( fp, i, &delta, cs->c1, Nwant-2, points);
     }
-}
-
-static void dump_candidates_sparse(const v_CS* sequence_candidates,
-                                   const std::vector<Point>& points)
-{
-    // plot with
-    // awk '{print $2,$12,$3,$5,$6}' | feedgnuplot --dataid --domain --autolegend --square --rangesizeall 3 --with 'vectors size screen 0.01,20 fixed filled'
-    for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
-    {
-        const CandidateSequence* cs = &(*it);
-        const Point*             pt = &points[cs->c0->source_index()];
-
-        printf("from %f %f delta_mean %f %f len %f angle %f type %s\n",
-               (double)(pt->x) / (double)FIND_GRID_SCALE, (double)(pt->y) / (double)FIND_GRID_SCALE,
-               cs->delta_mean.x / (double)FIND_GRID_SCALE, cs->delta_mean.y / (double)FIND_GRID_SCALE,
-               cs->spacing_length / (double)FIND_GRID_SCALE,
-               cs->spacing_angle,
-               type_string(cs->type));
-    }
+    fclose(fp);
+    fprintf(stderr, "Wrote detailed sequence-candidate dump to " DUMP_FILENAME_SEQUENCE_CANDIDATES_DENSE "\n");
 }
 
 static void write_output( std::vector<PointDouble>& points_out,
@@ -848,43 +884,33 @@ bool mrgingham::find_grid_from_points( // out
                                       std::vector<PointDouble>& points_out,
 
                                       // in
-                                      const std::vector<Point>& points )
+                                      const std::vector<Point>& points,
+                                      bool debug)
 {
     VORONOI voronoi;
     construct_voronoi(points.begin(), points.end(), &voronoi);
 
-    // dump_voronoi(&voronoi, points);
-    // exit(1);
+    if(debug)
+        dump_voronoi(&voronoi, points);
 
     v_CS sequence_candidates;
     get_sequence_candidates(&sequence_candidates, &voronoi, points);
 
 
-    // useful for debugging:
+    if(debug)
+    {
+        dump_candidates(&sequence_candidates, points);
 
-    // dump_candidates_sparse(&sequence_candidates, points);
-    // exit(1);
-
-    // fprintf(stderr, "got %zd points:\n", points.size());
-    // for(unsigned int i=0; i<points.size(); i++)
-    // {
-    //     const Point& pt = points[i];
-    //     fprintf(stderr, "%f %f\n",
-    //             (double)pt.x/(double)FIND_GRID_SCALE,
-    //             (double)pt.y/(double)FIND_GRID_SCALE);
-    // }
-    // fprintf(stderr, "\ngot %zd sequence candidates. They start at:\n", sequence_candidates.size());
-    // for(unsigned int i=0; i<sequence_candidates.size(); i++)
-    // {
-    //     const Point& pt = points[sequence_candidates[i].c0->source_index()];
-    //     fprintf(stderr, "%f %f\n",
-    //             (double)pt.x/(double)FIND_GRID_SCALE,
-    //             (double)pt.y/(double)FIND_GRID_SCALE);
-    // }
-    // exit(1);
+        fprintf(stderr, "got %zd points\n", points.size());
+        fprintf(stderr, "got %zd sequence candidates\n", sequence_candidates.size());
+    }
 
     if( !cluster_sequence_candidates(&sequence_candidates))
+    {
+        if(debug)
+            fprintf(stderr, "cluster_sequence_candidates() failed. No grid detected\n");
         return false;
+    }
 
     filter_bidirectional(&sequence_candidates, points, HORIZONTAL);
     filter_bidirectional(&sequence_candidates, points, VERTICAL);
@@ -894,12 +920,26 @@ bool mrgingham::find_grid_from_points( // out
     sort_candidates(&sequence_candidates, points);
 
     if( !filter_bounds(&sequence_candidates, HORIZONTAL, points) )
+    {
+        if(debug)
+            fprintf(stderr, "Horizontal sequence candidates out of bounds. No grid detected\n");
         return false;
+    }
     if( !filter_bounds(&sequence_candidates, VERTICAL,   points) )
+    {
+        if(debug)
+            fprintf(stderr, "Vertical sequence candidates out of bounds. No grid detected\n");
         return false;
+    }
     if(!validate_clasification(&sequence_candidates))
+    {
+        if(debug)
+            fprintf(stderr, "validate_clasification() failed. No grid detected\n");
         return false;
+    }
 
     write_output(points_out, &sequence_candidates, points);
+    if(debug)
+        fprintf(stderr, "Success. Found grid\n");
     return true;
 }

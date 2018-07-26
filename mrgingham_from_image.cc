@@ -17,6 +17,7 @@ struct mrgingham_thread_context_t
     bool          doclahe;
     int           blur_radius;
     bool          doblobs;
+    bool          debug;
     int           image_pyramid_level;
 } ctx;
 
@@ -61,12 +62,48 @@ static void* worker( void* _ijob )
                                1 + 2*ctx.blur_radius));
         }
 
+        if( ctx.debug )
+        {
+            do
+            {
+                char basename[1024];
+
+                const char* last_slash = strrchr(filename, '/');
+                const char* basename_start = last_slash ? &last_slash[1] : filename;
+
+                char* basename_start_end = stpncpy(basename, basename_start, sizeof(basename));
+                if(&basename[sizeof(basename)] == basename_start_end)
+                {
+                    fprintf(stderr, "--debug file dump overran filename buffer! Not dumping files\n");
+                    break;
+                }
+
+                // basename is now just the FILENAME with no directory. It still has
+                // an extension
+                char* last_dot = strrchr(basename, '.');
+                if(last_dot)
+                    *last_dot = '\0';
+
+                char filename_out[1024];
+                if(snprintf(filename_out, sizeof(filename_out),
+                            "/tmp/%s_preprocessed.png",
+                            basename) >= (int)sizeof(filename_out))
+                {
+                    fprintf(stderr, "--debug file dump overran filename buffer! Not dumping files\n");
+                    break;
+                }
+
+                cv::imwrite(filename_out, image);
+                fprintf(stderr, "Wrote preprocessed image to %s\n", filename_out);
+
+            } while(0);
+        }
         std::vector<PointDouble> points_out;
         bool result;
         if(ctx.doblobs)
-            result = find_circle_grid_from_image_array(points_out, image);
+            result = find_circle_grid_from_image_array(points_out, image, ctx.debug);
         else
-            result = find_chessboard_from_image_array (points_out, image, ctx.image_pyramid_level);
+            result = find_chessboard_from_image_array (points_out, image, ctx.image_pyramid_level, ctx.debug);
 
         flockfile(stdout);
         {
@@ -113,7 +150,10 @@ int main(int argc, char* argv[])
         "  The images are given as (multiple) globs. The output is a vnlog with columns\n"
         "  filename,x,y. All filenames matched in the glob will appear in the output.\n"
         "  Images for which no chessboard pattern was found appear as a single record\n"
-        "  with null x and y.\n";
+        "  with null x and y.\n"
+        "\n"
+        "  For debugging, pass in --debug. This will dump the various intermediate results\n"
+        "  into /tmp and it will report more stuff on the console\n";
 
     struct option opts[] = {
         { "blobs",             no_argument,       NULL, 'B' },
@@ -122,6 +162,7 @@ int main(int argc, char* argv[])
         { "clahe",             no_argument,       NULL, 'c' },
         { "level",             required_argument, NULL, 'l' },
         { "jobs",              required_argument, NULL, 'j' },
+        { "debug",             no_argument,       NULL, 'd' },
         { "help",              no_argument,       NULL, 'h' },
         {}
     };
@@ -130,6 +171,7 @@ int main(int argc, char* argv[])
     bool        have_doblobs        = false;
     bool        doblobs             = false; // to pacify compiler
     bool        doclahe             = false;
+    bool        debug               = false;
     int         blur_radius         = -1;
     int         image_pyramid_level = -1;
     int         jobs                = 1;
@@ -163,6 +205,10 @@ int main(int argc, char* argv[])
 
         case 'c':
             doclahe = true;
+            break;
+
+        case 'd':
+            debug = true;
             break;
 
         case 'b':
@@ -238,6 +284,13 @@ int main(int argc, char* argv[])
         doappend = GLOB_APPEND;
     }
 
+    if(debug && _glob.gl_pathc != 1)
+    {
+        fprintf(stderr, "When debugging, pass one image at a time. Got %d instead\n",
+                (int)_glob.gl_pathc);
+        return 1;
+    }
+
 
     printf("## generated with");
     for(int i=0; i<argc; i++)
@@ -256,6 +309,7 @@ int main(int argc, char* argv[])
     ctx.doclahe             = doclahe;
     ctx.blur_radius         = blur_radius;
     ctx.doblobs             = doblobs;
+    ctx.debug               = debug;
     ctx.image_pyramid_level = image_pyramid_level;
 
     pthread_t thread[jobs];

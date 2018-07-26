@@ -11,9 +11,9 @@
 namespace mrgingham
 {
     bool find_circle_grid_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
-                                            const cv::Mat& image );
+                                            const cv::Mat& image, bool debug = false );
     bool find_circle_grid_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
-                                           const char* filename );
+                                           const char* filename, bool debug = false );
 
     // set image_pyramid_level=0 to just use the image as is.
     //
@@ -25,7 +25,8 @@ namespace mrgingham
     // that produces results
     bool find_chessboard_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
                                            const cv::Mat& image,
-                                           int image_pyramid_level = -1 );
+                                           int image_pyramid_level = -1,
+                                           bool debug = false);
 
     // set image_pyramid_level=0 to just use the image as is.
     //
@@ -37,8 +38,10 @@ namespace mrgingham
     // that produces results
     bool find_chessboard_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
                                           const char* filename,
-                                          int image_pyramid_level = -1 );
+                                          int image_pyramid_level = -1,
+                                          bool debug = false );
 
     bool find_grid_from_points( std::vector<mrgingham::PointDouble>& points_out,
-                                const std::vector<mrgingham::Point>& points );
+                                const std::vector<mrgingham::Point>& points,
+                                bool debug = false);
 };

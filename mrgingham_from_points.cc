@@ -74,6 +74,7 @@ int main(int argc, char* argv[])
     std::vector<PointDouble> points_out;
     bool result = find_grid_from_points(points_out, points);
 
+    printf("# x y\n");
     if( result )
     {
         for(int i=0; i<(int)points_out.size(); i++)

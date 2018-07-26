@@ -1,5 +1,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <assert.h>
 
 #include "point.hh"
 #include "mrgingham_internal.h"
@@ -210,7 +211,7 @@ static void follow_connected_component(struct xylist_t* l,
 
                                        const uint8_t* image,
                                        std::vector<Point>* points,
-                                       bool dodump,
+                                       FILE* debugfp,
                                        uint16_t coord_scale)
 {
     struct connected_component_t c = connected_component_init();
@@ -246,11 +247,10 @@ static void follow_connected_component(struct xylist_t* l,
         x = (x + 0.5) * (double)coord_scale - 0.5;
         y = (y + 0.5) * (double)coord_scale - 0.5;
 
-        if( dodump )
-            printf("%f %f\n", x, y);
-        else
-            points->push_back( Point((int)(0.5 + x * FIND_GRID_SCALE),
-                                     (int)(0.5 + y * FIND_GRID_SCALE)));
+        if( debugfp )
+            fprintf(debugfp, "%f %f\n", x, y);
+        points->push_back( Point((int)(0.5 + x * FIND_GRID_SCALE),
+                                 (int)(0.5 + y * FIND_GRID_SCALE)));
     }
 }
 
@@ -258,7 +258,7 @@ static void process_connected_components(int w, int h, int16_t* d,
 
                                          const uint8_t* image,
                                          std::vector<Point>* points,
-                                         bool dodump,
+                                         FILE* debugfp,
                                          uint16_t coord_scale)
 {
     struct xylist_t l = xylist_alloc();
@@ -271,17 +271,18 @@ static void process_connected_components(int w, int h, int16_t* d,
 
             xylist_reset_with(&l, x, y);
             follow_connected_component(&l, w,h,d,
-                                       image, points, dodump, coord_scale);
+                                       image, points, debugfp, coord_scale);
         }
 }
 
+#define DUMP_FILENAME_CONNECTED_COMPONENT "/tmp/mrgingham-connected-component.vnl"
 __attribute__((visibility("default")))
 bool find_chessboard_corners_from_image_array( std::vector<Point>* points,
                                                const cv::Mat& image_input,
 
                                                // set to 0 to just use the image
                                                int image_pyramid_level,
-                                               bool dodump )
+                                               bool debug )
 {
     if( image_pyramid_level < 0 ||
 
@@ -357,9 +358,23 @@ bool find_chessboard_corners_from_image_array( std::vector<Point>* points,
 
     // This serves both to throw away duplicate nearby points at the same corner
     // and to provide sub-pixel-interpolation for the corner location
+    FILE* debugfp = NULL;
+    if(debug)
+    {
+        debugfp = fopen(DUMP_FILENAME_CONNECTED_COMPONENT, "w");
+        assert(debugfp);
+
+        fprintf(debugfp, "# x y\n");
+    }
     process_connected_components(w, h, responseData,
-                                 (uint8_t*)image->data, points, dodump,
+                                 (uint8_t*)image->data, points,
+                                 debugfp,
                                  1U << image_pyramid_level);
+    if(debug)
+    {
+        fprintf(stderr, "Wrote a connected-component dump to " DUMP_FILENAME_CONNECTED_COMPONENT "\n");
+        fclose(debugfp);
+    }
     return true;
 }
 
@@ -369,7 +384,7 @@ bool find_chessboard_corners_from_image_file( std::vector<Point>* points,
 
                                               // set to 0 to just use the image
                                               int image_pyramid_level,
-                                              bool dodump )
+                                              bool debug )
 {
     cv::Mat image = cv::imread(filename, CV_LOAD_IMAGE_GRAYSCALE);
     if( image.data == NULL )
@@ -379,5 +394,5 @@ bool find_chessboard_corners_from_image_file( std::vector<Point>* points,
         return false;
     }
 
-    return find_chessboard_corners_from_image_array( points, image, image_pyramid_level, dodump );
+    return find_chessboard_corners_from_image_array( points, image, image_pyramid_level, debug );
 }
