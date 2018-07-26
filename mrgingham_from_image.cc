@@ -265,5 +265,6 @@ int main(int argc, char* argv[])
     for(int i=0; i<jobs; i++)
         pthread_join(thread[i], NULL);
 
+    globfree(&_glob);
     return 0;
 }
