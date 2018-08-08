@@ -277,7 +277,14 @@ static void process_connected_components(int w, int h, int16_t* d,
 
 #define DUMP_FILENAME_CORNERS "/tmp/mrgingham-1-corners.vnl"
 __attribute__((visibility("default")))
-bool find_chessboard_corners_from_image_array( std::vector<Point>* points,
+bool find_chessboard_corners_from_image_array( // out
+
+                                               // integers scaled up by
+                                               // FIND_GRID_SCALE to get more
+                                               // resolution
+                                               std::vector<mrgingham::Point>* points,
+
+                                               // in
                                                const cv::Mat& image_input,
 
                                                // set to 0 to just use the image
@@ -379,7 +386,14 @@ bool find_chessboard_corners_from_image_array( std::vector<Point>* points,
 }
 
 __attribute__((visibility("default")))
-bool find_chessboard_corners_from_image_file( std::vector<Point>* points,
+bool find_chessboard_corners_from_image_file( // out
+
+                                              // integers scaled up by
+                                              // FIND_GRID_SCALE to get more
+                                              // resolution
+                                              std::vector<mrgingham::Point>* points,
+
+                                              // in
                                               const char* filename,
 
                                               // set to 0 to just use the image

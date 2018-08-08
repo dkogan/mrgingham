@@ -7,7 +7,14 @@
 
 
 // these all output the points scaled by FIND_GRID_SCALE in points[].
-bool find_chessboard_corners_from_image_array( std::vector<mrgingham::Point>* points,
+bool find_chessboard_corners_from_image_array( // out
+
+                                               // integers scaled up by
+                                               // FIND_GRID_SCALE to get more
+                                               // resolution
+                                               std::vector<mrgingham::Point>* points,
+
+                                               // in
                                                const cv::Mat& image,
 
                                                // set to 0 to just use the
@@ -19,7 +26,14 @@ bool find_chessboard_corners_from_image_array( std::vector<mrgingham::Point>* po
                                                int image_pyramid_level,
                                                bool debug = false);
 
-bool find_chessboard_corners_from_image_file( std::vector<mrgingham::Point>* points,
+bool find_chessboard_corners_from_image_file( // out
+
+                                              // integers scaled up by
+                                              // FIND_GRID_SCALE to get more
+                                              // resolution
+                                              std::vector<mrgingham::Point>* points,
+
+                                              // in
                                               const char* filename,
 
                                               // set to 0 to just use the
