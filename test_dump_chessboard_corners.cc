@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
 
     if( optind != argc-1)
     {
-        fprintf(stderr, "Not enough arguments: need image on the cmdline\n");
+        fprintf(stderr, "Need a single image on the cmdline\n");
         fprintf(stderr, usage, argv[0]);
         return 1;
     }
