@@ -246,7 +246,7 @@ static void dump_voronoi( const VORONOI* voronoi,
     assert(fp);
 
     // the kernel limits the #! line to 127 characters, so I abbreviate
-    fprintf(fp, "#!/usr/bin/feedgnuplot --domain --dataid --with 'lines linecolor 0' --square --maxcurves 100000 --set 'yrange rev'\n");
+    fprintf(fp, "#!/usr/bin/feedgnuplot --domain --dataid --with 'lines linecolor 0' --square --maxcurves 100000 --set 'yrange [:] rev'\n");
     fprintf(fp, "# x id_edge y\n");
 
     int i_edge = 0;
@@ -735,7 +735,7 @@ static void dump_candidates(const v_CS* sequence_candidates,
     assert(fp);
 
     // the kernel limits the #! line to 127 characters, so I abbreviate
-    fprintf(fp, "#!/usr/bin/feedgnuplot --dataid --dom --auto --square --rangesizea 3 --w 'vec size screen 0.01,20 fixed fill' --set 'yr rev'\n");
+    fprintf(fp, "#!/usr/bin/feedgnuplot --datai --dom --aut --square --rangesizea 3 --w 'vec size screen 0.01,20 fixed fill' --set 'yr [:] rev'\n");
     fprintf(fp, "# fromx type fromy deltax deltay\n");
 
     for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
