@@ -14,18 +14,22 @@ static bool read_points( std::vector<Point>* points, const char* file )
         return false;
     }
 
-    while(1)
+    char* line = NULL;
+    size_t n = 0;
+
+    while(getline(&line, &n, fp) >= 0)
     {
         double x,y;
-        int Nread = fscanf(fp, "%lf %lf", &x, &y);
+        int Nread = sscanf(line, "%lf %lf", &x, &y);
         if(Nread != 2)
-            break;
+            continue;
 
         Point pt( (int)( x * FIND_GRID_SCALE + 0.5 ),
                   (int)( y * FIND_GRID_SCALE + 0.5 ) );
         points->push_back(pt);
     }
     fclose(fp);
+    free(line);
     return true;
 }
 
