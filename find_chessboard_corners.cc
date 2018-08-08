@@ -275,7 +275,7 @@ static void process_connected_components(int w, int h, int16_t* d,
         }
 }
 
-#define DUMP_FILENAME_CONNECTED_COMPONENT "/tmp/mrgingham-1-connected-component.vnl"
+#define DUMP_FILENAME_CORNERS "/tmp/mrgingham-1-corners.vnl"
 __attribute__((visibility("default")))
 bool find_chessboard_corners_from_image_array( std::vector<Point>* points,
                                                const cv::Mat& image_input,
@@ -361,7 +361,7 @@ bool find_chessboard_corners_from_image_array( std::vector<Point>* points,
     FILE* debugfp = NULL;
     if(debug)
     {
-        debugfp = fopen(DUMP_FILENAME_CONNECTED_COMPONENT, "w");
+        debugfp = fopen(DUMP_FILENAME_CORNERS, "w");
         assert(debugfp);
 
         fprintf(debugfp, "# x y\n");
@@ -372,7 +372,7 @@ bool find_chessboard_corners_from_image_array( std::vector<Point>* points,
                                  1U << image_pyramid_level);
     if(debug)
     {
-        fprintf(stderr, "Wrote a connected-component dump to " DUMP_FILENAME_CONNECTED_COMPONENT "\n");
+        fprintf(stderr, "Wrote a corner dump to " DUMP_FILENAME_CORNERS "\n");
         fclose(debugfp);
     }
     return true;
