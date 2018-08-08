@@ -37,7 +37,7 @@ static bool read_points( std::vector<Point>* points, const char* file )
 int main(int argc, char* argv[])
 {
     const char* usage =
-        "Usage: %s points.vnl\n"
+        "Usage: %s [--debug] points.vnl\n"
         "\n"
         "Given a set of pre-detected points, this tool finds a chessboard grid, and returns\n"
         "the ordered coordinates of this grid on standard output. The pre-detected points\n"
@@ -45,9 +45,12 @@ int main(int argc, char* argv[])
 
     struct option opts[] = {
         { "help",              no_argument,       NULL, 'h' },
+        { "debug",             no_argument,       NULL, 'd' },
         {}
     };
 
+
+    bool        debug               = false;
 
     int opt;
     do
@@ -63,6 +66,10 @@ int main(int argc, char* argv[])
             printf(usage, argv[0]);
             return 0;
 
+        case 'd':
+            debug = true;
+            break;
+
         case '?':
             fprintf(stderr, "Unknown option\n");
             fprintf(stderr, usage, argv[0]);
@@ -70,13 +77,20 @@ int main(int argc, char* argv[])
         }
     } while( opt != -1 );
 
+    if( optind != argc-1)
+    {
+        fprintf(stderr, "Need a single points-file on the cmdline\n");
+        fprintf(stderr, usage, argv[0]);
+        return 1;
+    }
+
 
     std::vector<Point> points;
-    if( !read_points(&points, argv[1]) )
+    if( !read_points(&points, argv[argc-1]) )
         return 1;
 
     std::vector<PointDouble> points_out;
-    bool result = find_grid_from_points(points_out, points);
+    bool result = find_grid_from_points(points_out, points, debug);
 
     printf("# x y\n");
     if( result )
