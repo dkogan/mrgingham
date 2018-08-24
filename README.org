@@ -12,7 +12,7 @@ $ mrgingham_from_image --chessboard --clahe --level 1 /tmp/image*.jpg
 ...
 
 $ mrgingham_from_image --chessboard --clahe --level 1 /tmp/image.jpg |
-  vnlog-filter -p x,y |
+  vnl-filter -p x,y |
   feedgnuplot --domain --lines --points --image /tmp/image.jpg
 
 [ image pops up with the detected grid plotted on top ]
