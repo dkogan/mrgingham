@@ -53,7 +53,7 @@ namespace mrgingham
                                                       image_pyramid_level,
                                                       debug);
 
-        for( image_pyramid_level=2; image_pyramid_level>=0; image_pyramid_level--)
+        for( image_pyramid_level=3; image_pyramid_level>=0; image_pyramid_level--)
         {
             bool result =
                 _find_chessboard_from_image_array( points_out,
