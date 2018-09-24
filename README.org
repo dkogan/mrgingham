@@ -2,7 +2,7 @@
 This is a library for finding calibration boards in observed camera images:
 
 #+BEGIN_EXAMPLE
-$ mrgingham_from_image --chessboard --clahe --level 1 /tmp/image*.jpg
+$ mrgingham-from-image --chessboard --clahe --level 1 /tmp/image*.jpg
 
 # filename x y
 /tmp/image1.jpg - -
@@ -11,7 +11,7 @@ $ mrgingham_from_image --chessboard --clahe --level 1 /tmp/image*.jpg
 /tmp/image2.jpg 1582.086000 1467.561000
 ...
 
-$ mrgingham_from_image --chessboard --clahe --level 1 /tmp/image.jpg |
+$ mrgingham-from-image --chessboard --clahe --level 1 /tmp/image.jpg |
   vnl-filter -p x,y |
   feedgnuplot --domain --lines --points --image /tmp/image.jpg
 
@@ -139,21 +139,21 @@ The arguments should be clear. The only one that needs an explanation is
 ** Applications
 There're several included applications that exercise the library:
 
-- =mrgingham_from_image= takes in images as globs (with some optional
+- =mrgingham-from-image= takes in images as globs (with some optional
   manipulation given on the cmdline), finds the grids, and returns them on
   stdout, as a vnlog
 
-- =mrgingham_from_points= takes in a file that contains an unordered set of
+- =mrgingham-from-points= takes in a file that contains an unordered set of
   points with outliers. It the finds the grid, and returns it on stdout
 
 - =mrgingham-observe-pixel-uncertainty= evaluates the distribution of corner
   detections from repeated observations of a stationary scene
 
-- =test_dump_chessboard_corners= is a lower-level tool that just finds the
+- =test-dump-chessboard-corners= is a lower-level tool that just finds the
   chessboard corner features and returns them on stdout. No geometric search is
   done.
 
-- =test_dump_blobs= similarly is a lower-level tool that just finds the blob
+- =test-dump-chessboard-corners= similarly is a lower-level tool that just finds the blob
   center features and returns them on stdout. No geometric search is done.
 
 The =mrgingham_...= tools are distributed in the package, while the other two

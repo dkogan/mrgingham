@@ -1,5 +1,5 @@
 #include "mrgingham.hh"
-#include "mrgingham_internal.h"
+#include "mrgingham-internal.h"
 #include <stdio.h>
 #include <getopt.h>
 
@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
         "\n"
         "Given a set of pre-detected points, this tool finds a chessboard grid, and returns\n"
         "the ordered coordinates of this grid on standard output. The pre-detected points\n"
-        "can come from something like test_dump_chessboard_corners.\n";
+        "can come from something like test-dump-chessboard-corners.\n";
 
     struct option opts[] = {
         { "help",              no_argument,       NULL, 'h' },

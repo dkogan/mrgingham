@@ -2,7 +2,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "point.hh"
-#include "mrgingham_internal.h"
+#include "mrgingham-internal.h"
 
 using namespace mrgingham;
 

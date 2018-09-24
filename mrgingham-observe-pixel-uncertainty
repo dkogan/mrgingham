@@ -79,7 +79,7 @@ else:
 
     import subprocess
     import pipes
-    args_mrgingham = ['mrgingham_from_image', '--chessboard', '--blur', '3', '--clahe', '--jobs',
+    args_mrgingham = ['mrgingham-from-image', '--chessboard', '--blur', '3', '--clahe', '--jobs',
                       str(args.jobs)]
     args_mrgingham.extend((args.input,))
 
@@ -127,7 +127,7 @@ if corners_output_process:
     sys.stderr.write("Done computing chessboard corners\n")
     if corners_output_process.wait() != 0:
         err = corners_output_process.stderr.read()
-        raise Exception("mrgingham_from_image failed: {}".format(err))
+        raise Exception("mrgingham-from-image failed: {}".format(err))
 
 
 @nps.broadcast_define( (('n','n'),), (5,) )

@@ -3,9 +3,10 @@
 *.d
 *~
 
-mrgingham_from_image
-mrgingham_from_points
-test_dump_blobs
+mrgingham-from-image
+mrgingham-from-points
+test-dump-chessboard-corners
+test-dump-blobs
 
 core
 
