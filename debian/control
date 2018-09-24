@@ -29,7 +29,8 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libmrgingham1 (= ${binary:Version}),
   python-vnlog,
   python-numpysane,
-  python-gnuplotlib
+  python-gnuplotlib,
+  python2:any
 Description: Chessboard finder for visual calibration routines
  Given an observed image containing a chessboard or a grid of circles, mrgingham
  locates the board in the image, and precisely computes the locatino of the
