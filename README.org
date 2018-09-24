@@ -136,7 +136,7 @@ The arguments should be clear. The only one that needs an explanation is
 - if =image_pyramid_level= < 0 then we try several levels, taking the first one
   that produces results
 
-** Test applications
+** Applications
 There're several included applications that exercise the library:
 
 - =mrgingham_from_image= takes in images as globs (with some optional
@@ -145,6 +145,9 @@ There're several included applications that exercise the library:
 
 - =mrgingham_from_points= takes in a file that contains an unordered set of
   points with outliers. It the finds the grid, and returns it on stdout
+
+- =mrgingham-observe-pixel-uncertainty= evaluates the distribution of corner
+  detections from repeated observations of a stationary scene
 
 - =test_dump_chessboard_corners= is a lower-level tool that just finds the
   chessboard corner features and returns them on stdout. No geometric search is

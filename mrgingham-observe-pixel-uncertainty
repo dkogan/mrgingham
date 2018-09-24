@@ -1,0 +1,190 @@
+#!/usr/bin/python2
+
+r'''Evaluate observed point distribution from stationary observations
+
+Synopsis:
+
+  $ observe-pixel-uncertainty '*.png'
+    Evaluated 49 observations
+    mean 1-sigma for independent x,y: 0.26
+
+  $ calibrate-cameras --observed-pixel-uncertainty 0.26 .....
+  [ camera calibration is computed ]
+
+The chessboard corner finder (mrgingham) has finite precision, so repeated
+observations of the same board will produce slightly different corner
+coordinates. This tool takes in a set of images (assumed observing a chessboard,
+with both the camera and board stationary). This tool outputs the
+1-standard-deviation statistic for the distribution of detected corners. This
+value can be passed in to 'calibrated-cameras --observed-pixel-uncertainty'.
+
+The distribution of the detected corners is assumed to be gaussian. This is the
+x and y standard deviation, treated independently. If each of these is s, then
+the LENGTH of the deviation of each pixel is a Rayleigh distribution with
+expected value s*sqrt(pi/2) ~ s*1.25
+
+'''
+
+import numpy as np
+import numpysane as nps
+import argparse
+import os
+import vnlog
+import re
+import sys
+
+
+def parse_args():
+    parser = \
+        argparse.ArgumentParser(description = __doc__,
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--show-geometry',
+                        action='store_true',
+                        required=False,
+                        default=False,
+                        help='Visualize all the points and all the ellipses')
+    parser.add_argument('--show-radii',
+                        action='store_true',
+                        required=False,
+                        default=False,
+                        help='Visualize the radii statistics')
+    parser.add_argument('--jobs', '-j',
+                        type=int,
+                        default=1,
+                        help='''How much parallelization we want. Like GNU make. Affects only the chessboard
+                        corner finder. If we are reading a pre-computed file,
+                        this does nothing''')
+    parser.add_argument('input',
+                        type=str,
+                        help='''Either
+
+                        - A glob that matches images observing a stationary
+                          calibration target
+
+                        - A vnlog representing corner detections from these
+                          images. This is assumed to be a file with a filename
+                          ending in .vnl''')
+
+    return parser.parse_args()
+
+
+args = parse_args()
+
+
+
+corners_output_process = None
+if re.match('.*\.vnl$', args.input):
+    pipe_corners_read = open(args.input, 'r')
+else:
+
+    import subprocess
+    import pipes
+    args_mrgingham = ['mrgingham_from_image', '--chessboard', '--blur', '3', '--clahe', '--jobs',
+                      str(args.jobs)]
+    args_mrgingham.extend((args.input,))
+
+    sys.stderr.write("Computing chessboard corners by running:\n   {}\n". \
+                     format(' '.join(pipes.quote(s) for s in args_mrgingham)))
+
+    corners_output_process = subprocess.Popen(args_mrgingham, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    pipe_corners_read = corners_output_process.stdout
+
+
+
+# shape (Nobservations,Npoints_board,2)
+points = np.array(())
+
+# shape (Npoints_board,2)
+points_here = np.array(())
+
+path = ''
+parser = vnlog.vnlog()
+def finish_image(path_new):
+    global points, points_here, path
+    try:
+        points = nps.glue(points, points_here, axis=-3)
+    except:
+        raise Exception("I assume that all image observations have the same number of points.\n" + \
+                        "So far had {} points per image, but image '{}' has {} points per image". \
+                        format(points.shape[-2], path, points_here.shape[-2]))
+    points_here = np.array(())
+    path        = path_new
+
+for l in pipe_corners_read:
+    parser.parse(l)
+
+    d = parser.values_dict()
+    if not d or d['x'] is None:
+        continue
+    if path != d['filename']:
+        finish_image(d['filename'])
+
+    points_here = nps.glue(points_here, np.array((float(d['x']),float(d['y']))), axis=-2)
+
+finish_image('')
+
+if corners_output_process:
+    sys.stderr.write("Done computing chessboard corners\n")
+    if corners_output_process.wait() != 0:
+        err = corners_output_process.stderr.read()
+        raise Exception("mrgingham_from_image failed: {}".format(err))
+
+
+@nps.broadcast_define( (('n','n'),), (5,) )
+def ellipse_stats(M):
+    l,v = np.linalg.eig(M)
+
+    l = np.sqrt(l)
+    if l[0] > l[1]:
+        # ...0 is the major axis
+        # ...1 is the minor axis
+        r0 = l[0]
+        r1 = l[1]
+        v0 = v[:,0]
+        v1 = v[:,1]
+    else:
+        # ...0 is the major axis
+        # ...1 is the minor axis
+        r1 = l[0]
+        r0 = l[1]
+        v1 = v[:,0]
+        v0 = v[:,1]
+
+    # angle between x axis and major axis
+    th = np.arctan2(v0[1], v0[0])
+
+    rx,ry = np.sqrt(M[0,0]),np.sqrt(M[1,1])
+    return np.array((r0,r1,rx,ry,th))
+
+points_mean = np.mean(points, axis=0)
+points_centered = points - points_mean
+
+C       = np.mean( nps.outer(points_centered, points_centered), axis=0 )
+rad_major,rad_minor,rad_x,rad_y,angle = nps.transpose(ellipse_stats(C))
+
+
+print "Evaluated {} observations".format(points.shape[0])
+print "mean 1-sigma for independent x,y: {:.2f}".format(np.mean(nps.glue(rad_x,rad_y,axis=-1)))
+
+if not args.show_geometry and not args.show_radii:
+    sys.exit(0)
+
+
+import gnuplotlib as gp
+
+if args.show_geometry:
+    plot_geometry = gp.gnuplotlib(square=1)
+    plot_geometry.plot((points_mean[:,0], points_mean[:,1], 2*rad_major,2*rad_minor, angle*180.0/np.pi,
+                        dict(_with='ellipses', tuplesize=5, _legend='1-sigma: dependent x,y')),
+                       (points_mean[:,0], points_mean[:,1], 2*rad_x, 2*rad_y,
+                        dict(_with='ellipses', tuplesize=4, _legend='1-sigma: independent x,y')),
+                       (points[...,0].ravel(), points[...,1].ravel(),
+                        dict(_with='points')))
+
+if args.show_radii:
+    plot_radii = gp.gnuplotlib( equation='{} title "mean"'.format(np.mean(nps.glue(rad_x,rad_y,axis=-1))) )
+    plot_radii.plot( nps.cat(rad_x,rad_y),
+                     _legend=np.array(('x-radius', 'y-radius')) )
+
+import time
+time.sleep(10000)

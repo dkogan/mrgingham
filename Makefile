@@ -3,8 +3,8 @@ ABI_VERSION  := 1
 TAIL_VERSION := 1
 
 
-DIST_BIN := mrgingham_from_image mrgingham_from_points
-BIN_SOURCES := $(DIST_BIN:%=%.cc) test_dump_blobs.cc test_dump_chessboard_corners.cc
+DIST_BIN := mrgingham_from_image mrgingham_from_points mrgingham-observe-pixel-uncertainty
+BIN_SOURCES := $(wildcard $(DIST_BIN:%=%.cc)) test_dump_blobs.cc test_dump_chessboard_corners.cc
 LIB_SOURCES := find_grid.cc find_blobs.cc find_chessboard_corners.cc mrgingham.cc ChESS.c
 
 CXXFLAGS_CV := $(shell pkg-config --cflags opencv)
