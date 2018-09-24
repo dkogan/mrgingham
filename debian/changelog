@@ -1,3 +1,9 @@
+mrgingham (1.5) unstable; urgency=medium
+
+  * Lots of updates. 
+
+ -- Dima Kogan <dima@secretsauce.net>  Mon, 24 Sep 2018 15:36:24 -0700
+
 mrgingham (1.4) unstable; urgency=medium
 
   * mrgingham-from-image works now
