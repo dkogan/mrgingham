@@ -4,7 +4,8 @@ Section: devel
 Build-Depends: debhelper (>= 9), dh-python,
  libopencv-dev,
  libboost-dev,
- pkg-config
+ pkg-config,
+ chrpath
 Maintainer: Dima Kogan <dima@secretsauce.net>
 Standards-Version: 3.9.8
 Homepage: https://github.com/dkogan/mrgingham/
