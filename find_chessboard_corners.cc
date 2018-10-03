@@ -275,7 +275,9 @@ static void process_connected_components(int w, int h, int16_t* d,
         }
 }
 
-#define DUMP_FILENAME_CORNERS "/tmp/mrgingham-1-corners.vnl"
+#define DUMP_FILENAME_CORNERS   "/tmp/mrgingham-1-corners.vnl"
+#define SCALED_IMAGE_FILENAME   "/tmp/mrgingham-scaled.png"
+#define CHESS_RESPONSE_FILENAME "/tmp/chess-response.png"
 __attribute__((visibility("default")))
 bool find_chessboard_corners_from_image_array( // out
 
@@ -305,13 +307,23 @@ bool find_chessboard_corners_from_image_array( // out
     cv::Mat _image;
 
     if(image_pyramid_level == 0)
+    {
         image = &image_input;
+        if( debug )
+            fprintf(stderr, "This is level-0 so I'm not rescaling the image, and not writing the scaled version to disk\n");
+    }
     else
     {
 
         double scale = 1.0 / ((double)(1 << image_pyramid_level));
         cv::resize( image_input, _image, cv::Size(), scale, scale, cv::INTER_LINEAR );
         image = &_image;
+
+        if( debug )
+        {
+            cv::imwrite(SCALED_IMAGE_FILENAME, *image);
+            fprintf(stderr, "Wrote scaled image to " SCALED_IMAGE_FILENAME "\n");
+        }
     }
 
 
@@ -336,20 +348,21 @@ bool find_chessboard_corners_from_image_array( // out
     uint8_t* imageData    = image->data;
     int16_t* responseData = (int16_t*)response.data;
 
-
     ChESS_response_5( responseData, imageData, w, h );
 
-    // useful debugging code:
-    // {
-    //     cv::Mat out;
-    //     cv::normalize(response, out, 0, 255, cv::NORM_MINMAX);
-    //     cv::imwrite("/tmp/response.jpg", out);
-    // }
-    //
-    // for( int y = 0; y < h; y++ )
-    //     for( int x = 0; x < w; x++ )
-    //         printf("%d %d %d\n", x, y, responseData[x+y*w] );
+    if(debug)
+    {
+        cv::Mat out;
+        cv::normalize(response, out, 0, 255, cv::NORM_MINMAX);
+        cv::imwrite(CHESS_RESPONSE_FILENAME, out);
 
+        fprintf(stderr, "Wrote a normalized ChESS response to " CHESS_RESPONSE_FILENAME "\n");
+
+        // for( int y = 0; y < h; y++ )
+        //     for( int x = 0; x < w; x++ )
+        //         printf("%d %d %d\n", x, y, responseData[x+y*w] );
+
+    }
 
     // I set all responses <0 to "0". These are not valid as candidates, and
     // I'll use "0" to mean "visited" in the upcoming connectivity search
