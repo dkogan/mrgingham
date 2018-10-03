@@ -212,15 +212,26 @@ static void follow_connected_component(struct xylist_t* l,
                                        const uint8_t* image,
                                        std::vector<Point>* points,
                                        FILE* debugfp,
-                                       uint16_t coord_scale)
+                                       uint16_t coord_scale,
+                                       int margin)
 {
     struct connected_component_t c = connected_component_init();
+
+    bool touched_margin = false;
 
     int16_t x, y;
     while( xylist_pop(l, &x, &y))
     {
         if(!is_valid(x,y,w,h,d, &c))
             continue;
+
+        if( x     < margin ||
+            y     < margin ||
+            w-1-x < margin ||
+            h-1-y < margin)
+        {
+            touched_margin = true;
+        }
 
         accumulate  (x,y,w,h,d, &c);
         mark_invalid(x,y,w,h,d);
@@ -231,7 +242,9 @@ static void follow_connected_component(struct xylist_t* l,
         if( y > 0  ) xylist_push(l, x,   y-1);
     }
 
-    if( connected_component_is_valid(&c, w,h,image) )
+    // If I touched the margin, this connected component is NOT valid
+    if( !touched_margin &&
+        connected_component_is_valid(&c, w,h,image) )
     {
         double x = (double)c.sum_w_x / (double)c.sum_w;
         double y = (double)c.sum_w_y / (double)c.sum_w;
@@ -259,7 +272,8 @@ static void process_connected_components(int w, int h, int16_t* d,
                                          const uint8_t* image,
                                          std::vector<Point>* points,
                                          FILE* debugfp,
-                                         uint16_t coord_scale)
+                                         uint16_t coord_scale,
+                                         int margin)
 {
     struct xylist_t l = xylist_alloc();
 
@@ -271,7 +285,7 @@ static void process_connected_components(int w, int h, int16_t* d,
 
             xylist_reset_with(&l, x, y);
             follow_connected_component(&l, w,h,d,
-                                       image, points, debugfp, coord_scale);
+                                       image, points, debugfp, coord_scale, margin);
         }
 }
 
@@ -389,7 +403,14 @@ bool find_chessboard_corners_from_image_array( // out
     process_connected_components(w, h, responseData,
                                  (uint8_t*)image->data, points,
                                  debugfp,
-                                 1U << image_pyramid_level);
+                                 1U << image_pyramid_level,
+
+                                 // The ChESS response is invalid at a 7-pixel
+                                 // margin around the image. This is a property
+                                 // of the ChESS implementation. Anything that
+                                 // needs to touch pixels in this 7-pixel-wide
+                                 // ring is invalid
+                                 7);
     if(debug)
     {
         fprintf(stderr, "Wrote a corner dump to " DUMP_FILENAME_CORNERS "\n");
