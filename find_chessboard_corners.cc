@@ -210,6 +210,24 @@ static bool connected_component_is_valid(const struct connected_component_t* c,
         high_variance(c->x_peak, c->y_peak,
                       w,h, image);
 }
+static void check_and_push_candidate(struct xylist_t* l,
+                                     bool* touched_margin,
+                                     int16_t x, int16_t y, int16_t w, int16_t h,
+                                     const int16_t* d,
+                                     int margin)
+{
+    if( !(x >= margin && x < w-margin &&
+          y >= margin && y < h-margin ))
+    {
+        *touched_margin = true;
+        return;
+    }
+
+    if( response_at(x, y, w,d) <= 0 )
+        return;
+
+    xylist_push(l, x, y);
+}
 static void follow_connected_component(struct xylist_t* l,
                                        int16_t w, int16_t h, int16_t* d,
 
@@ -229,24 +247,13 @@ static void follow_connected_component(struct xylist_t* l,
         if(!is_valid(x,y,w,h,d, &c))
             continue;
 
-        if( x     < margin ||
-            y     < margin ||
-            w-1-x < margin ||
-            h-1-y < margin)
-        {
-            touched_margin = true;
-        }
-
         accumulate  (x,y,w,h,d, &c);
         mark_invalid(x,y,w,h,d);
 
-        // I do a partial validity check here. If the response is <=0, then this
-        // point will NEVER become valid, and I never push it onto the list.
-        // Otherwise, I do a full validity check when I pop it
-        if( x < w-1 && response_at(x+1, y,   w,d)>0 ) xylist_push(l, x+1, y);
-        if( x > 0   && response_at(x-1, y,   w,d)>0 ) xylist_push(l, x-1, y);
-        if( y < h-1 && response_at(x,   y+1, w,d)>0 ) xylist_push(l, x,   y+1);
-        if( y > 0   && response_at(x,   y-1, w,d)>0 ) xylist_push(l, x,   y-1);
+        check_and_push_candidate(l, &touched_margin, x+1, y,   w,h,d,margin);
+        check_and_push_candidate(l, &touched_margin, x-1, y,   w,h,d,margin);
+        check_and_push_candidate(l, &touched_margin, x,   y+1, w,h,d,margin);
+        check_and_push_candidate(l, &touched_margin, x,   y-1, w,h,d,margin);
     }
 
     // If I touched the margin, this connected component is NOT valid
@@ -284,8 +291,8 @@ static void process_connected_components(int w, int h, int16_t* d,
 {
     struct xylist_t l = xylist_alloc();
 
-    for(int16_t y = 0; y<h; y++)
-        for(int16_t x = 0; x<w; x++)
+    for(int16_t y = margin+1; y<h-margin-1; y++)
+        for(int16_t x = margin+1; x<w-margin-1; x++)
         {
             if( !is_valid(x,y,w,h,d, NULL) )
                 continue;
