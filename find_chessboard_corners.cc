@@ -240,10 +240,13 @@ static void follow_connected_component(struct xylist_t* l,
         accumulate  (x,y,w,h,d, &c);
         mark_invalid(x,y,w,h,d);
 
-        if( x < w-1) xylist_push(l, x+1, y);
-        if( x > 0  ) xylist_push(l, x-1, y);
-        if( y < h-1) xylist_push(l, x,   y+1);
-        if( y > 0  ) xylist_push(l, x,   y-1);
+        // I do a partial validity check here. If the response is <=0, then this
+        // point will NEVER become valid, and I never push it onto the list.
+        // Otherwise, I do a full validity check when I pop it
+        if( x < w-1 && response_at(x+1, y,   w,d)>0 ) xylist_push(l, x+1, y);
+        if( x > 0   && response_at(x-1, y,   w,d)>0 ) xylist_push(l, x-1, y);
+        if( y < h-1 && response_at(x,   y+1, w,d)>0 ) xylist_push(l, x,   y+1);
+        if( y > 0   && response_at(x,   y-1, w,d)>0 ) xylist_push(l, x,   y-1);
     }
 
     // If I touched the margin, this connected component is NOT valid
