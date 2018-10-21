@@ -52,12 +52,12 @@ def parse_args():
                         required=False,
                         default=False,
                         help='Visualize the radii statistics')
-    parser.add_argument('--jobs', '-j',
-                        type=int,
-                        default=1,
-                        help='''How much parallelization we want. Like GNU make. Affects only the chessboard
-                        corner finder. If we are reading a pre-computed file,
-                        this does nothing''')
+    parser.add_argument('--mrgingham',
+                        type=str,
+                        default='',
+                        help='''If we're processing images, these are the arguments given to
+                        mrgingham-from-image. If we are reading a pre-computed file, this does
+                        nothing''')
     parser.add_argument('input',
                         type=str,
                         help='''Either
@@ -82,15 +82,12 @@ if re.match('.*\.vnl$', args.input):
 else:
 
     import subprocess
-    import pipes
-    args_mrgingham = ['mrgingham-from-image', '--chessboard', '--blur', '3', '--clahe', '--jobs',
-                      str(args.jobs)]
-    args_mrgingham.extend((args.input,))
+    args_mrgingham = 'mrgingham-from-image ' + args.mrgingham + ' ' + args.input
 
     sys.stderr.write("Computing chessboard corners by running:\n   {}\n". \
-                     format(' '.join(pipes.quote(s) for s in args_mrgingham)))
+                     format(args_mrgingham))
 
-    corners_output_process = subprocess.Popen(args_mrgingham, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    corners_output_process = subprocess.Popen(args_mrgingham, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     pipe_corners_read = corners_output_process.stdout
 
 
