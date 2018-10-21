@@ -54,6 +54,11 @@ If the main commandline argument I<is> C<something.vnl> I assume we're given
 corner coordinates. This is a 3-column vnlog C<mrgingham-from-image> returns:
 C<filename>,C<x>,C<y>.
 
+=item C<--mrgingham MRGINGHAM_PARAMETERS>
+
+If we're processing images, these are the arguments given to
+C<mrgingham-from-image>
+
 =item C<--show-geometry>
 
 Optional argument to visualize the 1-stdev ellipses of the distribution. The
