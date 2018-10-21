@@ -145,11 +145,11 @@ There're several included applications that exercise the library:
   manipulation given on the cmdline), finds the grids, and returns them on
   stdout, as a vnlog
 
-- =mrgingham-from-points= takes in a file that contains an unordered set of
-  points with outliers. It the finds the grid, and returns it on stdout
-
 - =mrgingham-observe-pixel-uncertainty= evaluates the distribution of corner
   detections from repeated observations of a stationary scene
+
+- =test-find-grid-from-points= takes in a file that contains an unordered set of
+  points with outliers. It the finds the grid, and returns it on stdout
 
 - =test-dump-chessboard-corners= is a lower-level tool that just finds the
   chessboard corner features and returns them on stdout. No geometric search is
