@@ -1,0 +1,193 @@
+=head1 NAME
+
+mrgingham-from-image - Extract chessboard corners from a set of images
+
+=head1 SYNOPSIS
+
+ $ mrgingham-from-image --chessboard --clahe --level 1 /tmp/image*.jpg
+
+ # filename x y
+ /tmp/image1.jpg - -
+ /tmp/image2.jpg 1385.433000 1471.719000
+ /tmp/image2.jpg 1483.597000 1469.825000
+ /tmp/image2.jpg 1582.086000 1467.561000
+ ...
+
+
+ $ mrgingham-from-image --chessboard --clahe --level 1 /tmp/image.jpg |
+   vnl-filter -p x,y |
+   feedgnuplot --domain --lines --points --image /tmp/image.jpg
+
+ [ image pops up with the detected grid plotted on top ]
+
+=head1 DESCRIPTION
+
+This tool uses the C<mrgingham> library to detect chessboard corners from images
+stored on disk.
+
+Both chessboard and a non-offset grid of circles are supported. Chessboard are
+the I<strongly> preferred choice; the circle detector is mostly here for
+compatibility. Both are nominally supported by OpenCV, but those implementations
+are slow and not at all robust, in my experience. The implementations here are
+much faster and work much better. I I<do> use OpenCV here, but only for some
+core functionality.
+
+Currently a 10x10 grid of points is hard-coded into the implementation. Talk to
+Dima, if this is a problem for you.
+
+=head2 Approach
+
+This tool works in two passes:
+
+=over
+
+=item *
+
+Look for "interesting" points in the image. The goal is to find all the points
+we care about, in any order. It is assumed that
+
+=over
+
+=item *
+
+there will be many outliers
+
+=item *
+
+there will be no outliers interspersed throughout the points we do care about
+(this isn't an unreasonable requirement: areas between chessboard corners have a
+solid color)
+
+=back
+
+=item *
+
+Run a geometric analysis to find a grid in this set of "interesting" points.
+This will throw out the outliers and it will order the output
+
+=back
+
+If we return I<any> data, that means we found a full grid. The geometric search
+is fairly anal, so if we found a full grid, it's extremely likely that it is
+"right".
+
+=head3 Chessboards
+
+This is based on the feature detector described in this paper:
+L<https://arxiv.org/abs/1301.5491>
+
+The authors provide a simple MIT-licensed implementation here:
+L<http://www-sigproc.eng.cam.ac.uk/Main/SB476Chess>
+
+This produces an image of detector response. I<This> library then aggregates
+these responses by looking at local neighborhoods of high responses, and
+computing the mean of the position of the points in each candidate neighborhood,
+weighted by the detector response.
+
+As noted earlier, I look for a hard-coded 10x10 grid. Here that means 10x10
+I<internal corners>, meaning an 11x11 chessboard. A recommended pattern is
+available in C<chessboard.pdf> in the C<mrgingham> sources.
+
+=head3 Circles
+
+B<This isn't recommended, and exists for legacy compatibility only*>
+
+The circle finder does mostly what the first stage of the OpenCV circle detector
+does:
+
+=over
+
+=item *
+
+Find a reasonable intensity threshold
+
+=item *
+
+Threshold the image
+
+=item *
+
+Find blobs
+
+=item *
+
+Return centroid of the blobs
+
+=back
+
+This is relatively slow, can get confused by uneven lighting (although CLAHE can
+take care of that), and is inaccurate: nothing says that the centroid of a blob
+came from the center of the circle on the calibration board.
+
+=head1 ARGUMENTS
+
+The general usage is
+
+ mrgingham-from-image [--debug] [--jobs N] [--clahe] [--blur radius]
+                      [--level l] --blobs|--chessboard imageglobs imageglobs ...
+
+The arguments are
+
+=over
+
+=item C<--blobs> and C<--chessboard>
+
+Exactly one of these is required. Use C<--chessboard>
+
+=item C<--clahe>
+
+Optional argument to control image preprocessing. This will apply adaptive
+histogram equalization to the images. This is I<extremely> helpful if the images
+aren't lit evenly; which is most of them.
+
+=item C<--blur RADIUS>
+
+Optional argument to control image preprocessing. This will apply a gaussian
+blur to the image (after the histogram equalization, if C<--clahe> is given). A
+light blurring is very helpful with CLAHE, since that makes noisy images.
+
+=item C<--level L>
+
+Optional argument to control image preprocessing. Applies a downsampling to the
+image (after C<--clahe> and C<--blur>, if those are given). Level 0 means 'use
+the original image'. Level > 0 means downsample by 2**level. Level < 0 means
+'try several different levels until we find one that works. This is the default.
+
+=item C<--jobs N>
+
+Parallelizes the processing N-ways. C<-j> is a synonym. This is just like GNU
+make, except you're required to explicitly specify a job count.
+
+The images are given as (multiple) globs. The output is a vnlog with columns
+C<filename>,C<x>,C<y>. All filenames matched in the glob will appear in the
+output. Images for which no chessboard pattern was found appear as a single
+record with null C<x> and C<y>.
+
+=item C<--debug>
+
+If given, C<mrgingham-from-image> will dump various intermediate results into
+C</tmp> and it will report more stuff on the console. The output is
+self-documenting
+
+=back
+
+=head1 REPOSITORY
+
+L<https://github.com/dkogan/mrgingham>
+
+=head1 AUTHOR
+
+Dima Kogan, C<< <dima@secretsauce.net> >>
+
+=head1 LICENSE AND COPYRIGHT
+
+This library is free software; you can redistribute it and/or modify it under
+the terms of the GNU Lesser General Public License as published by the Free
+Software Foundation; either version 2.1 of the License, or (at your option) any
+later version.
+
+Copyright 2017-2018 California Institute of Technology
+
+Copyright 2017-2018 Dima Kogan (C<dima@secretsauce.net>)
+
+=cut

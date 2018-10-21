@@ -4,6 +4,8 @@ TAIL_VERSION := 1
 
 
 DIST_BIN := mrgingham-from-image mrgingham-observe-pixel-uncertainty
+DIST_MAN := $(addsuffix .1,$(DIST_BIN))
+
 BIN_SOURCES := $(wildcard $(DIST_BIN:%=%.cc)) test-dump-chessboard-corners.cc test-dump-blobs.cc test-find-grid-from-points.cc
 LIB_SOURCES := find_grid.cc find_blobs.cc find_chessboard_corners.cc mrgingham.cc ChESS.c
 
@@ -18,6 +20,40 @@ CFLAGS    += -std=gnu99
 CCXXFLAGS += -Wno-unused-function -Wno-missing-field-initializers -Wno-unused-parameter -Wno-strict-aliasing -Wno-int-to-pointer-cast
 
 DIST_INCLUDE := mrgingham.hh point.hh
+
+# I construct the README.org from the template. The only thing I do is to insert
+# the manpages. Note that this is more complicated than it looks:
+#
+# 1. The documentation lives in a POD
+# 2. This documentation is stripped out here with pod2text, and included in the
+#    README. This README is an org-mode file, and the README.template.org
+#    container included the manpage text inside a #+BEGIN_EXAMPLE/#+END_EXAMPLE.
+#    So the manpages are treated as a verbatim, unformatted text blob
+# 3. Further down, the same POD is converted to a manpage via pod2man
+define MAKE_README =
+BEGIN									\
+{									\
+  for $$a (@ARGV)							\
+  {									\
+    $$c{$$a} = `pod2text $$a.pod | mawk "/REPOSITORY/{exit} {print}"`;	\
+  }									\
+}									\
+									\
+while(<STDIN>)								\
+{									\
+  print s/xxx-manpage-(.*?)-xxx/$$c{$$1}/gr;				\
+}
+endef
+
+README.org: README.template.org $(DIST_BIN)
+	< $(filter README%,$^) perl -e '$(MAKE_README)' $(filter-out README%,$^) > $@
+all: README.org
+
+%.1: %.pod
+	pod2man --center="mrgingham: chessboard corner finder" --name=MRGINGHAM --release="mrgingham $(VERSION)" --section=1 $^ $@
+EXTRA_CLEAN += *.1
+
+
 
 
 

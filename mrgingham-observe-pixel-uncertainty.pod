@@ -1,0 +1,91 @@
+=head1 NAME
+
+mrgingham-observe-pixel-uncertainty - Evaluate observed point distribution from stationary observations
+
+=head1 SYNOPSIS
+
+  $ observe-pixel-uncertainty '*.png'
+    Evaluated 49 observations
+    mean 1-sigma for independent x,y: 0.26
+
+  $ calibrate-cameras --observed-pixel-uncertainty 0.26 .....
+  [ mrcal computes a camera calibration ]
+
+=head1 DESCRIPTION
+
+C<mrgingham> has finite precision, so repeated observations of the same board
+will produce slightly different corner coordinates. This tool takes in a set of
+images (assumed observing a chessboard, with both the camera and board
+stationary). It then outputs the 1-standard-deviation statistic for the
+distribution of detected corners. This can then be passed in to mrcal:
+C<calibrate-cameras --observed-pixel-uncertainty ...>
+
+The distribution of the detected corners is assumed to be gaussian, and
+I<independent> in the horizontal and vertical directions. If the C<x> and C<y>
+distributions are each C<s>, then the /length/ of the deviation of each pixel is
+a Rayleigh distribution with expected value C<s*sqrt(pi/2)> ~ C<s*1.25>
+
+B<This tool performs no outlier rejection, and it is assumed that the scene is
+stationary>
+
+=head1 ARGUMENTS
+
+The general usage is
+
+ mrgingham-observe-pixel-uncertainty
+     [--show-geometry] [--show-radii] [--mrgingham MRGINGHAM_PARAMETERS]
+     images_glob | corners.vnl
+
+Either images or corner coordinates I<must> be passed in. Images are passed as a
+I<glob>. So in the shell pass in C<'*.png'> and I<not> C<*.png>. The arguments
+are
+
+=over
+
+=item images_glob
+
+If the main commandline argument is I<not> C<something.vnl> I assume we're given
+images. These are processed by C<mrgingham-from-image> and the arguments given
+in C<--mrgingham>.
+
+=item C<corners.vnl>
+
+If the main commandline argument I<is> C<something.vnl> I assume we're given
+corner coordinates. This is a 3-column vnlog C<mrgingham-from-image> returns:
+C<filename>,C<x>,C<y>.
+
+=item C<--show-geometry>
+
+Optional argument to visualize the 1-stdev ellipses of the distribution. The
+plot shows the chessboard corners, and the ellipses for each one.
+
+=item C<--show-radii>
+
+Optional argument to visualize the distribution of the 1-stdev radii. The radii
+for each chessboard corner are plotted together, so their consistency can be
+evaluated.
+
+=back
+
+=head1 REPOSITORY
+
+L<https://github.com/dkogan/mrgingham>
+
+=head1 AUTHOR
+
+Dima Kogan, C<< <dima@secretsauce.net> >>
+
+=head1 LICENSE AND COPYRIGHT
+
+This library is free software; you can redistribute it and/or modify it under
+the terms of the GNU Lesser General Public License as published by the Free
+Software Foundation; either version 2.1 of the License, or (at your option) any
+later version.
+
+Copyright 2017-2018 California Institute of Technology
+
+Copyright 2017-2018 Dima Kogan (C<dima@secretsauce.net>)
+
+=cut
+
+

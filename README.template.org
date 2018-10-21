@@ -166,6 +166,17 @@ There's a test suite in =test/test.sh=. It checks all images in =test/data/*=,
 and reports which ones produced no data. Currently I don't ship any actual data.
 I will at some point.
 
+* MANPAGES
+** mrgingham-from-image
+#+BEGIN_EXAMPLE
+xxx-manpage-mrgingham-from-image-xxx
+#+END_EXAMPLE
+
+** mrgingham-observe-pixel-uncertainty
+#+BEGIN_EXAMPLE
+xxx-manpage-mrgingham-observe-pixel-uncertainty-xxx
+#+END_EXAMPLE
+
 * MAINTAINER
 This is maintained by Dima Kogan <dima@secretsauce.net>. Please let Dima know if
 something is unclear/broken/missing.
