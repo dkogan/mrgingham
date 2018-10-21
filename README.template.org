@@ -2,7 +2,7 @@
 This is a library for finding calibration boards in observed camera images:
 
 #+BEGIN_EXAMPLE
-$ mrgingham-from-image --chessboard --clahe --level 1 /tmp/image*.jpg
+$ mrgingham --chessboard --clahe --level 1 /tmp/image*.jpg
 
 # filename x y
 /tmp/image1.jpg - -
@@ -12,7 +12,7 @@ $ mrgingham-from-image --chessboard --clahe --level 1 /tmp/image*.jpg
 ...
 
 
-$ mrgingham-from-image --chessboard --clahe --level 1 /tmp/image.jpg |
+$ mrgingham --chessboard --clahe --level 1 /tmp/image.jpg |
   vnl-filter -p x,y |
   feedgnuplot --domain --lines --points --image /tmp/image.jpg
 
@@ -142,7 +142,7 @@ The arguments should be clear. The only one that needs an explanation is
 There're several included applications that exercise the library.
 =mrgingham-...= are distributed, and their manpages appear below.
 
-- =mrgingham-from-image= takes in images as globs (with some optional
+- =mrgingham= takes in images as globs (with some optional
   manipulation given on the cmdline), finds the grids, and returns them on
   stdout, as a vnlog
 
@@ -168,9 +168,9 @@ and reports which ones produced no data. Currently I don't ship any actual data.
 I will at some point.
 
 * MANPAGES
-** mrgingham-from-image
+** mrgingham
 #+BEGIN_EXAMPLE
-xxx-manpage-mrgingham-from-image-xxx
+xxx-manpage-mrgingham-xxx
 #+END_EXAMPLE
 
 ** mrgingham-observe-pixel-uncertainty

@@ -3,7 +3,7 @@
 *.d
 *~
 
-mrgingham-from-image
+mrgingham
 test-find-grid-from-points
 test-dump-chessboard-corners
 test-dump-blobs

@@ -3,10 +3,18 @@ ABI_VERSION  := 1
 TAIL_VERSION := 1
 
 
-DIST_BIN := mrgingham-from-image mrgingham-observe-pixel-uncertainty
+DIST_BIN := mrgingham mrgingham-observe-pixel-uncertainty
 DIST_MAN := $(addsuffix .1,$(DIST_BIN))
 
-BIN_SOURCES := $(wildcard $(DIST_BIN:%=%.cc)) test-dump-chessboard-corners.cc test-dump-blobs.cc test-find-grid-from-points.cc
+# I want the tool I ship to be called "mrgingham", but I already have
+# mrgingham.cc: it's a part of the LIBRARY
+mrgingham: mrgingham-from-image
+	cp $< $@
+
+
+BIN_SOURCES := mrgingham-from-image.cc
+BIN_SOURCES += test-dump-chessboard-corners.cc test-dump-blobs.cc test-find-grid-from-points.cc
+
 LIB_SOURCES := find_grid.cc find_blobs.cc find_chessboard_corners.cc mrgingham.cc ChESS.c
 
 CXXFLAGS_CV := $(shell pkg-config --cflags opencv)

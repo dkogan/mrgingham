@@ -56,7 +56,7 @@ def parse_args():
                         type=str,
                         default='',
                         help='''If we're processing images, these are the arguments given to
-                        mrgingham-from-image. If we are reading a pre-computed file, this does
+                        mrgingham. If we are reading a pre-computed file, this does
                         nothing''')
     parser.add_argument('input',
                         type=str,
@@ -82,7 +82,7 @@ if re.match('.*\.vnl$', args.input):
 else:
 
     import subprocess
-    args_mrgingham = 'mrgingham-from-image ' + args.mrgingham + ' ' + args.input
+    args_mrgingham = 'mrgingham ' + args.mrgingham + ' ' + args.input
 
     sys.stderr.write("Computing chessboard corners by running:\n   {}\n". \
                      format(args_mrgingham))
@@ -128,7 +128,7 @@ if corners_output_process:
     sys.stderr.write("Done computing chessboard corners\n")
     if corners_output_process.wait() != 0:
         err = corners_output_process.stderr.read()
-        raise Exception("mrgingham-from-image failed: {}".format(err))
+        raise Exception("mrgingham failed: {}".format(err))
 
 
 @nps.broadcast_define( (('n','n'),), (5,) )

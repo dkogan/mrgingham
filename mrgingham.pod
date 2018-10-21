@@ -1,10 +1,10 @@
 =head1 NAME
 
-mrgingham-from-image - Extract chessboard corners from a set of images
+mrgingham - Extract chessboard corners from a set of images
 
 =head1 SYNOPSIS
 
- $ mrgingham-from-image --chessboard --clahe --level 1 /tmp/image*.jpg
+ $ mrgingham --chessboard --clahe --level 1 /tmp/image*.jpg
 
  # filename x y
  /tmp/image1.jpg - -
@@ -14,7 +14,7 @@ mrgingham-from-image - Extract chessboard corners from a set of images
  ...
 
 
- $ mrgingham-from-image --chessboard --clahe --level 1 /tmp/image.jpg |
+ $ mrgingham --chessboard --clahe --level 1 /tmp/image.jpg |
    vnl-filter -p x,y |
    feedgnuplot --domain --lines --points --image /tmp/image.jpg
 
@@ -123,8 +123,8 @@ came from the center of the circle on the calibration board.
 
 The general usage is
 
- mrgingham-from-image [--debug] [--jobs N] [--clahe] [--blur radius]
-                      [--level l] --blobs|--chessboard imageglobs imageglobs ...
+ mrgingham [--debug] [--jobs N] [--clahe] [--blur radius]
+           [--level l] --blobs|--chessboard imageglobs imageglobs ...
 
 The arguments are
 
@@ -165,7 +165,7 @@ record with null C<x> and C<y>.
 
 =item C<--debug>
 
-If given, C<mrgingham-from-image> will dump various intermediate results into
+If given, C<mrgingham> will dump various intermediate results into
 C</tmp> and it will report more stuff on the console. The output is
 self-documenting
 

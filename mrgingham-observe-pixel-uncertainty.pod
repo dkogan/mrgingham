@@ -45,19 +45,19 @@ are
 =item images_glob
 
 If the main commandline argument is I<not> C<something.vnl> I assume we're given
-images. These are processed by C<mrgingham-from-image> and the arguments given
+images. These are processed by C<mrgingham> and the arguments given
 in C<--mrgingham>.
 
 =item C<corners.vnl>
 
 If the main commandline argument I<is> C<something.vnl> I assume we're given
-corner coordinates. This is a 3-column vnlog C<mrgingham-from-image> returns:
+corner coordinates. This is a 3-column vnlog C<mrgingham> returns:
 C<filename>,C<x>,C<y>.
 
 =item C<--mrgingham MRGINGHAM_PARAMETERS>
 
 If we're processing images, these are the arguments given to
-C<mrgingham-from-image>
+C<mrgingham>
 
 =item C<--show-geometry>
 
