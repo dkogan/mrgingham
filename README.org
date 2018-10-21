@@ -27,9 +27,9 @@ circle center could be very far away from each other. Because of this, more work
 was put into the chessboard detector. Use that one. Really.
 
 These are both nominally supported by OpenCV, but those implementations are slow
-and not at all robust, in my experience. In fact, they're so non-robust, that I
-wouldn't claim they even work. The implementations here are much faster and work
-much better. I /do/ use OpenCV here, but only for some core functionality.
+and not at all robust, in my experience. The implementations here are much
+faster and work much better. I /do/ use OpenCV, but only for some core
+functionality.
 
 Currently a 10x10 grid of points is hard-coded into the implementation. Talk to
 Dima, if this is a problem for you.
@@ -52,19 +52,6 @@ If we return /any/ data, that means we found the full grid. The geometric search
 is fairly anal, so if we found a full grid, it's extremely likely that it is
 "right".
 
-*** Circles
-The circle finder does mostly what the first stage of the OpenCV circle detector
-does:
-
-1. Find a reasonable intensity threshold
-2. Threshold the image
-3. Find blobs
-4. Return centroid of the blobs
-
-This is relatively slow, can get confused by uneven lighting (although CLAHE can
-take care of that), and is inaccurate: nothing says that the centroid of a blob
-came from the center of the circle on the calibration board.
-
 *** Chessboards
 This is based on the feature detector described in this paper:
 https://arxiv.org/abs/1301.5491
@@ -86,6 +73,21 @@ with the expected spacing, not 12. I haven't tried with an even 10x10 board, so
 I don't know if this is a real issue.
 
 The recommended pattern can be printed from this file: [[chessboard.pdf]]
+
+*** Circles
+*This isn't recommended, and exists for legacy compatibility only*
+
+The circle finder does mostly what the first stage of the OpenCV circle detector
+does:
+
+1. Find a reasonable intensity threshold
+2. Threshold the image
+3. Find blobs
+4. Return centroid of the blobs
+
+This is relatively slow, can get confused by uneven lighting (although CLAHE can
+take care of that), and is inaccurate: nothing says that the centroid of a blob
+came from the center of the circle on the calibration board.
 
 ** API
 The user-facing functions live in =mrgingham.hh=. Everything is in C++, mostly
