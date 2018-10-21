@@ -7,7 +7,18 @@ mrgingham
 test-find-grid-from-points
 test-dump-chessboard-corners
 test-dump-blobs
+mrgingham-observe-pixel-uncertainty.pod
 
 core
 
 cscope.*
+
+analyses/
+debian/.debhelper/
+debian/files
+debian/*.log
+debian/*.substvars
+debian/libmrgingham-dev/
+debian/libmrgingham1/
+debian/tmp/
+test/data/
