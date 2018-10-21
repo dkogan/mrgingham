@@ -11,18 +11,17 @@ Synopsis:
   $ calibrate-cameras --observed-pixel-uncertainty 0.26 .....
   [ mrcal computes a camera calibration ]
 
-The chessboard corner finder (mrgingham) has finite precision, so repeated
-observations of the same board will produce slightly different corner
-coordinates. This tool takes in a set of images (assumed observing a chessboard,
-with both the camera and board stationary). It then outputs the
-1-standard-deviation statistic for the distribution of detected corners. This
-can then be passed in to mrcal: 'calibrate-cameras --observed-pixel-uncertainty
-...'
+mrgingham has finite precision, so repeated observations of the same board will
+produce slightly different corner coordinates. This tool takes in a set of
+images (assumed observing a chessboard, with both the camera and board
+stationary). It then outputs the 1-standard-deviation statistic for the
+distribution of detected corners. This can then be passed in to mrcal:
+'calibrate-cameras --observed-pixel-uncertainty ...'
 
 The distribution of the detected corners is assumed to be gaussian, and
-I<independent> in the horizontal and vertical directions. If the x and y
-distributions are each s, then the LENGTH of the deviation of each pixel is
-a Rayleigh distribution with expected value s*sqrt(pi/2) ~ s*1.25
+INDEPENDENT in the horizontal and vertical directions. If the x and y
+distributions are each s, then the LENGTH of the deviation of each pixel is a
+Rayleigh distribution with expected value s*sqrt(pi/2) ~ s*1.25
 
 THIS TOOL PERFORMS NO OUTLIER REJECTION, AND IT IS ASSUMED THAT THE SCENE IS
 STATIONARY
@@ -46,12 +45,15 @@ def parse_args():
                         action='store_true',
                         required=False,
                         default=False,
-                        help='Visualize all the points and all the ellipses')
+                        help='''Visualize the 1-stdev ellipses of the distribution. The plot shows the
+                        chessboard corners, and the ellipses for each one.''')
     parser.add_argument('--show-radii',
                         action='store_true',
                         required=False,
                         default=False,
-                        help='Visualize the radii statistics')
+                        help='''Visualize the distribution of the 1-stdev radii. The radii
+                        for each chessboard corner are plotted together, so their consistency can be
+                        evaluated''')
     parser.add_argument('--mrgingham',
                         type=str,
                         default='',
@@ -63,11 +65,15 @@ def parse_args():
                         help='''Either
 
                         - A glob that matches images observing a stationary
-                          calibration target
+                          calibration target. This must be a GLOB. So in the
+                          shell pass in '*.png' and NOT *.png. These are
+                          processed by 'mrgingham' and the arguments passed in
+                          with --mrgingham
 
                         - A vnlog representing corner detections from these
                           images. This is assumed to be a file with a filename
-                          ending in .vnl''')
+                          ending in .vnl, formatted like 'mrgingham' output: 3
+                          columns: filename,x,y''')
 
     return parser.parse_args()
 

@@ -43,7 +43,8 @@ BEGIN									\
 {									\
   for $$a (@ARGV)							\
   {									\
-    $$c{$$a} = `pod2text $$a.pod | mawk "/REPOSITORY/{exit} {print}"`;	\
+    $$base = $$a =~ s/\.pod$$//r;                                       \
+    $$c{$$base} = `pod2text $$a | mawk "/REPOSITORY/{exit} {print}"`;	\
   }									\
 }									\
 									\
@@ -53,13 +54,16 @@ while(<STDIN>)								\
 }
 endef
 
-README.org: README.template.org $(DIST_BIN)
+README.org: README.template.org $(DIST_BIN:%=%.pod)
 	< $(filter README%,$^) perl -e '$(MAKE_README)' $(filter-out README%,$^) > $@
 all: README.org
 
 %.1: %.pod
 	pod2man --center="mrgingham: chessboard corner finder" --name=MRGINGHAM --release="mrgingham $(VERSION)" --section=1 $^ $@
-EXTRA_CLEAN += *.1
+mrgingham-observe-pixel-uncertainty.pod: %.pod: %
+	./make-pod.pl $< > $@
+	cat footer.pod >> $@
+EXTRA_CLEAN += *.1 mrgingham-observe-pixel-uncertainty.pod
 
 
 
