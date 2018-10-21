@@ -1,0 +1,390 @@
+* SYNOPSIS
+This is a library for finding calibration boards in observed camera images:
+
+#+BEGIN_EXAMPLE
+$ mrgingham --chessboard --clahe --level 1 /tmp/image*.jpg
+
+# filename x y
+/tmp/image1.jpg - -
+/tmp/image2.jpg 1385.433000 1471.719000
+/tmp/image2.jpg 1483.597000 1469.825000
+/tmp/image2.jpg 1582.086000 1467.561000
+...
+
+
+$ mrgingham --chessboard --clahe --level 1 /tmp/image.jpg |
+  vnl-filter -p x,y |
+  feedgnuplot --domain --lines --points --image /tmp/image.jpg
+
+[ image pops up with the detected grid plotted on top ]
+#+END_EXAMPLE
+
+* DESCRIPTION
+Both chessboard and a non-offset grid of circles are supported. Chessboard are
+the /strongly/ preferred choice, since the circles cannot produce accurate
+results: we care about the center point, which we are not directly observing.
+Thus with closeup and oblique views, the reported circle center and the real
+circle center could be very far away from each other. Because of this, more work
+was put into the chessboard detector. Use that one. Really.
+
+These are both nominally supported by OpenCV, but those implementations are slow
+and not at all robust, in my experience. The implementations here are much
+faster and work much better. I /do/ use OpenCV, but only for some core
+functionality.
+
+Currently a 10x10 grid of points is hard-coded into the implementation. Talk to
+Dima, if this is a problem for you.
+
+** Approach
+These tools work in two passes:
+
+1. Look for "interesting" points in the image. The goal is to find all the
+   points we care about, in any order. It is assumed that
+
+   - there will be many outliers
+   - there will be no outliers interspersed throughout the points we do care
+     about (this isn't an unreasonable requirement: areas between chessboard
+     corners have a solid color)
+
+2. Run a geometric analysis to find a grid in this set of "interesting" points.
+   This will throw out the outliers and it will order the output
+
+If we return /any/ data, that means we found a full grid. The geometric search
+is fairly anal, so if we found a full grid, it's extremely likely that it is
+"right".
+
+*** Chessboards
+This is based on the feature detector described in this paper:
+https://arxiv.org/abs/1301.5491
+
+The authors provide a simple MIT-licensed implementation here:
+http://www-sigproc.eng.cam.ac.uk/Main/SB476Chess
+
+This produces an image of detector response. /This/ library then aggregates
+these responses by looking at local neighborhoods of high responses, and
+computing the mean of the position of the points in each candidate neighborhood,
+weighted by the detector response.
+
+As noted earlier, I look for a hard-coded 10x10 grid. Here that means 10x10
+/internal corners/, meaning an 11x11 chessboard. It probably doesn't matter, but
+if the outer squares have a different width than the inner squares, the detector
+is less likely to fail. This would ensure that we see exactly 10 points in a row
+with the expected spacing, not 12. I haven't tried with an even 10x10 board, so
+I don't know if this is a real issue.
+
+The recommended pattern can be printed from this file: [[chessboard.pdf]]
+
+*** Circles
+*This isn't recommended, and exists for legacy compatibility only*
+
+The circle finder does mostly what the first stage of the OpenCV circle detector
+does:
+
+1. Find a reasonable intensity threshold
+2. Threshold the image
+3. Find blobs
+4. Return centroid of the blobs
+
+This is relatively slow, can get confused by uneven lighting (although CLAHE can
+take care of that), and is inaccurate: nothing says that the centroid of a blob
+came from the center of the circle on the calibration board.
+
+** API
+The user-facing functions live in =mrgingham.hh=. Everything is in C++, mostly
+because some of the underlying libraries are in C++. All functions return a
+=bool= to indicate success/failure. All functions put the destination arguments
+/first/. All functions return the output points in
+=std::vector<mrgingham::PointDouble& points_out>=, an ordered list of found
+points. The inputs are one of
+
+- An image filename
+- An OpenCV matrix: =cv::Mat& image=
+- A set of detected points, that are unordered, and are a superset of the points
+  we're seeking
+
+The prototypes:
+
+#+BEGIN_SRC C++
+namespace mrgingham
+{
+    bool find_circle_grid_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
+                                            const cv::Mat& image );
+
+    bool find_circle_grid_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
+                                           const char* filename );
+
+    bool find_chessboard_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
+                                           const cv::Mat& image,
+                                           int image_pyramid_level = -1 );
+
+    bool find_chessboard_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
+                                          const char* filename,
+                                          int image_pyramid_level = -1 );
+
+    bool find_grid_from_points( std::vector<mrgingham::PointDouble>& points_out,
+                                const std::vector<mrgingham::Point>& points );
+};
+#+END_SRC
+
+The arguments should be clear. The only one that needs an explanation is
+=image_pyramid_level=:
+
+- if =image_pyramid_level= is 0 then we just use the image as is.
+
+- if =image_pyramid_level= > 0 then we cut down the image by a factor of 2 that
+  many times. So for example, level 3 means each dimension is cut down by a
+  factor of 2^3 = 8
+
+- if =image_pyramid_level= < 0 then we try several levels, taking the first one
+  that produces results
+
+** Applications
+There're several included applications that exercise the library.
+=mrgingham-...= are distributed, and their manpages appear below.
+
+- =mrgingham= takes in images as globs (with some optional
+  manipulation given on the cmdline), finds the grids, and returns them on
+  stdout, as a vnlog
+
+- =mrgingham-observe-pixel-uncertainty= evaluates the distribution of corner
+  detections from repeated observations of a stationary scene
+
+- =test-find-grid-from-points= takes in a file that contains an unordered set of
+  points with outliers. It the finds the grid, and returns it on stdout
+
+- =test-dump-chessboard-corners= is a lower-level tool that just finds the
+  chessboard corner features and returns them on stdout. No geometric search is
+  done.
+
+- =test-dump-chessboard-corners= similarly is a lower-level tool that just finds the blob
+  center features and returns them on stdout. No geometric search is done.
+
+The =mrgingham_...= tools are distributed in the package, while the other two
+are internal.
+
+** Tests
+There's a test suite in =test/test.sh=. It checks all images in =test/data/*=,
+and reports which ones produced no data. Currently I don't ship any actual data.
+I will at some point.
+
+* MANPAGES
+** mrgingham
+#+BEGIN_EXAMPLE
+NAME
+    mrgingham - Extract chessboard corners from a set of images
+
+SYNOPSIS
+     $ mrgingham --chessboard --clahe --level 1 /tmp/image*.jpg
+
+     # filename x y
+     /tmp/image1.jpg - -
+     /tmp/image2.jpg 1385.433000 1471.719000
+     /tmp/image2.jpg 1483.597000 1469.825000
+     /tmp/image2.jpg 1582.086000 1467.561000
+     ...
+
+
+     $ mrgingham --chessboard --clahe --level 1 /tmp/image.jpg |
+       vnl-filter -p x,y |
+       feedgnuplot --domain --lines --points --image /tmp/image.jpg
+
+     [ image pops up with the detected grid plotted on top ]
+
+DESCRIPTION
+    This tool uses the "mrgingham" library to detect chessboard corners from
+    images stored on disk.
+
+    Both chessboard and a non-offset grid of circles are supported.
+    Chessboard are the *strongly* preferred choice; the circle detector is
+    mostly here for compatibility. Both are nominally supported by OpenCV,
+    but those implementations are slow and not at all robust, in my
+    experience. The implementations here are much faster and work much
+    better. I *do* use OpenCV here, but only for some core functionality.
+
+    Currently a 10x10 grid of points is hard-coded into the implementation.
+    Talk to Dima, if this is a problem for you.
+
+  Approach
+    This tool works in two passes:
+
+    *   Look for "interesting" points in the image. The goal is to find all
+        the points we care about, in any order. It is assumed that
+
+        *   there will be many outliers
+
+        *   there will be no outliers interspersed throughout the points we
+            do care about (this isn't an unreasonable requirement: areas
+            between chessboard corners have a solid color)
+
+    *   Run a geometric analysis to find a grid in this set of "interesting"
+        points. This will throw out the outliers and it will order the
+        output
+
+    If we return *any* data, that means we found a full grid. The geometric
+    search is fairly anal, so if we found a full grid, it's extremely likely
+    that it is "right".
+
+   Chessboards
+    This is based on the feature detector described in this paper:
+    <https://arxiv.org/abs/1301.5491>
+
+    The authors provide a simple MIT-licensed implementation here:
+    <http://www-sigproc.eng.cam.ac.uk/Main/SB476Chess>
+
+    This produces an image of detector response. *This* library then
+    aggregates these responses by looking at local neighborhoods of high
+    responses, and computing the mean of the position of the points in each
+    candidate neighborhood, weighted by the detector response.
+
+    As noted earlier, I look for a hard-coded 10x10 grid. Here that means
+    10x10 *internal corners*, meaning an 11x11 chessboard. A recommended
+    pattern is available in "chessboard.pdf" in the "mrgingham" sources.
+
+   Circles
+    This isn't recommended, and exists for legacy compatibility only*
+
+    The circle finder does mostly what the first stage of the OpenCV circle
+    detector does:
+
+    *   Find a reasonable intensity threshold
+
+    *   Threshold the image
+
+    *   Find blobs
+
+    *   Return centroid of the blobs
+
+    This is relatively slow, can get confused by uneven lighting (although
+    CLAHE can take care of that), and is inaccurate: nothing says that the
+    centroid of a blob came from the center of the circle on the calibration
+    board.
+
+ARGUMENTS
+    The general usage is
+
+     mrgingham [--debug] [--jobs N] [--clahe] [--blur radius]
+               [--level l] --blobs|--chessboard imageglobs imageglobs ...
+
+    The arguments are
+
+    "--blobs" and "--chessboard"
+        Exactly one of these is required. Use "--chessboard"
+
+    "--clahe"
+        Optional argument to control image preprocessing. This will apply
+        adaptive histogram equalization to the images. This is *extremely*
+        helpful if the images aren't lit evenly; which is most of them.
+
+    "--blur RADIUS"
+        Optional argument to control image preprocessing. This will apply a
+        gaussian blur to the image (after the histogram equalization, if
+        "--clahe" is given). A light blurring is very helpful with CLAHE,
+        since that makes noisy images.
+
+    "--level L"
+        Optional argument to control image preprocessing. Applies a
+        downsampling to the image (after "--clahe" and "--blur", if those
+        are given). Level 0 means 'use the original image'. Level > 0 means
+        downsample by 2**level. Level < 0 means 'try several different
+        levels until we find one that works. This is the default.
+
+    "--jobs N"
+        Parallelizes the processing N-ways. "-j" is a synonym. This is just
+        like GNU make, except you're required to explicitly specify a job
+        count.
+
+        The images are given as (multiple) globs. The output is a vnlog with
+        columns "filename","x","y". All filenames matched in the glob will
+        appear in the output. Images for which no chessboard pattern was
+        found appear as a single record with null "x" and "y".
+
+    "--debug"
+        If given, "mrgingham" will dump various intermediate results into
+        "/tmp" and it will report more stuff on the console. The output is
+        self-documenting
+
+
+#+END_EXAMPLE
+
+** mrgingham-observe-pixel-uncertainty
+#+BEGIN_EXAMPLE
+NAME
+    mrgingham-observe-pixel-uncertainty - Evaluate observed point
+    distribution from stationary observations
+
+SYNOPSIS
+      $ observe-pixel-uncertainty '*.png'
+        Evaluated 49 observations
+        mean 1-sigma for independent x,y: 0.26
+
+      $ calibrate-cameras --observed-pixel-uncertainty 0.26 .....
+      [ mrcal computes a camera calibration ]
+
+DESCRIPTION
+    "mrgingham" has finite precision, so repeated observations of the same
+    board will produce slightly different corner coordinates. This tool
+    takes in a set of images (assumed observing a chessboard, with both the
+    camera and board stationary). It then outputs the 1-standard-deviation
+    statistic for the distribution of detected corners. This can then be
+    passed in to mrcal: "calibrate-cameras --observed-pixel-uncertainty ..."
+
+    The distribution of the detected corners is assumed to be gaussian, and
+    *independent* in the horizontal and vertical directions. If the "x" and
+    "y" distributions are each "s", then the /length/ of the deviation of
+    each pixel is a Rayleigh distribution with expected value "s*sqrt(pi/2)"
+    ~ "s*1.25"
+
+    This tool performs no outlier rejection, and it is assumed that the
+    scene is stationary
+
+ARGUMENTS
+    The general usage is
+
+     mrgingham-observe-pixel-uncertainty
+         [--show-geometry] [--show-radii] [--mrgingham MRGINGHAM_PARAMETERS]
+         images_glob | corners.vnl
+
+    Either images or corner coordinates *must* be passed in. Images are
+    passed as a *glob*. So in the shell pass in '*.png' and *not* "*.png".
+    The arguments are
+
+    images_glob
+        If the main commandline argument is *not* "something.vnl" I assume
+        we're given images. These are processed by "mrgingham" and the
+        arguments given in "--mrgingham".
+
+    "corners.vnl"
+        If the main commandline argument *is* "something.vnl" I assume we're
+        given corner coordinates. This is a 3-column vnlog "mrgingham"
+        returns: "filename","x","y".
+
+    "--mrgingham MRGINGHAM_PARAMETERS"
+        If we're processing images, these are the arguments given to
+        "mrgingham"
+
+    "--show-geometry"
+        Optional argument to visualize the 1-stdev ellipses of the
+        distribution. The plot shows the chessboard corners, and the
+        ellipses for each one.
+
+    "--show-radii"
+        Optional argument to visualize the distribution of the 1-stdev
+        radii. The radii for each chessboard corner are plotted together, so
+        their consistency can be evaluated.
+
+
+#+END_EXAMPLE
+
+* MAINTAINER
+This is maintained by Dima Kogan <dima@secretsauce.net>. Please let Dima know if
+something is unclear/broken/missing.
+* LICENSE AND COPYRIGHT
+
+This library is free software; you can redistribute it and/or modify it under
+the terms of the GNU Lesser General Public License as published by the Free
+Software Foundation; either version 2.1 of the License, or (at your option) any
+later version.
+
+Copyright 2017-2018 California Institute of Technology
+
+Copyright 2017-2018 Dima Kogan (=dima@secretsauce.net=)
