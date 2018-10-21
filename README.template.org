@@ -11,6 +11,7 @@ $ mrgingham-from-image --chessboard --clahe --level 1 /tmp/image*.jpg
 /tmp/image2.jpg 1582.086000 1467.561000
 ...
 
+
 $ mrgingham-from-image --chessboard --clahe --level 1 /tmp/image.jpg |
   vnl-filter -p x,y |
   feedgnuplot --domain --lines --points --image /tmp/image.jpg
@@ -42,13 +43,13 @@ These tools work in two passes:
 
    - there will be many outliers
    - there will be no outliers interspersed throughout the points we do care
-     about (this isn't hard: intermediate points in a chessboard have a solid
-     color)
+     about (this isn't an unreasonable requirement: areas between chessboard
+     corners have a solid color)
 
 2. Run a geometric analysis to find a grid in this set of "interesting" points.
    This will throw out the outliers and it will order the output
 
-If we return /any/ data, that means we found the full grid. The geometric search
+If we return /any/ data, that means we found a full grid. The geometric search
 is fairly anal, so if we found a full grid, it's extremely likely that it is
 "right".
 
@@ -62,8 +63,7 @@ http://www-sigproc.eng.cam.ac.uk/Main/SB476Chess
 This produces an image of detector response. /This/ library then aggregates
 these responses by looking at local neighborhoods of high responses, and
 computing the mean of the position of the points in each candidate neighborhood,
-weighted by the detector response. There're a few outlier-detection things too,
-and the whole thing works very well so far.
+weighted by the detector response.
 
 As noted earlier, I look for a hard-coded 10x10 grid. Here that means 10x10
 /internal corners/, meaning an 11x11 chessboard. It probably doesn't matter, but
@@ -139,7 +139,8 @@ The arguments should be clear. The only one that needs an explanation is
   that produces results
 
 ** Applications
-There're several included applications that exercise the library:
+There're several included applications that exercise the library.
+=mrgingham-...= are distributed, and their manpages appear below.
 
 - =mrgingham-from-image= takes in images as globs (with some optional
   manipulation given on the cmdline), finds the grids, and returns them on
