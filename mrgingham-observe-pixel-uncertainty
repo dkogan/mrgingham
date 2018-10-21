@@ -190,5 +190,7 @@ if args.show_radii:
     plot_radii.plot( nps.cat(rad_x,rad_y),
                      _legend=np.array(('x-radius', 'y-radius')) )
 
+# don't do plot(wait=1) because I can have two plots. I can make that work
+# nicely, but I don't want to bother, and do this instead
 import time
-time.sleep(10000)
+time.sleep(10000000)
