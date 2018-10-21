@@ -8,6 +8,7 @@ test-find-grid-from-points
 test-dump-chessboard-corners
 test-dump-blobs
 mrgingham-observe-pixel-uncertainty.pod
+mrgingham-from-image
 
 core
 
