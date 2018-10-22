@@ -338,11 +338,11 @@ DESCRIPTION
 
 OPTIONS
   POSITIONAL ARGUMENTS
-      input                 Either - A glob that matches images observing a
+      input                 Either 1: A glob that matches images observing a
                             stationary calibration target. This must be a GLOB. So
                             in the shell pass in '*.png' and NOT *.png. These are
                             processed by 'mrgingham' and the arguments passed in
-                            with --mrgingham - A vnlog representing corner
+                            with --mrgingham. Or 2: a vnlog representing corner
                             detections from these images. This is assumed to be a
                             file with a filename ending in .vnl, formatted like
                             'mrgingham' output: 3 columns: filename,x,y
