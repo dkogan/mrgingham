@@ -338,18 +338,27 @@ DESCRIPTION
 
 OPTIONS
   POSITIONAL ARGUMENTS
-      input                 Either - A glob that matches images observing a stationary calibration target. This must be a GLOB. So in the shell pass in
-                            '*.png' and NOT *.png. These are processed by 'mrgingham' and the arguments passed in with --mrgingham - A vnlog representing
-                            corner detections from these images. This is assumed to be a file with a filename ending in .vnl, formatted like 'mrgingham'
-                            output: 3 columns: filename,x,y
+      input                 Either - A glob that matches images observing a
+                            stationary calibration target. This must be a GLOB. So
+                            in the shell pass in '*.png' and NOT *.png. These are
+                            processed by 'mrgingham' and the arguments passed in
+                            with --mrgingham - A vnlog representing corner
+                            detections from these images. This is assumed to be a
+                            file with a filename ending in .vnl, formatted like
+                            'mrgingham' output: 3 columns: filename,x,y
 
   OPTIONAL ARGUMENTS
       -h, --help            show this help message and exit
-      --show-geometry       Visualize the 1-stdev ellipses of the distribution. The plot shows the chessboard corners, and the ellipses for each one.
-      --show-radii          Visualize the distribution of the 1-stdev radii. The radii for each chessboard corner are plotted together, so their consistency
-                            can be evaluated
+      --show-geometry       Visualize the 1-stdev ellipses of the distribution.
+                            The plot shows the chessboard corners, and the
+                            ellipses for each one.
+      --show-radii          Visualize the distribution of the 1-stdev radii. The
+                            radii for each chessboard corner are plotted together,
+                            so their consistency can be evaluated
       --mrgingham MRGINGHAM
-                            If we're processing images, these are the arguments given to mrgingham. If we are reading a pre-computed file, this does nothing
+                            If we're processing images, these are the arguments
+                            given to mrgingham. If we are reading a pre-computed
+                            file, this does nothing
 
 
 #+END_EXAMPLE
