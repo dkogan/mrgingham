@@ -15,6 +15,8 @@ if( ! (-r $path && -x $path && -f $path) )
     die "Commandline argument must be an executable file\n$usagemessage";
 }
 
+# for proper --help formatting
+$ENV{COLUMNS}=80;
 # prepend ./ if no path given. I'm going to run this thing, so we need that
 $path = "./$path" unless $path =~ m{^/};
 my $helpstring = `$path --help`;
