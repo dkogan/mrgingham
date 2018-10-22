@@ -63,7 +63,7 @@ all: README.org
 mrgingham-observe-pixel-uncertainty.pod: %.pod: %
 	./make-pod.pl $< > $@
 	cat footer.pod >> $@
-EXTRA_CLEAN += *.1 mrgingham-observe-pixel-uncertainty.pod
+EXTRA_CLEAN += *.1 mrgingham-observe-pixel-uncertainty.pod README.org
 
 
 
