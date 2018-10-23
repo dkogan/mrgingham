@@ -1,6 +1,15 @@
+mrgingham (1.6) unstable; urgency=medium
+
+  * Added manpages, including in README.org
+  * Renamed main top-level tool: mrgingam-from-image -> mrgingham
+  * mrgingham-from-points is now an internal tool
+  * Fixed accuracy issues for points near the image edge
+
+ -- Dima Kogan <dima@secretsauce.net>  Mon, 22 Oct 2018 17:09:51 -0700
+
 mrgingham (1.5) unstable; urgency=medium
 
-  * Lots of updates. 
+  * Lots of updates.
 
  -- Dima Kogan <dima@secretsauce.net>  Mon, 24 Sep 2018 15:36:24 -0700
 
