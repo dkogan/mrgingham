@@ -5,14 +5,12 @@ namespace mrgingham
     struct Point
     {
         int x,y;
-        Point(int _x, int _y) : x(_x), y(_y) {}
-        Point() {}
+        Point(int _x=0, int _y=0) : x(_x), y(_y) {}
     };
 
     struct PointDouble
     {
         double x,y;
-        PointDouble(double _x, double _y) : x(_x), y(_y) {}
-        PointDouble() {}
+        PointDouble(double _x=0, double _y=0) : x(_x), y(_y) {}
     };
 };
