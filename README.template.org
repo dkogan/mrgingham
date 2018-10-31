@@ -159,8 +159,8 @@ There're several included applications that exercise the library.
 - =test-dump-chessboard-corners= similarly is a lower-level tool that just finds the blob
   center features and returns them on stdout. No geometric search is done.
 
-The =mrgingham_...= tools are distributed in the package, while the other two
-are internal.
+The =mrgingham...= tools are distributed in the package, while the others are
+internal.
 
 ** Tests
 There's a test suite in =test/test.sh=. It checks all images in =test/data/*=,
