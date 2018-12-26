@@ -1,3 +1,9 @@
+mrgingham (1.6.1) unstable; urgency=medium
+
+  * Default downsampling pulled back to level-2
+
+ -- Dima Kogan <dima@secretsauce.net>  Thu, 08 Nov 2018 11:20:33 -0800
+
 mrgingham (1.6) unstable; urgency=medium
 
   * Added manpages, including in README.org
