@@ -24,7 +24,8 @@ bool find_chessboard_corners_from_image_array( // out
                                                // level==2 means each dimension
                                                // is cut down by a factor of 4
                                                int image_pyramid_level,
-                                               bool debug = false);
+                                               bool debug = false,
+                                               const char* debug_image_filename = NULL);
 
 bool find_chessboard_corners_from_image_file( // out
 
@@ -63,4 +64,5 @@ int refine_chessboard_corners_from_image_array( // out/int
                                                 const cv::Mat& image_input,
 
                                                 int image_pyramid_level,
-                                                bool debug );
+                                                bool debug = false,
+                                                const char* debug_image_filename = NULL);

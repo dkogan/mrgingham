@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
     }
 
     std::vector<PointInt> points;
-    if(!find_chessboard_corners_from_image_array (&points, image, image_pyramid_level, true))
+    if(!find_chessboard_corners_from_image_array (&points, image, image_pyramid_level, true, filename))
     {
         fprintf(stderr, "Error computing the corners!\n");
         return 1;

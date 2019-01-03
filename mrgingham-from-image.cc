@@ -104,7 +104,7 @@ static void* worker( void* _ijob )
         if(ctx.doblobs)
             result = find_circle_grid_from_image_array(points_out, image, ctx.debug);
         else
-            result = find_chessboard_from_image_array (points_out, image, ctx.image_pyramid_level, ctx.do_refine, ctx.debug);
+            result = find_chessboard_from_image_array (points_out, image, ctx.image_pyramid_level, ctx.do_refine, ctx.debug, filename);
 
         flockfile(stdout);
         {

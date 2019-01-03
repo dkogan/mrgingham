@@ -31,10 +31,11 @@ namespace mrgingham
                                                    const cv::Mat& image,
                                                    int image_pyramid_level,
                                                    bool do_refine,
-                                                   bool debug)
+                                                   bool debug,
+                                                   const char* debug_image_filename)
     {
         std::vector<PointInt> points;
-        find_chessboard_corners_from_image_array(&points, image, image_pyramid_level, debug);
+        find_chessboard_corners_from_image_array(&points, image, image_pyramid_level, debug, debug_image_filename);
         if(!find_grid_from_points(points_out, points, debug))
             return false;
 
@@ -76,7 +77,7 @@ namespace mrgingham
                 refine_chessboard_corners_from_image_array( &points_out,
                                                             refinable,
                                                             image, image_pyramid_level,
-                                                            debug);
+                                                            debug, debug_image_filename);
             if(debug)
                 fprintf(stderr, "Refining to level %d... Nrefined=%d\n", image_pyramid_level, Nrefined);
             if(Nrefined <= 0)
@@ -90,7 +91,8 @@ namespace mrgingham
                                            const cv::Mat& image,
                                            int image_pyramid_level,
                                            bool do_refine,
-                                           bool debug)
+                                           bool debug,
+                                           const char* debug_image_filename)
 
     {
         if( image_pyramid_level >= 0)
@@ -98,7 +100,7 @@ namespace mrgingham
                                                       image,
                                                       image_pyramid_level,
                                                       do_refine,
-                                                      debug);
+                                                      debug, debug_image_filename);
 
         for( image_pyramid_level=2; image_pyramid_level>=0; image_pyramid_level--)
         {
@@ -107,7 +109,7 @@ namespace mrgingham
                                                    image,
                                                    image_pyramid_level,
                                                    do_refine,
-                                                   debug);
+                                                   debug, debug_image_filename);
             if(result)
                 return true;
         }
@@ -130,6 +132,6 @@ namespace mrgingham
         }
 
         std::vector<PointInt> points;
-        return find_chessboard_from_image_array(points_out, image, image_pyramid_level, do_refine, debug);
+        return find_chessboard_from_image_array(points_out, image, image_pyramid_level, do_refine, debug, filename);
     }
 };

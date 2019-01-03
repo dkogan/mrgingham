@@ -1,6 +1,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <assert.h>
+#include <sys/stat.h>
 
 #include "point.hh"
 #include "mrgingham-internal.h"
@@ -303,26 +304,30 @@ static void process_connected_components(int w, int h, int16_t* d,
                                          const uint8_t* image,
                                          std::vector<PointInt>* points_scaled_out,
                                          refinement_context_t* refinement_context,
-                                         bool debug,
+                                         bool debug, const char* debug_image_filename,
                                          int image_pyramid_level,
                                          int margin)
 {
     FILE* debugfp = NULL;
+    const char* debug_filename = NULL;
     if(debug)
     {
         if(refinement_context == NULL)
-        {
-            debugfp = fopen(DUMP_FILENAME_CORNERS, "w");
-            fprintf(stderr, "Writing corner dump to " DUMP_FILENAME_CORNERS "\n");
-        }
+            debug_filename = DUMP_FILENAME_CORNERS;
         else
         {
             char filename[256];
             sprintf(filename, DUMP_FILENAME_CORNERS_BASE "-refinement-level%d.vnl", image_pyramid_level);
-            debugfp = fopen(filename, "w");
-            fprintf(stderr, "Writing corner dump to %s\n", filename);
+            debug_filename = filename;
         }
+        fprintf(stderr, "Writing self-plotting corner dump to %s\n", debug_filename);
+
+        debugfp = fopen(debug_filename, "w");
         assert(debugfp);
+        if(debug_image_filename != NULL)
+            fprintf(debugfp, "#!/usr/bin/feedgnuplot --dom --with 'points pt 7 ps 2' --square --image %s\n", debug_image_filename);
+        else
+            fprintf(debugfp, "#!/usr/bin/feedgnuplot --dom --square --set 'yr [:] rev'\n");
         fprintf(debugfp, "# x y\n");
     }
 
@@ -401,7 +406,13 @@ static void process_connected_components(int w, int h, int16_t* d,
     xylist_free(&l);
 
     if(debug)
+    {
         fclose(debugfp);
+        chmod(debug_filename,
+              S_IRUSR | S_IRGRP | S_IROTH |
+              S_IWUSR | S_IWGRP |
+              S_IXUSR | S_IXGRP | S_IXOTH);
+    }
 }
 
 // returns a scaled image, or NULL on failure
@@ -484,7 +495,8 @@ int _find_or_refine_chessboard_corners_from_image_array ( // out
                                                           const cv::Mat& image_input,
 
                                                           int image_pyramid_level,
-                                                          bool debug)
+                                                          bool debug,
+                                                          const char* debug_image_filename)
 {
     cv::Mat _image;
     const cv::Mat* image = apply_image_pyramid_scaling(_image,
@@ -533,7 +545,7 @@ int _find_or_refine_chessboard_corners_from_image_array ( // out
                                  (uint8_t*)image->data,
                                  points_scaled_out,
                                  refinement_context,
-                                 debug,
+                                 debug, debug_image_filename,
                                  image_pyramid_level,
 
                                  // The ChESS response is invalid at a 7-pixel
@@ -559,10 +571,12 @@ bool find_chessboard_corners_from_image_array( // out
 
                                                // set to 0 to just use the image
                                                int image_pyramid_level,
-                                               bool debug )
+                                               bool debug,
+                                               const char* debug_image_filename)
 {
     return _find_or_refine_chessboard_corners_from_image_array(points_scaled_out, NULL,
-                                                               image_input, image_pyramid_level, debug) > 0;
+                                                               image_input, image_pyramid_level,
+                                                               debug, debug_image_filename) > 0;
 }
 
 // Returns how many points were refined
@@ -585,14 +599,16 @@ int refine_chessboard_corners_from_image_array( // out/int
                                                 const cv::Mat& image_input,
 
                                                 int image_pyramid_level,
-                                                bool debug )
+                                                bool debug,
+                                                const char* debug_image_filename)
 {
     refinement_context_t ctx = refinement_context_init(points,
                                                        point_refinable);
 
     return
         _find_or_refine_chessboard_corners_from_image_array( NULL, &ctx,
-                                                             image_input, image_pyramid_level, debug);
+                                                             image_input, image_pyramid_level,
+                                                             debug, debug_image_filename);
 }
 
 
@@ -619,5 +635,5 @@ bool find_chessboard_corners_from_image_file( // out
         return false;
     }
 
-    return find_chessboard_corners_from_image_array( points, image, image_pyramid_level, debug );
+    return find_chessboard_corners_from_image_array( points, image, image_pyramid_level, debug, filename );
 }
