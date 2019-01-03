@@ -12,7 +12,7 @@ namespace mrgingham
                                             const cv::Mat& image,
                                             bool debug)
     {
-        std::vector<Point> points;
+        std::vector<PointInt> points;
         find_blobs_from_image_array(&points, image);
         return find_grid_from_points(points_out, points, debug);
     }
@@ -22,7 +22,7 @@ namespace mrgingham
                                            const char* filename,
                                            bool debug)
     {
-        std::vector<Point> points;
+        std::vector<PointInt> points;
         find_blobs_from_image_file(&points, filename);
         return find_grid_from_points(points_out, points, debug);
     }
@@ -35,7 +35,7 @@ namespace mrgingham
                                                    bool do_refine,
                                                    bool debug)
     {
-        std::vector<Point> points;
+        std::vector<PointInt> points;
         find_chessboard_corners_from_image_array(&points, image, image_pyramid_level, debug);
         return find_grid_from_points(points_out, points, debug);
 
@@ -85,7 +85,7 @@ namespace mrgingham
             return false;
         }
 
-        std::vector<Point> points;
+        std::vector<PointInt> points;
         return find_chessboard_from_image_array(points_out, image, image_pyramid_level, do_refine, debug);
     }
 };

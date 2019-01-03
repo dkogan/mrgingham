@@ -232,7 +232,7 @@ static void follow_connected_component(struct xylist_t* l,
                                        int16_t w, int16_t h, int16_t* d,
 
                                        const uint8_t* image,
-                                       std::vector<Point>* points,
+                                       std::vector<PointInt>* points,
                                        FILE* debugfp,
                                        uint16_t coord_scale,
                                        int margin)
@@ -276,7 +276,7 @@ static void follow_connected_component(struct xylist_t* l,
 
         if( debugfp )
             fprintf(debugfp, "%f %f\n", x, y);
-        points->push_back( Point((int)(0.5 + x * FIND_GRID_SCALE),
+        points->push_back( PointInt((int)(0.5 + x * FIND_GRID_SCALE),
                                  (int)(0.5 + y * FIND_GRID_SCALE)));
     }
 }
@@ -284,7 +284,7 @@ static void follow_connected_component(struct xylist_t* l,
 static void process_connected_components(int w, int h, int16_t* d,
 
                                          const uint8_t* image,
-                                         std::vector<Point>* points,
+                                         std::vector<PointInt>* points,
                                          FILE* debugfp,
                                          uint16_t coord_scale,
                                          int margin)
@@ -312,7 +312,7 @@ bool find_chessboard_corners_from_image_array( // out
                                                // integers scaled up by
                                                // FIND_GRID_SCALE to get more
                                                // resolution
-                                               std::vector<mrgingham::Point>* points,
+                                               std::vector<mrgingham::PointInt>* points,
 
                                                // in
                                                const cv::Mat& image_input,
@@ -439,7 +439,7 @@ bool find_chessboard_corners_from_image_file( // out
                                               // integers scaled up by
                                               // FIND_GRID_SCALE to get more
                                               // resolution
-                                              std::vector<mrgingham::Point>* points,
+                                              std::vector<mrgingham::PointInt>* points,
 
                                               // in
                                               const char* filename,

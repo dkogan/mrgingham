@@ -12,7 +12,7 @@ bool find_chessboard_corners_from_image_array( // out
                                                // integers scaled up by
                                                // FIND_GRID_SCALE to get more
                                                // resolution
-                                               std::vector<mrgingham::Point>* points,
+                                               std::vector<mrgingham::PointInt>* points,
 
                                                // in
                                                const cv::Mat& image,
@@ -31,7 +31,7 @@ bool find_chessboard_corners_from_image_file( // out
                                               // integers scaled up by
                                               // FIND_GRID_SCALE to get more
                                               // resolution
-                                              std::vector<mrgingham::Point>* points,
+                                              std::vector<mrgingham::PointInt>* points,
 
                                               // in
                                               const char* filename,

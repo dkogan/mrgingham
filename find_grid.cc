@@ -14,15 +14,15 @@ using namespace mrgingham;
 using boost::polygon::voronoi_diagram;
 namespace boost { namespace polygon {
         template <>
-        struct geometry_concept<Point> {
+        struct geometry_concept<PointInt> {
             typedef point_concept type;
         };
 
         template <>
-        struct point_traits<Point> {
+        struct point_traits<PointInt> {
             typedef int coordinate_type;
 
-            static inline coordinate_type get(const Point& point, orientation_2d orient) {
+            static inline coordinate_type get(const PointInt& point, orientation_2d orient) {
                 return (orient == HORIZONTAL) ? point.x : point.y;
             }
         };
@@ -39,7 +39,7 @@ typedef voronoi_diagram<double> VORONOI;
 
 
 #define FOR_ALL_ADJACENT_CELLS(c) do {                                  \
-    const Point*        pt = &points[c->source_index()];                \
+    const PointInt*        pt = &points[c->source_index()];                \
     const VORONOI::edge_type* const e0 = c->incident_edge();            \
     bool first = true;                                                  \
     for(const VORONOI::edge_type* e = e0;                               \
@@ -48,9 +48,9 @@ typedef voronoi_diagram<double> VORONOI;
     {                                                                   \
         const VORONOI::cell_type* c_adjacent = e->twin()->cell();       \
                                                                         \
-        const Point* pt_adjacent = &points[c_adjacent->source_index()]; \
+        const PointInt* pt_adjacent = &points[c_adjacent->source_index()]; \
                                                                         \
-        Point delta( pt_adjacent->x - pt->x,                            \
+        PointInt delta( pt_adjacent->x - pt->x,                            \
                      pt_adjacent->y - pt->y );
 
 #define FOR_ALL_ADJACENT_CELLS_END() }} while(0)
@@ -62,7 +62,7 @@ typedef voronoi_diagram<double> VORONOI;
 
 struct HypothesisStatistics
 {
-    Point  delta_last;
+    PointInt  delta_last;
 
     double length_ratio_sum;
     int    length_ratio_N;
@@ -72,7 +72,7 @@ static void fill_initial_hypothesis_statistics(// out
                                                HypothesisStatistics* stats,
 
                                                // in
-                                               const Point* delta0)
+                                               const PointInt* delta0)
 {
     stats->delta_last       = *delta0;
     stats->length_ratio_sum = 0.0;
@@ -110,7 +110,7 @@ get_adjacent_cell_along_sequence( // out,in.
 
                               // in
                               const VORONOI::cell_type* c,
-                              const std::vector<Point>& points)
+                              const std::vector<PointInt>& points)
 {
     // We're given a voronoi cell, and some properties that a potential next
     // cell in the sequence should match. I look through all the voronoi
@@ -135,7 +135,7 @@ get_adjacent_cell_along_sequence( // out,in.
     // geometrically due to perspective effects, or it the distances will all be
     // roughly constant, which is still geometric, technically
 
-    const Point& delta_last = stats->delta_last;
+    const PointInt& delta_last = stats->delta_last;
 
     double delta_last_length = hypot((double)delta_last.x, (double)delta_last.y);
 
@@ -190,11 +190,11 @@ static bool search_along_sequence( // out
                                PointDouble* delta_mean,
 
                                // in
-                               const Point* delta,
+                               const PointInt* delta,
                                const VORONOI::cell_type* c,
                                int N_remaining,
 
-                               const std::vector<Point>& points)
+                               const std::vector<PointInt>& points)
 {
     delta_mean->x = (double)delta->x;
     delta_mean->y = (double)delta->y;
@@ -217,19 +217,19 @@ static bool search_along_sequence( // out
 
 static void write_cell_center( std::vector<PointDouble>& points_out,
                                const VORONOI::cell_type* c,
-                               const std::vector<Point>& points )
+                               const std::vector<PointInt>& points )
 {
-    const Point* pt = &points[c->source_index()];
+    const PointInt* pt = &points[c->source_index()];
     points_out.push_back( PointDouble( (double)pt->x / (double)FIND_GRID_SCALE,
                                        (double)pt->y / (double)FIND_GRID_SCALE) );
 }
 
 static void write_along_sequence( std::vector<PointDouble>& points_out,
-                                  const Point* delta,
+                                  const PointInt* delta,
                               const VORONOI::cell_type* c,
                               int N_remaining,
 
-                              const std::vector<Point>& points)
+                              const std::vector<PointInt>& points)
 {
     FOR_MATCHING_ADJACENT_CELLS()
     {
@@ -240,7 +240,7 @@ static void write_along_sequence( std::vector<PointDouble>& points_out,
 // dumps the voronoi diagram to a self-plotting vnlog
 #define DUMP_FILENAME_VORONOI "/tmp/mrgingham-2-voronoi.vnl"
 static void dump_voronoi( const VORONOI* voronoi,
-                          const std::vector<Point>& points )
+                          const std::vector<PointInt>& points )
 {
     FILE* fp = fopen(DUMP_FILENAME_VORONOI, "w");
     assert(fp);
@@ -254,7 +254,7 @@ static void dump_voronoi( const VORONOI* voronoi,
     {
         const VORONOI::cell_type* c = &(*it);
 
-        const Point*        pt0 = &points[c->source_index()];
+        const PointInt*        pt0 = &points[c->source_index()];
         const VORONOI::edge_type* const e0 = c->incident_edge();
         bool first = true;
         for(const VORONOI::edge_type* e = e0;
@@ -262,7 +262,7 @@ static void dump_voronoi( const VORONOI* voronoi,
             e = e->next(), first=false)
         {
             const VORONOI::cell_type* c_adjacent = e->twin()->cell();
-            const Point* pt1 = &points[c_adjacent->source_index()];
+            const PointInt* pt1 = &points[c_adjacent->source_index()];
             fprintf(fp, "%f %d %f\n", pt0->x/(double)FIND_GRID_SCALE, i_edge, pt0->y/(double)FIND_GRID_SCALE);
             fprintf(fp, "%f %d %f\n", pt1->x/(double)FIND_GRID_SCALE, i_edge, pt1->y/(double)FIND_GRID_SCALE);
             i_edge++;
@@ -281,10 +281,10 @@ static void dump_interval( FILE* fp,
                            const int i_pt,
                            const VORONOI::cell_type* c0,
                            const VORONOI::cell_type* c1,
-                           const std::vector<Point>& points )
+                           const std::vector<PointInt>& points )
 {
-    const Point* pt0 = &points[c0->source_index()];
-    const Point* pt1 = &points[c1->source_index()];
+    const PointInt* pt0 = &points[c0->source_index()];
+    const PointInt* pt1 = &points[c1->source_index()];
 
     double dx = (double)(pt1->x - pt0->x) / (double)FIND_GRID_SCALE;
     double dy = (double)(pt1->y - pt0->y) / (double)FIND_GRID_SCALE;
@@ -300,11 +300,11 @@ static void dump_interval( FILE* fp,
 
 static void dump_intervals_along_sequence( FILE* fp,
                                            int i_candidate,
-                                           const Point* delta,
+                                           const PointInt* delta,
                                            const VORONOI::cell_type* c,
                                            int N_remaining,
 
-                                           const std::vector<Point>& points)
+                                           const std::vector<PointInt>& points)
 {
     FOR_MATCHING_ADJACENT_CELLS()
     {
@@ -365,7 +365,7 @@ static void get_sequence_candidates( // out
 
                                      // in
                                      const VORONOI* voronoi,
-                                     const std::vector<Point>& points)
+                                     const std::vector<PointInt>& points)
 {
     for (auto it = voronoi->cells().begin(); it != voronoi->cells().end(); it++ )
     {
@@ -580,11 +580,11 @@ static void get_candidate_point( unsigned int* cs_point,
 }
 static void get_candidate_points_along_sequence( unsigned int* cs_points,
 
-                                                 const Point* delta,
+                                                 const PointInt* delta,
                                                  const VORONOI::cell_type* c,
                                                  int N_remaining,
 
-                                                 const std::vector<Point>& points)
+                                                 const std::vector<PointInt>& points)
 {
     FOR_MATCHING_ADJACENT_CELLS()
     {
@@ -594,26 +594,26 @@ static void get_candidate_points_along_sequence( unsigned int* cs_points,
 }
 static void get_candidate_points( unsigned int* cs_points,
                                   const CandidateSequence* cs,
-                                  const std::vector<Point>& points )
+                                  const std::vector<PointInt>& points )
 {
     get_candidate_point( &cs_points[0], cs->c0 );
     get_candidate_point( &cs_points[1], cs->c1 );
 
-    const Point* pt0 = &points[cs->c0->source_index()];
-    const Point* pt1 = &points[cs->c1->source_index()];
+    const PointInt* pt0 = &points[cs->c0->source_index()];
+    const PointInt* pt1 = &points[cs->c1->source_index()];
 
-    Point delta({ pt1->x - pt0->x,
+    PointInt delta({ pt1->x - pt0->x,
                   pt1->y - pt0->y});
     get_candidate_points_along_sequence(&cs_points[2], &delta, cs->c1, Nwant-2, points);
 }
 
 static bool compare_reverse_along_sequence( const unsigned int* cs_points_other,
 
-                                            const Point* delta,
+                                            const PointInt* delta,
                                             const VORONOI::cell_type* c,
                                             int N_remaining,
 
-                                            const std::vector<Point>& points)
+                                            const std::vector<PointInt>& points)
 {
     FOR_MATCHING_ADJACENT_CELLS()
     {
@@ -626,15 +626,15 @@ static bool compare_reverse_along_sequence( const unsigned int* cs_points_other,
 }
 static bool is_reverse_sequence( const unsigned int* cs_points_other,
                                  const CandidateSequence* cs,
-                                 const std::vector<Point>& points )
+                                 const std::vector<PointInt>& points )
 {
     if( cs->c0->source_index() != cs_points_other[Nwant-1] ) return false;
     if( cs->c1->source_index() != cs_points_other[Nwant-2] ) return false;
 
-    const Point* pt0 = &points[cs->c0->source_index()];
-    const Point* pt1 = &points[cs->c1->source_index()];
+    const PointInt* pt0 = &points[cs->c0->source_index()];
+    const PointInt* pt1 = &points[cs->c1->source_index()];
 
-    Point delta({ pt1->x - pt0->x,
+    PointInt delta({ pt1->x - pt0->x,
                   pt1->y - pt0->y});
     return compare_reverse_along_sequence(&cs_points_other[Nwant-3], &delta, cs->c1, Nwant-2, points);
 }
@@ -647,7 +647,7 @@ static bool matches_direction(CandidateSequence* cs,
 }
 
 static void filter_bidirectional( v_CS* sequence_candidates,
-                                  const std::vector<Point>& points,
+                                  const std::vector<PointInt>& points,
                                   ClassificationType orientation )
 {
     // I loop through the candidates list, and try to find a matching other
@@ -721,7 +721,7 @@ static bool validate_clasification(const v_CS* sequence_candidates)
 #define DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE_AFTER  "/tmp/mrgingham-4-candidates.vnl"
 #define DUMP_FILENAME_SEQUENCE_CANDIDATES_DENSE_AFTER   "/tmp/mrgingham-4-candidates-detailed.vnl"
 static void dump_candidates(const v_CS* sequence_candidates,
-                            const std::vector<Point>& points,
+                            const std::vector<PointInt>& points,
                             bool post_filter)
 {
     const char* dump_filename_sequence_candidates_sparse = post_filter ?
@@ -741,7 +741,7 @@ static void dump_candidates(const v_CS* sequence_candidates,
     for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
     {
         const CandidateSequence* cs = &(*it);
-        const Point*             pt = &points[cs->c0->source_index()];
+        const PointInt*             pt = &points[cs->c0->source_index()];
 
         fprintf(fp,
                 "%f %s %f %f %f\n",
@@ -772,10 +772,10 @@ static void dump_candidates(const v_CS* sequence_candidates,
 
         dump_interval(fp, i, 0, cs->c0, cs->c1, points);
 
-        const Point* pt0 = &points[cs->c0->source_index()];
-        const Point* pt1 = &points[cs->c1->source_index()];
+        const PointInt* pt0 = &points[cs->c0->source_index()];
+        const PointInt* pt1 = &points[cs->c1->source_index()];
 
-        Point delta({ pt1->x - pt0->x,
+        PointInt delta({ pt1->x - pt0->x,
                       pt1->y - pt0->y});
         dump_intervals_along_sequence( fp, i, &delta, cs->c1, Nwant-2, points);
     }
@@ -786,7 +786,7 @@ static void dump_candidates(const v_CS* sequence_candidates,
 
 static void write_output( std::vector<PointDouble>& points_out,
                           const v_CS* sequence_candidates,
-                          const std::vector<Point>& points )
+                          const std::vector<PointInt>& points )
 {
     for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
     {
@@ -795,10 +795,10 @@ static void write_output( std::vector<PointDouble>& points_out,
             write_cell_center(points_out, it->c0, points);
             write_cell_center(points_out, it->c1, points);
 
-            const Point* pt0 = &points[it->c0->source_index()];
-            const Point* pt1 = &points[it->c1->source_index()];
+            const PointInt* pt0 = &points[it->c0->source_index()];
+            const PointInt* pt1 = &points[it->c1->source_index()];
 
-            Point delta({ pt1->x - pt0->x,
+            PointInt delta({ pt1->x - pt0->x,
                           pt1->y - pt0->y});
             write_along_sequence( points_out, &delta, it->c1, Nwant-2, points);
         }
@@ -806,7 +806,7 @@ static void write_output( std::vector<PointDouble>& points_out,
 }
 
 static void sort_candidates(v_CS* sequence_candidates,
-                            const std::vector<Point>& points )
+                            const std::vector<PointInt>& points )
 {
     // I sort my vertical sequences in order of increasing x
     //
@@ -832,8 +832,8 @@ static void sort_candidates(v_CS* sequence_candidates,
             return _points[a.c0->source_index()].x < _points[b.c0->source_index()].x;
         }
 
-        const std::vector<Point>& _points;
-        S(const std::vector<Point>& __points) : _points(__points) {}
+        const std::vector<PointInt>& _points;
+        S(const std::vector<PointInt>& __points) : _points(__points) {}
     } sequence_comparator(points);
 
     std::sort( sequence_candidates->begin(), sequence_candidates->end(),
@@ -854,7 +854,7 @@ static CandidateSequence* get_first(v_CS* sequence_candidates,
 
 static bool filter_bounds(v_CS* sequence_candidates,
                           ClassificationType orientation,
-                          const std::vector<Point>& points)
+                          const std::vector<PointInt>& points)
 {
     // I look at the first horizontal sequence and make sure that it consists of
     // the first points of all the vertical sequences, in order. And vice versa
@@ -896,7 +896,7 @@ bool mrgingham::find_grid_from_points( // out
                                       std::vector<PointDouble>& points_out,
 
                                       // in
-                                      const std::vector<Point>& points,
+                                      const std::vector<PointInt>& points,
                                       bool debug)
 {
     VORONOI voronoi;

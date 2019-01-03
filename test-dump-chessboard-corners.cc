@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
                            1 + 2*blur_radius));
     }
 
-    std::vector<Point> points;
+    std::vector<PointInt> points;
     if(!find_chessboard_corners_from_image_array (&points, image, image_pyramid_level, true))
     {
         fprintf(stderr, "Error computing the corners!\n");

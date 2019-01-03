@@ -5,7 +5,7 @@
 
 using namespace mrgingham;
 
-static bool read_points( std::vector<Point>* points, const char* file )
+static bool read_points( std::vector<PointInt>* points, const char* file )
 {
     FILE* fp = fopen(file, "r");
     if( fp == NULL )
@@ -24,7 +24,7 @@ static bool read_points( std::vector<Point>* points, const char* file )
         if(Nread != 2)
             continue;
 
-        Point pt( (int)( x * FIND_GRID_SCALE + 0.5 ),
+        PointInt pt( (int)( x * FIND_GRID_SCALE + 0.5 ),
                   (int)( y * FIND_GRID_SCALE + 0.5 ) );
         points->push_back(pt);
     }
@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
     }
 
 
-    std::vector<Point> points;
+    std::vector<PointInt> points;
     if( !read_points(&points, argv[argc-1]) )
         return 1;
 

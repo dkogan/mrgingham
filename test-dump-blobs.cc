@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    std::vector<Point> points;
+    std::vector<PointInt> points;
     find_blobs_from_image_file(&points, argv[1], true);
     return 0;
 }

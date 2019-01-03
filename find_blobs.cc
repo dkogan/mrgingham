@@ -7,7 +7,7 @@
 using namespace mrgingham;
 
 __attribute__((visibility("default")))
-bool find_blobs_from_image_array( std::vector<Point>* points,
+bool find_blobs_from_image_array( std::vector<PointInt>* points,
                                   const cv::Mat& image,
                                   bool dodump )
 {
@@ -34,7 +34,7 @@ bool find_blobs_from_image_array( std::vector<Point>* points,
         }
         else
         {
-            points->push_back( Point((int)(it->pt.x * FIND_GRID_SCALE + 0.5),
+            points->push_back( PointInt((int)(it->pt.x * FIND_GRID_SCALE + 0.5),
                                      (int)(it->pt.y * FIND_GRID_SCALE + 0.5)));
         }
     }
@@ -43,7 +43,7 @@ bool find_blobs_from_image_array( std::vector<Point>* points,
 }
 
 __attribute__((visibility("default")))
-bool find_blobs_from_image_file( std::vector<Point>* points,
+bool find_blobs_from_image_file( std::vector<PointInt>* points,
                                  const char* filename,
                                  bool dodump )
 {

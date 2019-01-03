@@ -44,6 +44,6 @@ namespace mrgingham
                                           bool debug = false );
 
     bool find_grid_from_points( std::vector<mrgingham::PointDouble>& points_out,
-                                const std::vector<mrgingham::Point>& points,
+                                const std::vector<mrgingham::PointInt>& points,
                                 bool debug = false);
 };
