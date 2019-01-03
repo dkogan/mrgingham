@@ -26,6 +26,7 @@ namespace mrgingham
     bool find_chessboard_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
                                            const cv::Mat& image,
                                            int image_pyramid_level = -1,
+                                           bool do_refine = true,
                                            bool debug = false);
 
     // set image_pyramid_level=0 to just use the image as is.
@@ -39,6 +40,7 @@ namespace mrgingham
     bool find_chessboard_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
                                           const char* filename,
                                           int image_pyramid_level = -1,
+                                          bool do_refine = true,
                                           bool debug = false );
 
     bool find_grid_from_points( std::vector<mrgingham::PointDouble>& points_out,

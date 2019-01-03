@@ -32,6 +32,7 @@ namespace mrgingham
     static bool _find_chessboard_from_image_array( std::vector<PointDouble>& points_out,
                                                    const cv::Mat& image,
                                                    int image_pyramid_level,
+                                                   bool do_refine,
                                                    bool debug)
     {
         std::vector<Point> points;
@@ -44,6 +45,7 @@ namespace mrgingham
     bool find_chessboard_from_image_array( std::vector<PointDouble>& points_out,
                                            const cv::Mat& image,
                                            int image_pyramid_level,
+                                           bool do_refine,
                                            bool debug)
 
     {
@@ -51,6 +53,7 @@ namespace mrgingham
             return _find_chessboard_from_image_array( points_out,
                                                       image,
                                                       image_pyramid_level,
+                                                      do_refine,
                                                       debug);
 
         for( image_pyramid_level=2; image_pyramid_level>=0; image_pyramid_level--)
@@ -59,6 +62,7 @@ namespace mrgingham
                 _find_chessboard_from_image_array( points_out,
                                                    image,
                                                    image_pyramid_level,
+                                                   do_refine,
                                                    debug);
             if(result)
                 return true;
@@ -70,6 +74,7 @@ namespace mrgingham
     bool find_chessboard_from_image_file( std::vector<PointDouble>& points_out,
                                           const char* filename,
                                           int image_pyramid_level,
+                                          bool do_refine,
                                           bool debug)
     {
         cv::Mat image = cv::imread(filename, CV_LOAD_IMAGE_GRAYSCALE);
@@ -81,6 +86,6 @@ namespace mrgingham
         }
 
         std::vector<Point> points;
-        return find_chessboard_from_image_array(points_out, image, image_pyramid_level, debug);
+        return find_chessboard_from_image_array(points_out, image, image_pyramid_level, do_refine, debug);
     }
 };

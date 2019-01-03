@@ -17,6 +17,7 @@ struct mrgingham_thread_context_t
     bool          doclahe;
     int           blur_radius;
     bool          doblobs;
+    bool          do_refine;
     bool          debug;
     int           image_pyramid_level;
 } ctx;
@@ -103,7 +104,7 @@ static void* worker( void* _ijob )
         if(ctx.doblobs)
             result = find_circle_grid_from_image_array(points_out, image, ctx.debug);
         else
-            result = find_chessboard_from_image_array (points_out, image, ctx.image_pyramid_level, ctx.debug);
+            result = find_chessboard_from_image_array (points_out, image, ctx.image_pyramid_level, ctx.do_refine, ctx.debug);
 
         flockfile(stdout);
         {
@@ -144,6 +145,10 @@ int main(int argc, char* argv[])
         "  means 'try several different levels until we find one that works. This is the\n"
         "  default.\n"
         "\n"
+        "  --no-refine  By default, the coordinates of reported corners are re-detected at\n"
+        "  less-downsampled zoom levels to improve their accuracy. If we do not want to do\n"
+        "  that, pass --no-refine\n"
+        "\n"
         "  --jobs N  will parallelize the processing N-ways. -j is a synonym. This is like\n"
         "  GNU make, except you're required to explicitly specify a job count.\n"
         "\n"
@@ -161,6 +166,7 @@ int main(int argc, char* argv[])
         { "blur",              required_argument, NULL, 'b' },
         { "clahe",             no_argument,       NULL, 'c' },
         { "level",             required_argument, NULL, 'l' },
+        { "no-refine",         no_argument,       NULL, 'R' },
         { "jobs",              required_argument, NULL, 'j' },
         { "debug",             no_argument,       NULL, 'd' },
         { "help",              no_argument,       NULL, 'h' },
@@ -171,6 +177,7 @@ int main(int argc, char* argv[])
     bool        have_doblobs        = false;
     bool        doblobs             = false; // to pacify compiler
     bool        doclahe             = false;
+    bool        do_refine           = true;
     bool        debug               = false;
     int         blur_radius         = -1;
     int         image_pyramid_level = -1;
@@ -180,7 +187,7 @@ int main(int argc, char* argv[])
     do
     {
         // "h" means -h does something
-        opt = getopt_long(argc, argv, "hj:", opts, NULL);
+        opt = getopt_long(argc, argv, "hj:b:l:", opts, NULL);
         switch(opt)
         {
         case -1:
@@ -205,6 +212,10 @@ int main(int argc, char* argv[])
 
         case 'c':
             doclahe = true;
+            break;
+
+        case 'R':
+            do_refine = false;
             break;
 
         case 'd':
@@ -309,6 +320,7 @@ int main(int argc, char* argv[])
     ctx.doclahe             = doclahe;
     ctx.blur_radius         = blur_radius;
     ctx.doblobs             = doblobs;
+    ctx.do_refine           = do_refine;
     ctx.debug               = debug;
     ctx.image_pyramid_level = image_pyramid_level;
 
