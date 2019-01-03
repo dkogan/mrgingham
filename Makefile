@@ -10,7 +10,8 @@ DIST_MAN := $(addsuffix .1,$(DIST_BIN))
 # mrgingham.cc: it's a part of the LIBRARY
 mrgingham: mrgingham-from-image
 	cp $< $@
-
+EXTRA_CLEAN += mrgingham
+all: mrgingham
 
 BIN_SOURCES := mrgingham-from-image.cc
 BIN_SOURCES += test-dump-chessboard-corners.cc test-dump-blobs.cc test-find-grid-from-points.cc
