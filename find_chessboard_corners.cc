@@ -303,8 +303,76 @@ static void process_connected_components(int w, int h, int16_t* d,
         }
 }
 
-#define DUMP_FILENAME_CORNERS   "/tmp/mrgingham-1-corners.vnl"
+// returns a scaled image, or NULL on failure
 #define SCALED_IMAGE_FILENAME   "/tmp/mrgingham-scaled.png"
+static const cv::Mat*
+apply_image_pyramid_scaling(// out
+
+                            // This MAY be used for the output image. The
+                            // pointer returned by this function is what the
+                            // caller should use. The caller should provide a
+                            // cv::Mat object that this function can use for its
+                            // purposes. When the caller is done with the scaled
+                            // image, they may free this object
+                            cv::Mat& image_buffer_output,
+
+                            // in
+                            const cv::Mat& image_input,
+
+                            // set to 0 to just use the image
+                            int image_pyramid_level,
+                            bool debug )
+{
+    if( image_pyramid_level < 0 ||
+
+        // 10 is an arbitrary high number
+        image_pyramid_level > 10 )
+    {
+        fprintf(stderr, "%s:%d in %s(): Got an unreasonable image_pyramid_level = %d."
+                " Sorry.\n", __FILE__, __LINE__, __func__, image_pyramid_level);
+        return NULL;
+    }
+
+    const cv::Mat* image;
+
+    if(image_pyramid_level == 0)
+    {
+        image = &image_input;
+        if( debug )
+            fprintf(stderr, "This is level-0 so I'm not rescaling the image, and not writing the scaled version to disk\n");
+    }
+    else
+    {
+        double scale = 1.0 / ((double)(1 << image_pyramid_level));
+        cv::resize( image_input, image_buffer_output, cv::Size(), scale, scale, cv::INTER_LINEAR );
+        image = &image_buffer_output;
+
+        if( debug )
+        {
+            cv::imwrite(SCALED_IMAGE_FILENAME, *image);
+            fprintf(stderr, "Wrote scaled image to " SCALED_IMAGE_FILENAME "\n");
+        }
+    }
+
+
+    if( !image->isContinuous() )
+    {
+        fprintf(stderr, "%s:%d in %s(): I can only handle continuous arrays (stride == width) currently."
+                " Sorry.\n", __FILE__, __LINE__, __func__);
+        return NULL;
+    }
+
+    if( image->type() != CV_8U )
+    {
+        fprintf(stderr, "%s:%d in %s(): I can only handle CV_8U arrays currently."
+                " Sorry.\n", __FILE__, __LINE__, __func__);
+        return NULL;
+    }
+
+    return image;
+}
+
+#define DUMP_FILENAME_CORNERS   "/tmp/mrgingham-1-corners.vnl"
 #define CHESS_RESPONSE_FILENAME "/tmp/chess-response.png"
 __attribute__((visibility("default")))
 bool find_chessboard_corners_from_image_array( // out
@@ -321,53 +389,10 @@ bool find_chessboard_corners_from_image_array( // out
                                                int image_pyramid_level,
                                                bool debug )
 {
-    if( image_pyramid_level < 0 ||
-
-        // 10 is an arbitrary high number
-        image_pyramid_level > 10 )
-    {
-        fprintf(stderr, "%s:%d in %s(): Got an unreasonable image_pyramid_level = %d."
-                " Sorry.\n", __FILE__, __LINE__, __func__, image_pyramid_level);
-        return false;
-    }
-
-    const cv::Mat* image;
     cv::Mat _image;
-
-    if(image_pyramid_level == 0)
-    {
-        image = &image_input;
-        if( debug )
-            fprintf(stderr, "This is level-0 so I'm not rescaling the image, and not writing the scaled version to disk\n");
-    }
-    else
-    {
-
-        double scale = 1.0 / ((double)(1 << image_pyramid_level));
-        cv::resize( image_input, _image, cv::Size(), scale, scale, cv::INTER_LINEAR );
-        image = &_image;
-
-        if( debug )
-        {
-            cv::imwrite(SCALED_IMAGE_FILENAME, *image);
-            fprintf(stderr, "Wrote scaled image to " SCALED_IMAGE_FILENAME "\n");
-        }
-    }
-
-
-    if( !image->isContinuous() )
-    {
-        fprintf(stderr, "%s:%d in %s(): I can only handle continuous arrays (stride == width) currently."
-                " Sorry.\n", __FILE__, __LINE__, __func__);
-        return false;
-    }
-
-    if( image->type() != CV_8U )
-    {
-        fprintf(stderr, "%s:%d in %s(): I can only handle CV_8U arrays currently."
-                " Sorry.\n", __FILE__, __LINE__, __func__);
-        return false;
-    }
+    const cv::Mat* image = apply_image_pyramid_scaling(_image,
+                                                       image_input, image_pyramid_level, debug);
+    if( image == NULL ) return false;
 
     const int w = image->cols;
     const int h = image->rows;
