@@ -12,10 +12,10 @@ bool find_chessboard_corners_from_image_array( // out
                                                // integers scaled up by
                                                // FIND_GRID_SCALE to get more
                                                // resolution
-                                               std::vector<mrgingham::PointInt>* points,
+                                               std::vector<mrgingham::PointInt>* points_scaled_out,
 
                                                // in
-                                               const cv::Mat& image,
+                                               const cv::Mat& image_input,
 
                                                // set to 0 to just use the
                                                // image. Values > 0 cut down the
@@ -44,3 +44,23 @@ bool find_chessboard_corners_from_image_file( // out
                                               // is cut down by a factor of 4
                                               int image_pyramid_level,
                                               bool debug = false);
+
+int refine_chessboard_corners_from_image_array( // out/int
+
+                                                // initial coordinates on input,
+                                                // refined coordinates on output
+                                                std::vector<mrgingham::PointDouble>* points,
+
+                                                // if(!point_refinable[ipoint])
+                                                // then that point shouldn't be
+                                                // refined. If we try and fail
+                                                // to refine a point, we set
+                                                // point_refinable[ipoint] to
+                                                // false
+                                                bool* point_refinable,
+
+                                                // in
+                                                const cv::Mat& image_input,
+
+                                                int image_pyramid_level,
+                                                bool debug );

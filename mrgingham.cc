@@ -27,8 +27,6 @@ namespace mrgingham
         return find_grid_from_points(points_out, points, debug);
     }
 
-    // same as below, but with a valid image_pyramid_level. The main function
-    // will try several of these if image_pyramid_level<0
     static bool _find_chessboard_from_image_array( std::vector<PointDouble>& points_out,
                                                    const cv::Mat& image,
                                                    int image_pyramid_level,
@@ -37,8 +35,54 @@ namespace mrgingham
     {
         std::vector<PointInt> points;
         find_chessboard_corners_from_image_array(&points, image, image_pyramid_level, debug);
-        return find_grid_from_points(points_out, points, debug);
+        if(!find_grid_from_points(points_out, points, debug))
+            return false;
 
+        // we found a grid! If we're not trying to refine the locations, or if
+        // we can't refine them, we're done
+        if(!do_refine || image_pyramid_level == 0)
+            return true;
+
+        // Alright, I need to refine each intersection. Big-picture logic:
+        //
+        //   for(points)
+        //   {
+        //       zoom = next_from_current;
+        //       while(update corner coord using zoom)
+        //           zoom = next_from_current;
+        //   }
+        //
+        // It would be more efficient to loop through the zoom levels once, so I
+        // move that to the outer loop
+        //
+        //   for(zoom)
+        //   {
+        //       for(points)
+        //       {
+        //           if(!this point is refinable) continue;
+        //           refine();
+        //       }
+        //       if( no points remain refinable )
+        //           break;
+        //   }
+
+        int N = points_out.size();
+        bool refinable[N];
+        for(int i=0; i<N; i++) refinable[i] = true;
+
+        while(image_pyramid_level--)
+        {
+            int Nrefined =
+                refine_chessboard_corners_from_image_array( &points_out,
+                                                            refinable,
+                                                            image, image_pyramid_level,
+                                                            debug);
+            if(debug)
+                fprintf(stderr, "Refining to level %d... Nrefined=%d\n", image_pyramid_level, Nrefined);
+            if(Nrefined <= 0)
+                break;
+        }
+        return true;
     }
 
     __attribute__((visibility("default")))
