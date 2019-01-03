@@ -24,10 +24,10 @@ namespace mrgingham
     // image_pyramid_level < 0 means we try several levels, taking the first one
     // that produces results
     bool find_chessboard_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
-                                           const cv::Mat& image,
-                                           int image_pyramid_level = -1,
-                                           bool do_refine = true,
-                                           bool debug = false);
+                                           const cv::Mat&                       image,
+                                           int                                  image_pyramid_level = -1,
+                                           bool                                 do_refine           = true,
+                                           bool                                 debug               = false);
 
     // set image_pyramid_level=0 to just use the image as is.
     //
@@ -38,10 +38,10 @@ namespace mrgingham
     // image_pyramid_level < 0 means we try several levels, taking the first one
     // that produces results
     bool find_chessboard_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
-                                          const char* filename,
-                                          int image_pyramid_level = -1,
-                                          bool do_refine = true,
-                                          bool debug = false );
+                                          const char*                          filename,
+                                          int                                  image_pyramid_level = -1,
+                                          bool                                 do_refine           = true,
+                                          bool                                 debug               = false );
 
     bool find_grid_from_points( std::vector<mrgingham::PointDouble>& points_out,
                                 const std::vector<mrgingham::PointInt>& points,
