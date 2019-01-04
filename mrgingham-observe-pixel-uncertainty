@@ -41,19 +41,12 @@ def parse_args():
     parser = \
         argparse.ArgumentParser(description = __doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--show-geometry',
-                        action='store_true',
+    parser.add_argument('--show',
                         required=False,
-                        default=False,
-                        help='''Visualize the 1-stdev ellipses of the distribution. The plot shows the
-                        chessboard corners, and the ellipses for each one.''')
-    parser.add_argument('--show-radii',
-                        action='store_true',
-                        required=False,
-                        default=False,
-                        help='''Visualize the distribution of the 1-stdev radii. The radii
-                        for each chessboard corner are plotted together, so their consistency can be
-                        evaluated''')
+                        help='''Visualize something. Arguments can be: "geometry": show the 1-stdev ellipses
+                        of the distribution for each chessboard corner
+                        separately. "histograms": show the distribution of all
+                        the x- and y-deviations off the mean''')
     parser.add_argument('--mrgingham',
                         type=str,
                         default='',
@@ -75,7 +68,9 @@ def parse_args():
 
 
 args = parse_args()
-
+if args.show is not None and not re.match('^(geometry|histograms|radii)$', args.show):
+    sys.stderr.write("ERROR: --show MUST be followed by 'geometry' or 'histograms' or 'radii'\n")
+    sys.exit(1)
 
 
 corners_output_process = None
@@ -101,7 +96,7 @@ points = np.array(())
 points_here = np.array(())
 
 path = ''
-parser = vnlog.vnlog()
+vnlparser = vnlog.vnlog()
 def finish_image(path_new):
     global points, points_here, path
     try:
@@ -114,9 +109,9 @@ def finish_image(path_new):
     path        = path_new
 
 for l in pipe_corners_read:
-    parser.parse(l)
+    vnlparser.parse(l)
 
-    d = parser.values_dict()
+    d = vnlparser.values_dict()
     if not d or d['x'] is None:
         continue
     if path != d['filename']:
@@ -159,37 +154,37 @@ def ellipse_stats(M):
     rx,ry = np.sqrt(M[0,0]),np.sqrt(M[1,1])
     return np.array((r0,r1,rx,ry,th))
 
-points_mean = np.mean(points, axis=0)
+points_mean     = np.mean(points, axis=0)
 points_centered = points - points_mean
+
+all_dxy = nps.transpose(nps.clump(points_centered, n=2))
 
 C       = np.mean( nps.outer(points_centered, points_centered), axis=0 )
 rad_major,rad_minor,rad_x,rad_y,angle = nps.transpose(ellipse_stats(C))
 
-
 print "Evaluated {} observations".format(points.shape[0])
-print "mean 1-sigma for independent x,y: {:.2f}".format(np.mean(nps.glue(rad_x,rad_y,axis=-1)))
+print "mean 1-sigma for independent x,y: {:.3f}".format(np.std(all_dxy.ravel()))
 
-if not args.show_geometry and not args.show_radii:
+if not args.show:
     sys.exit(0)
 
 
 import gnuplotlib as gp
 
-if args.show_geometry:
-    plot_geometry = gp.gnuplotlib(square=1)
-    plot_geometry.plot((points_mean[:,0], points_mean[:,1], 2*rad_major,2*rad_minor, angle*180.0/np.pi,
-                        dict(_with='ellipses', tuplesize=5, _legend='1-sigma: dependent x,y')),
-                       (points_mean[:,0], points_mean[:,1], 2*rad_x, 2*rad_y,
-                        dict(_with='ellipses', tuplesize=4, _legend='1-sigma: independent x,y')),
-                       (points[...,0].ravel(), points[...,1].ravel(),
-                        dict(_with='points')))
+if args.show == 'geometry':
+    gp.plot((points_mean[:,0], points_mean[:,1], 2*rad_major,2*rad_minor, angle*180.0/np.pi,
+             dict(_with='ellipses', tuplesize=5, _legend='1-sigma: dependent x,y')),
+            (points_mean[:,0], points_mean[:,1], 2*rad_x, 2*rad_y,
+             dict(_with='ellipses', tuplesize=4, _legend='1-sigma: independent x,y')),
+            (points[...,0].ravel(), points[...,1].ravel(),
+             dict(_with='points')),
+            square = 1,
+            wait   = 1)
 
-if args.show_radii:
-    plot_radii = gp.gnuplotlib( equation='{} title "mean"'.format(np.mean(nps.glue(rad_x,rad_y,axis=-1))) )
-    plot_radii.plot( nps.cat(rad_x,rad_y),
-                     _legend=np.array(('x-radius', 'y-radius')) )
-
-# don't do plot(wait=1) because I can have two plots. I can make that work
-# nicely, but I don't want to bother, and do this instead
-import time
-time.sleep(10000000)
+elif args.show == 'histograms':
+    gp.plot( all_dxy,
+             _legend=np.array(('x-distribution ', 'y-distribution')),
+             histogram = 1,
+             binwidth = 0.02,
+             _with = np.array(('boxes fill solid border lt -1', 'boxes fill transparent pattern 1', )),
+             wait = 1)
