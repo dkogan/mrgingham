@@ -68,8 +68,8 @@ def parse_args():
 
 
 args = parse_args()
-if args.show is not None and not re.match('^(geometry|histograms|radii)$', args.show):
-    sys.stderr.write("ERROR: --show MUST be followed by 'geometry' or 'histograms' or 'radii'\n")
+if args.show is not None and not re.match('^(geometry|histograms)$', args.show):
+    sys.stderr.write("ERROR: --show MUST be followed by 'geometry' or 'histograms'\n")
     sys.exit(1)
 
 
