@@ -127,6 +127,9 @@ if corners_output_process:
         err = corners_output_process.stderr.read()
         raise Exception("mrgingham failed: {}".format(err))
 
+if len(points) == 0:
+    print "Received no target observations"
+    sys.exit(1)
 
 @nps.broadcast_define( (('n','n'),), (5,) )
 def ellipse_stats(M):
