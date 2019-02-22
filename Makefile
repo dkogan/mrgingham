@@ -28,6 +28,10 @@ $(addsuffix .o,$(basename $(LIB_SOURCES))): CCXXFLAGS += -fvisibility=hidden
 CFLAGS    += -std=gnu99
 CCXXFLAGS += -Wno-unused-function -Wno-missing-field-initializers -Wno-unused-parameter -Wno-strict-aliasing -Wno-int-to-pointer-cast
 
+AM_OLD_RH7 := $(shell grep "release 7" /etc/redhat-release 2>/dev/null)
+CCXXFLAGS  += -DOLD_OPENCV=$(if $(AM_OLD_RH7),1,0)
+
+
 DIST_INCLUDE := mrgingham.hh point.hh
 
 # I construct the README.org from the template. The only thing I do is to insert
