@@ -11,6 +11,8 @@ Source0:        https://github.com/dkogan/mrgingham/archive/%{version}.tar.gz#/%
 
 BuildRequires:  opencv-devel
 BuildRequires:  boost-devel
+BuildRequires:  chrpath
+
 
 # to build the manpages I need to run 'mrgingham-observe-pixel-uncertainty
 # --help'
