@@ -58,3 +58,4 @@ rm -rf $RPM_BUILD_ROOT
 
 %files tools
 %{_bindir}/*
+%{_mandir}/*
