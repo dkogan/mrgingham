@@ -31,6 +31,7 @@ STATIONARY
 
 import argparse
 import re
+import sys
 
 def parse_args():
     parser = \
@@ -74,7 +75,6 @@ import numpy as np
 import numpysane as nps
 import os
 import vnlog
-import sys
 
 
 corners_output_process = None
