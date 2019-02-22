@@ -12,6 +12,10 @@ Source0:        https://github.com/dkogan/mrgingham/archive/%{version}.tar.gz#/%
 BuildRequires:  opencv-devel
 BuildRequires:  boost-devel
 
+# to build the manpages I need to run 'mrgingham-observe-pixel-uncertainty
+# --help'
+BuildRequires:  python
+
 %description
 Library to find a grid of points; used for calibration routines
 

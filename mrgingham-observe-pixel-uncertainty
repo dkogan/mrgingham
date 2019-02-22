@@ -28,14 +28,9 @@ STATIONARY
 
 '''
 
-import numpy as np
-import numpysane as nps
-import argparse
-import os
-import vnlog
-import re
-import sys
 
+import argparse
+import re
 
 def parse_args():
     parser = \
@@ -71,6 +66,15 @@ args = parse_args()
 if args.show is not None and not re.match('^(geometry|histograms)$', args.show):
     sys.stderr.write("ERROR: --show MUST be followed by 'geometry' or 'histograms'\n")
     sys.exit(1)
+
+
+# I do these after the arg-parsing so that --help can work without all of this
+# being available. That makes the manpage generation work better
+import numpy as np
+import numpysane as nps
+import os
+import vnlog
+import sys
 
 
 corners_output_process = None
