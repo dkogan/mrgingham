@@ -286,12 +286,17 @@ DIST_INCLUDE = $(filter-out $(wildcard $(DIST_INCLUDE_EXCEPT)),		\
 		  $(wildcard $(DIST_INCLUDE_ORIG)))
 
 ifneq (,$(shell grep -qi debian /etc/os-release 2>/dev/null && echo yep))
-  # we're a debian box, use the multiarch dir
+  # we're a debian-ish box, use the multiarch dir, and Debian's manpage dir
   DEB_HOST_MULTIARCH := $(shell dpkg-architecture -qDEB_HOST_MULTIARCH 2>/dev/null)
   USRLIB             := usr/lib/$(DEB_HOST_MULTIARCH)
+  MANDIR             := usr/share/man
 else
-  # we're something else. If /usr/lib64 exists, use that. Otherwise /usr/lib
+  # we're something else. Do what CentOS does.
+  # If /usr/lib64 exists, use that. Otherwise /usr/lib
   USRLIB := $(if $(wildcard /usr/lib64),usr/lib64,usr/lib)
+
+  MANDIR := usr/share/man/man1
+
 endif
 
 # Generates the install rules. Arguments:
@@ -322,7 +327,7 @@ endif
 	$(call install_rule,DIST_BIN,         $(DESTDIR)/usr/bin,)
 	$(call install_rule,DIST_INCLUDE,     $(DESTDIR)/usr/include/$(PROJECT_NAME),)
 	$(call install_rule,DIST_DOC,         $(DESTDIR)/usr/share/doc/$(PROJECT_NAME),)
-	$(call install_rule,DIST_MAN,         $(DESTDIR)/usr/share/man,)
+	$(call install_rule,DIST_MAN,         $(DESTDIR)/$(MANDIR),)
 	$(call install_rule,DIST_DATA,        $(DESTDIR)/usr/share/$(PROJECT_NAME),)
 	$(call install_rule,DIST_PERL_MODULES,$(DESTDIR)/usr/share/perl5,)
 	$(call install_rule,DIST_PY2_MODULES, $(DESTDIR)/usr/lib/python2.7/site-packages,)
