@@ -104,7 +104,10 @@ int main(int argc, char* argv[])
     }
 
     if( doclahe )
+    {
+        cv::equalizeHist(image, image);
         clahe->apply(image, image);
+    }
     if( blur_radius > 0 )
     {
         cv::blur( image, image,

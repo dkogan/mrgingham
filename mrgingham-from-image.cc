@@ -55,7 +55,12 @@ static void* worker( void* _ijob )
         }
 
         if( ctx.doclahe )
+        {
+            // CLAHE doesn't by itself use the full dynamic range all the time.
+            // I explicitly apply histogram equalization and then CLAHE
+            cv::equalizeHist(image, image);
             clahe->apply(image, image);
+        }
         if( ctx.blur_radius > 0 )
         {
             cv::blur( image, image,
