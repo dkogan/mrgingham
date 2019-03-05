@@ -74,6 +74,7 @@ namespace mrgingham
         while(image_pyramid_level--)
         {
             int Nrefined =
+                mrgingham::
                 refine_chessboard_corners_from_image_array( &points_out,
                                                             refinable,
                                                             image, image_pyramid_level,

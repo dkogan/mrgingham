@@ -5,6 +5,8 @@
 #include "point.hh"
 
 
+namespace mrgingham
+{
 
 // these all output the points scaled by FIND_GRID_SCALE in points[].
 bool find_chessboard_corners_from_image_array( // out
@@ -66,3 +68,5 @@ int refine_chessboard_corners_from_image_array( // out/int
                                                 int image_pyramid_level,
                                                 bool debug = false,
                                                 const char* debug_image_filename = NULL);
+
+};
