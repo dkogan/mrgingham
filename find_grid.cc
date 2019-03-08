@@ -226,10 +226,10 @@ static void write_cell_center( std::vector<PointDouble>& points_out,
 
 static void write_along_sequence( std::vector<PointDouble>& points_out,
                                   const PointInt* delta,
-                              const VORONOI::cell_type* c,
-                              int N_remaining,
+                                  const VORONOI::cell_type* c,
+                                  int N_remaining,
 
-                              const std::vector<PointInt>& points)
+                                  const std::vector<PointInt>& points)
 {
     FOR_MATCHING_ADJACENT_CELLS()
     {
