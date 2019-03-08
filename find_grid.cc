@@ -98,7 +98,7 @@ static void fill_initial_hypothesis_statistics(// out
 
 // tight bound on angle error, loose bound on length error. This is because
 // perspective distortion can vary the lengths, but NOT the orientations
-#define THRESHOLD_SPACING_LENGTH                 (80*FIND_GRID_SCALE)
+#define THRESHOLD_SPACING_LENGTH                 (80.*FIND_GRID_SCALE)
 #define THRESHOLD_SPACING_COS                    0.984 /* 10 degrees */
 #define THRESHOLD_SPACING_LENGTH_RATIO_MIN       0.7
 #define THRESHOLD_SPACING_LENGTH_RATIO_MAX       1.4
