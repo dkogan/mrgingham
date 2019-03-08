@@ -51,7 +51,7 @@ typedef voronoi_diagram<double> VORONOI;
         const PointInt* pt_adjacent = &points[c_adjacent->source_index()]; \
                                                                         \
         PointInt delta( pt_adjacent->x - pt->x,                            \
-                     pt_adjacent->y - pt->y );
+                        pt_adjacent->y - pt->y );
 
 #define FOR_ALL_ADJACENT_CELLS_END() }} while(0)
 
@@ -82,12 +82,12 @@ static void fill_initial_hypothesis_statistics(// out
 
 
 
-#define FOR_MATCHING_ADJACENT_CELLS() do {                              \
+#define FOR_MATCHING_ADJACENT_CELLS(debug_sequence_pointscale) do {     \
     HypothesisStatistics stats;                                         \
     fill_initial_hypothesis_statistics(&stats, delta);                  \
     for(int i=0; i<N_remaining; i++)                                    \
     {                                                                   \
-        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_along_sequence(&stats, c, points);
+        const VORONOI::cell_type* c_adjacent = get_adjacent_cell_along_sequence(&stats, c, points, debug_sequence_pointscale);
 
 
 #define FOR_MATCHING_ADJACENT_CELLS_END() \
@@ -106,11 +106,12 @@ static void fill_initial_hypothesis_statistics(// out
 
 static const VORONOI::cell_type*
 get_adjacent_cell_along_sequence( // out,in.
-                              HypothesisStatistics* stats,
+                                 HypothesisStatistics* stats,
 
-                              // in
-                              const VORONOI::cell_type* c,
-                              const std::vector<PointInt>& points)
+                                 // in
+                                 const VORONOI::cell_type* c,
+                                 const std::vector<PointInt>& points,
+                                 int debug_sequence_pointscale /* <=0 means "no debugging" */ )
 {
     // We're given a voronoi cell, and some properties that a potential next
     // cell in the sequence should match. I look through all the voronoi
@@ -141,6 +142,15 @@ get_adjacent_cell_along_sequence( // out,in.
 
     FOR_ALL_ADJACENT_CELLS(c)
     {
+        if(debug_sequence_pointscale > 0)
+            fprintf(stderr, "Considering connection in sequence from (%d,%d) -> (%d,%d); delta (%d,%d) ..... \n",
+                    pt->x          / debug_sequence_pointscale,
+                    pt->y          / debug_sequence_pointscale,
+                    pt_adjacent->x / debug_sequence_pointscale,
+                    pt_adjacent->y / debug_sequence_pointscale,
+                    delta.x        / debug_sequence_pointscale,
+                    delta.y        / debug_sequence_pointscale);
+
         double delta_length = hypot( (double)delta.x, (double)delta.y );
 
         double cos_err =
@@ -148,17 +158,33 @@ get_adjacent_cell_along_sequence( // out,in.
              (double)delta_last.y * (double)delta.y) /
             (delta_last_length * delta_length);
         if( cos_err < THRESHOLD_SPACING_COS )
+        {
+            if(debug_sequence_pointscale > 0)
+                fprintf(stderr, "..... rejecting. Angle is wrong. I wanted cos_err>=threshold, but saw %f<%f\n",
+                        cos_err, THRESHOLD_SPACING_COS);
             continue;
+        }
 
         double length_err = delta_last_length - delta_length;
         if( length_err < -THRESHOLD_SPACING_LENGTH ||
             length_err >  THRESHOLD_SPACING_LENGTH )
+        {
+            if(debug_sequence_pointscale > 0)
+                fprintf(stderr, "..... rejecting. Lengths are wrong. I wanted abs(length_err)<=threshold, but saw %f>%f\n",
+                        fabs(length_err), THRESHOLD_SPACING_LENGTH);
             continue;
+        }
 
         double length_ratio = delta_length / delta_last_length;
         if( length_ratio < THRESHOLD_SPACING_LENGTH_RATIO_MIN ||
             length_ratio > THRESHOLD_SPACING_LENGTH_RATIO_MAX )
+        {
+            if(debug_sequence_pointscale > 0)
+                fprintf(stderr, "..... rejecting. Lengths are wrong. I wanted abs(length_ratio)<=threshold, but saw %f<%f or %f>%f\n",
+                        length_ratio, THRESHOLD_SPACING_LENGTH_RATIO_MIN,
+                        length_ratio, THRESHOLD_SPACING_LENGTH_RATIO_MAX);
             continue;
+        }
 
         // I compute the mean and look at the deviation from the CURRENT mean. I
         // ignore the first few points, since the mean is unstable then. This is
@@ -171,7 +197,12 @@ get_adjacent_cell_along_sequence( // out,in.
             double length_ratio_deviation = length_ratio - length_ratio_mean;
             if( length_ratio_deviation < -THRESHOLD_SPACING_LENGTH_RATIO_DEVIATION ||
                 length_ratio_deviation >  THRESHOLD_SPACING_LENGTH_RATIO_DEVIATION )
+            {
+                if(debug_sequence_pointscale > 0)
+                    fprintf(stderr, "..... rejecting. Lengths are wrong. I wanted abs(length_ratio_deviation)<=threshold, but saw %f>%f\n",
+                            fabs(length_ratio_deviation), THRESHOLD_SPACING_LENGTH_RATIO_DEVIATION);
                 continue;
+            }
         }
 
         stats->length_ratio_sum += length_ratio;
@@ -179,6 +210,8 @@ get_adjacent_cell_along_sequence( // out,in.
 
         stats->delta_last        = delta;
 
+        if(debug_sequence_pointscale > 0)
+            fprintf(stderr, "..... accepting!\n");
         return c_adjacent;
 
     } FOR_ALL_ADJACENT_CELLS_END();
@@ -187,20 +220,20 @@ get_adjacent_cell_along_sequence( // out,in.
 }
 
 static bool search_along_sequence( // out
-                               PointDouble* delta_mean,
+                                  PointDouble* delta_mean,
 
-                               // in
-                               const PointInt* delta,
-                               const VORONOI::cell_type* c,
-                               int N_remaining,
+                                  // in
+                                  const PointInt* delta,
+                                  const VORONOI::cell_type* c,
+                                  int N_remaining,
 
-                               const std::vector<PointInt>& points)
+                                  const std::vector<PointInt>& points,
+                                  int debug_sequence_pointscale )
 {
     delta_mean->x = (double)delta->x;
     delta_mean->y = (double)delta->y;
 
-
-    FOR_MATCHING_ADJACENT_CELLS()
+    FOR_MATCHING_ADJACENT_CELLS(debug_sequence_pointscale)
     {
         if( c_adjacent == NULL )
             return false;
@@ -231,7 +264,7 @@ static void write_along_sequence( std::vector<PointDouble>& points_out,
 
                                   const std::vector<PointInt>& points)
 {
-    FOR_MATCHING_ADJACENT_CELLS()
+    FOR_MATCHING_ADJACENT_CELLS(-1)
     {
         write_cell_center(points_out, c_adjacent, points);
     } FOR_MATCHING_ADJACENT_CELLS_END();
@@ -306,7 +339,7 @@ static void dump_intervals_along_sequence( FILE* fp,
 
                                            const std::vector<PointInt>& points)
 {
-    FOR_MATCHING_ADJACENT_CELLS()
+    FOR_MATCHING_ADJACENT_CELLS(-1)
     {
         dump_interval(fp, i_candidate, i+1, c, c_adjacent, points);
     } FOR_MATCHING_ADJACENT_CELLS_END();
@@ -365,17 +398,56 @@ static void get_sequence_candidates( // out
 
                                      // in
                                      const VORONOI* voronoi,
-                                     const std::vector<PointInt>& points)
+                                     const std::vector<PointInt>& points,
+
+                                     // for debugging
+                                     const debug_sequence_t& debug_sequence)
 {
+    const VORONOI::cell_type* tracing_c = NULL;
+
+    int debug_sequence_pointscale = -1;
+    if(debug_sequence.dodebug)
+    {
+        // we're tracing some point. I find the nearest voronoi vertex, and
+        // debug_sequence that
+        unsigned long d2 = (unsigned long)(-1L); // max at first
+        debug_sequence_pointscale = FIND_GRID_SCALE;
+        for (auto it = voronoi->cells().begin(); it != voronoi->cells().end(); it++ )
+        {
+            const VORONOI::cell_type* c  = &(*it);
+            const PointInt*           pt = &points[c->source_index()];
+            long dx = (long)(pt->x - debug_sequence_pointscale*debug_sequence.pt.x);
+            long dy = (long)(pt->y - debug_sequence_pointscale*debug_sequence.pt.y);
+            unsigned long d2_here = (unsigned long)(dx*dx + dy*dy);
+            if(d2_here < d2)
+            {
+                d2 = d2_here;
+                tracing_c = c;
+            }
+        }
+        const PointInt* pt = &points[tracing_c->source_index()];
+        fprintf(stderr, "============== Looking at sequences from (%d,%d)\n",
+                pt->x / debug_sequence_pointscale,
+                pt->y / debug_sequence_pointscale);
+    }
+
     for (auto it = voronoi->cells().begin(); it != voronoi->cells().end(); it++ )
     {
         const VORONOI::cell_type* c  = &(*it);
 
+        bool debug_sequence = ( c == tracing_c );
+
         FOR_ALL_ADJACENT_CELLS(c)
         {
+            if(c == tracing_c)
+                fprintf(stderr, "====== Looking at adjacent point (%d,%d)\n",
+                        pt_adjacent->x / debug_sequence_pointscale,
+                        pt_adjacent->y / debug_sequence_pointscale);
+
             PointDouble delta_mean;
             if( search_along_sequence( &delta_mean,
-                                       &delta, c_adjacent, Nwant-2, points) )
+                                       &delta, c_adjacent, Nwant-2, points,
+                                       (c == tracing_c) ? debug_sequence_pointscale : -1 ) )
             {
                 double spacing_angle  = get_spacing_angle(delta_mean.y, delta_mean.x);
                 double spacing_length = hypot(delta_mean.x, delta_mean.y);
@@ -586,7 +658,7 @@ static void get_candidate_points_along_sequence( unsigned int* cs_points,
 
                                                  const std::vector<PointInt>& points)
 {
-    FOR_MATCHING_ADJACENT_CELLS()
+    FOR_MATCHING_ADJACENT_CELLS(-1)
     {
         get_candidate_point(cs_points, c_adjacent);
         cs_points++;
@@ -615,7 +687,7 @@ static bool compare_reverse_along_sequence( const unsigned int* cs_points_other,
 
                                             const std::vector<PointInt>& points)
 {
-    FOR_MATCHING_ADJACENT_CELLS()
+    FOR_MATCHING_ADJACENT_CELLS(-1)
     {
         if(*cs_points_other != c_adjacent->source_index())
             return false;
@@ -897,7 +969,8 @@ bool mrgingham::find_grid_from_points( // out
 
                                       // in
                                       const std::vector<PointInt>& points,
-                                      bool debug)
+                                      bool     debug,
+                                      const debug_sequence_t& debug_sequence)
 {
     VORONOI voronoi;
     construct_voronoi(points.begin(), points.end(), &voronoi);
@@ -906,7 +979,8 @@ bool mrgingham::find_grid_from_points( // out
         dump_voronoi(&voronoi, points);
 
     v_CS sequence_candidates;
-    get_sequence_candidates(&sequence_candidates, &voronoi, points);
+    get_sequence_candidates(&sequence_candidates, &voronoi, points,
+                            debug_sequence);
 
 
     if(debug)

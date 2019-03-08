@@ -10,10 +10,25 @@
 
 namespace mrgingham
 {
+
+    struct debug_sequence_t
+    {
+        bool     dodebug;
+        PointInt pt;
+        debug_sequence_t() :
+            dodebug(false),
+            pt()
+        {}
+    };
+
     bool find_circle_grid_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
-                                            const cv::Mat& image, bool debug = false );
+                                            const cv::Mat& image,
+                                            bool     debug = false,
+                                            debug_sequence_t debug_sequence = debug_sequence_t());
     bool find_circle_grid_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
-                                           const char* filename, bool debug = false );
+                                           const char* filename,
+                                           bool     debug = false,
+                                           debug_sequence_t debug_sequence = debug_sequence_t());
 
     // set image_pyramid_level=0 to just use the image as is.
     //
@@ -28,6 +43,7 @@ namespace mrgingham
                                            int                                  image_pyramid_level  = -1,
                                            bool                                 do_refine            = true,
                                            bool                                 debug                = false,
+                                           debug_sequence_t                     debug_sequence = debug_sequence_t(),
                                            const char*                          debug_image_filename = NULL);
 
     // set image_pyramid_level=0 to just use the image as is.
@@ -42,9 +58,11 @@ namespace mrgingham
                                           const char*                          filename,
                                           int                                  image_pyramid_level = -1,
                                           bool                                 do_refine           = true,
-                                          bool                                 debug               = false );
+                                          bool                                 debug               = false,
+                                          debug_sequence_t                     debug_sequence = debug_sequence_t());
 
     bool find_grid_from_points( std::vector<mrgingham::PointDouble>& points_out,
                                 const std::vector<mrgingham::PointInt>& points,
-                                bool debug = false);
+                                bool     debug             = false,
+                                const debug_sequence_t& debug_sequence = debug_sequence_t());
 };

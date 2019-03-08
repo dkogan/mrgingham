@@ -19,6 +19,7 @@ struct mrgingham_thread_context_t
     bool          doblobs;
     bool          do_refine;
     bool          debug;
+    debug_sequence_t debug_sequence;
     int           image_pyramid_level;
 } ctx;
 
@@ -107,9 +108,12 @@ static void* worker( void* _ijob )
         std::vector<PointDouble> points_out;
         bool result;
         if(ctx.doblobs)
-            result = find_circle_grid_from_image_array(points_out, image, ctx.debug);
+            result = find_circle_grid_from_image_array(points_out, image,
+                                                       ctx.debug, ctx.debug_sequence);
         else
-            result = find_chessboard_from_image_array (points_out, image, ctx.image_pyramid_level, ctx.do_refine, ctx.debug, filename);
+            result = find_chessboard_from_image_array (points_out, image, ctx.image_pyramid_level, ctx.do_refine,
+                                                       ctx.debug, ctx.debug_sequence,
+                                                       filename);
 
         flockfile(stdout);
         {
@@ -163,7 +167,11 @@ int main(int argc, char* argv[])
         "  with null x and y.\n"
         "\n"
         "  For debugging, pass in --debug. This will dump the various intermediate results\n"
-        "  into /tmp and it will report more stuff on the console\n";
+        "  into /tmp and it will report more stuff on the console.\n"
+        "  For debugging sequence candidates, pass in --debug-sequence x,y where 'x,y' are the\n"
+        "  approximate image coordinates of the start of a given sequence (corner on the edge of\n"
+        "  a chessboard. This doesn't need to be exact; mrgingham will report on the nearest\n"
+        "  corner\n";
 
     struct option opts[] = {
         { "blobs",             no_argument,       NULL, 'B' },
@@ -174,6 +182,7 @@ int main(int argc, char* argv[])
         { "no-refine",         no_argument,       NULL, 'R' },
         { "jobs",              required_argument, NULL, 'j' },
         { "debug",             no_argument,       NULL, 'd' },
+        { "debug-sequence",    required_argument, NULL, 'D' },
         { "help",              no_argument,       NULL, 'h' },
         {}
     };
@@ -184,6 +193,8 @@ int main(int argc, char* argv[])
     bool        doclahe             = false;
     bool        do_refine           = true;
     bool        debug               = false;
+    bool        debug_sequence      = false;
+    PointInt    debug_sequence_pt;
     int         blur_radius         = -1;
     int         image_pyramid_level = -1;
     int         jobs                = 1;
@@ -225,6 +236,19 @@ int main(int argc, char* argv[])
 
         case 'd':
             debug = true;
+            break;
+
+        case 'D':
+            debug_sequence = true;
+            if( 2 != sscanf(optarg, "%d,%d",
+                            &debug_sequence_pt.x,
+                            &debug_sequence_pt.y) )
+            {
+                fprintf(stderr, "I could not parse 'x,y' from --debug-sequence '%s'. Giving up\n",
+                        optarg);
+                fprintf(stderr, usage, argv[0]);
+                return -1;
+            }
             break;
 
         case 'b':
@@ -327,6 +351,10 @@ int main(int argc, char* argv[])
     ctx.doblobs             = doblobs;
     ctx.do_refine           = do_refine;
     ctx.debug               = debug;
+
+    ctx.debug_sequence.dodebug = debug_sequence;
+    ctx.debug_sequence.pt      = debug_sequence_pt;
+
     ctx.image_pyramid_level = image_pyramid_level;
 
     pthread_t thread[jobs];

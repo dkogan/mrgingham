@@ -10,33 +10,39 @@ namespace mrgingham
     __attribute__((visibility("default")))
     bool find_circle_grid_from_image_array( std::vector<PointDouble>& points_out,
                                             const cv::Mat& image,
-                                            bool debug)
+                                            bool     debug,
+                                            debug_sequence_t debug_sequence)
     {
         std::vector<PointInt> points;
         find_blobs_from_image_array(&points, image);
-        return find_grid_from_points(points_out, points, debug);
+        return find_grid_from_points(points_out, points,
+                                     debug, debug_sequence);
     }
 
     __attribute__((visibility("default")))
     bool find_circle_grid_from_image_file( std::vector<PointDouble>& points_out,
                                            const char* filename,
-                                           bool debug)
+                                           bool     debug,
+                                           debug_sequence_t debug_sequence)
     {
         std::vector<PointInt> points;
         find_blobs_from_image_file(&points, filename);
-        return find_grid_from_points(points_out, points, debug);
+        return find_grid_from_points(points_out, points,
+                                     debug, debug_sequence);
     }
 
     static bool _find_chessboard_from_image_array( std::vector<PointDouble>& points_out,
                                                    const cv::Mat& image,
                                                    int image_pyramid_level,
                                                    bool do_refine,
-                                                   bool debug,
+                                                   bool     debug,
+                                                   debug_sequence_t debug_sequence,
                                                    const char* debug_image_filename)
     {
         std::vector<PointInt> points;
         find_chessboard_corners_from_image_array(&points, image, image_pyramid_level, debug, debug_image_filename);
-        if(!find_grid_from_points(points_out, points, debug))
+        if(!find_grid_from_points(points_out, points,
+                                  debug, debug_sequence))
             return false;
 
         // we found a grid! If we're not trying to refine the locations, or if
@@ -92,7 +98,8 @@ namespace mrgingham
                                            const cv::Mat& image,
                                            int image_pyramid_level,
                                            bool do_refine,
-                                           bool debug,
+                                           bool     debug,
+                                           debug_sequence_t debug_sequence,
                                            const char* debug_image_filename)
 
     {
@@ -101,7 +108,8 @@ namespace mrgingham
                                                       image,
                                                       image_pyramid_level,
                                                       do_refine,
-                                                      debug, debug_image_filename);
+                                                      debug, debug_sequence,
+                                                      debug_image_filename);
 
         for( image_pyramid_level=3; image_pyramid_level>=0; image_pyramid_level--)
         {
@@ -110,7 +118,8 @@ namespace mrgingham
                                                    image,
                                                    image_pyramid_level,
                                                    do_refine,
-                                                   debug, debug_image_filename);
+                                                   debug, debug_sequence,
+                                                   debug_image_filename);
             if(result)
                 return true;
         }
@@ -122,7 +131,8 @@ namespace mrgingham
                                           const char* filename,
                                           int image_pyramid_level,
                                           bool do_refine,
-                                          bool debug)
+                                          bool debug,
+                                          debug_sequence_t debug_sequence)
     {
         cv::Mat image = cv::imread(filename, CV_LOAD_IMAGE_GRAYSCALE);
         if( image.data == NULL )
@@ -133,6 +143,8 @@ namespace mrgingham
         }
 
         std::vector<PointInt> points;
-        return find_chessboard_from_image_array(points_out, image, image_pyramid_level, do_refine, debug, filename);
+        return find_chessboard_from_image_array(points_out, image, image_pyramid_level, do_refine,
+                                                debug, debug_sequence,
+                                                filename);
     }
 };
