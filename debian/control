@@ -6,6 +6,7 @@ Build-Depends: debhelper (>= 9), dh-python,
  libboost-dev,
  pkg-config,
  chrpath,
+ python,
  perl,
  mawk
 Maintainer: Dima Kogan <dima@secretsauce.net>
