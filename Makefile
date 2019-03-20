@@ -26,7 +26,7 @@ LDLIBS    += $(LDLIBS_CV) -lpthread
 $(addsuffix .o,$(basename $(LIB_SOURCES))): CCXXFLAGS += -fvisibility=hidden
 
 CFLAGS    += -std=gnu99
-CCXXFLAGS += -Wno-unused-function -Wno-missing-field-initializers -Wno-unused-parameter -Wno-strict-aliasing -Wno-int-to-pointer-cast
+CCXXFLAGS += -Wno-unused-function -Wno-missing-field-initializers -Wno-unused-parameter -Wno-strict-aliasing -Wno-int-to-pointer-cast -Wno-unused-variable
 
 AM_OLD_RH7 := $(shell grep "release 7" /etc/redhat-release 2>/dev/null)
 CCXXFLAGS  += -DOLD_OPENCV=$(if $(AM_OLD_RH7),1,0)
