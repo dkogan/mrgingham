@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python
 
 r'''Evaluate observed point distribution from stationary observations
 
@@ -28,6 +28,7 @@ STATIONARY
 
 '''
 
+from __future__ import print_function
 
 import argparse
 import re
@@ -132,7 +133,7 @@ if corners_output_process:
         raise Exception("mrgingham failed: {}".format(err))
 
 if len(points) == 0:
-    print "Received no target observations"
+    print("Received no target observations")
     sys.exit(1)
 
 @nps.broadcast_define( (('n','n'),), (5,) )
@@ -179,7 +180,7 @@ title = "Have {} observations, separate x,y stdev: ({:.2f},{:.2f}), joint x,y st
            np.std(all_dxy[:,0]),
            np.std(all_dxy[:,1]),
            np.std(all_dxy.ravel()))
-print title
+print(title)
 
 if not args.show:
     sys.exit(0)
@@ -210,7 +211,7 @@ elif args.show == 'histograms':
                   format(what = 'x' if i==0 else 'y',
                          var  = var_xy[i],
                          k    = all_dxy.shape[-2]*erf(binwidth/(2.*np.sqrt(2)*np.sqrt(var_xy[i]))) * np.sqrt(2.*np.pi*var_xy[i])) \
-                  for i in xrange(2) ]
+                  for i in range(2) ]
 
     gp.plot( nps.transpose(all_dxy),
              _legend=np.array(('x-distribution: observed ', 'y-distribution: observed')),
