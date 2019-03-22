@@ -42,41 +42,47 @@
 /**
  * Perform the ChESS corner detection algorithm with a 5 px sampling radius
  *
- * @param    response  output response image
- * @param    image     input image
+ * @param    response  output response image. Densely-packed
+ *                     signed-16-bits-per-pixel image if size (w,h). Densely-
+ *                     packed means the stride doesn't apply
+ * @param    image     input image. Assumed 8 bits (1 byte) per pixel. Not
+ *                     densely-packed: the stride applies
  * @param    w         image width
  * @param    h         image height
+ * @param    stride    the length (in bytes) of each row in memory of the input
+ *                     image. If stored densely, w == stride
  */
 void ChESS_response_5(      int16_t* restrict response,
                       const uint8_t* restrict image,
-                      int w, int h )
+                      int w, int h, int stride )
 {
     int x, y;
     // funny bounds due to sampling ring radius (5) and border of previously applied blur (2)
     for (y = 7; y < h - 7; y++)
         for (x = 7; x < w - 7; x++) {
-            const unsigned offset = x + y * w;
+            const unsigned offset_input    = x + y * stride;
+            const unsigned offset_response = x + y * w;
             uint8_t circular_sample[16];
 
-            circular_sample[2] = image[offset - 2 - 5 * w];
-            circular_sample[1] = image[offset - 5 * w];
-            circular_sample[0] = image[offset + 2 - 5 * w];
-            circular_sample[8] = image[offset - 2 + 5 * w];
-            circular_sample[9] = image[offset + 5 * w];
-            circular_sample[10] = image[offset + 2 + 5 * w];
-            circular_sample[3] = image[offset - 4 - 4 * w];
-            circular_sample[15] = image[offset + 4 - 4 * w];
-            circular_sample[7] = image[offset - 4 + 4 * w];
-            circular_sample[11] = image[offset + 4 + 4 * w];
-            circular_sample[4] = image[offset - 5 - 2 * w];
-            circular_sample[14] = image[offset + 5 - 2 * w];
-            circular_sample[6] = image[offset - 5 + 2 * w];
-            circular_sample[12] = image[offset + 5 + 2 * w];
-            circular_sample[5] = image[offset - 5];
-            circular_sample[13] = image[offset + 5];
+            circular_sample[2] = image[offset_input - 2 - 5 * stride];
+            circular_sample[1] = image[offset_input - 5 * stride];
+            circular_sample[0] = image[offset_input + 2 - 5 * stride];
+            circular_sample[8] = image[offset_input - 2 + 5 * stride];
+            circular_sample[9] = image[offset_input + 5 * stride];
+            circular_sample[10] = image[offset_input + 2 + 5 * stride];
+            circular_sample[3] = image[offset_input - 4 - 4 * stride];
+            circular_sample[15] = image[offset_input + 4 - 4 * stride];
+            circular_sample[7] = image[offset_input - 4 + 4 * stride];
+            circular_sample[11] = image[offset_input + 4 + 4 * stride];
+            circular_sample[4] = image[offset_input - 5 - 2 * stride];
+            circular_sample[14] = image[offset_input + 5 - 2 * stride];
+            circular_sample[6] = image[offset_input - 5 + 2 * stride];
+            circular_sample[12] = image[offset_input + 5 + 2 * stride];
+            circular_sample[5] = image[offset_input - 5];
+            circular_sample[13] = image[offset_input + 5];
 
             // purely horizontal local_mean samples
-            uint16_t local_mean = (image[offset - 1] + image[offset] + image[offset + 1]) * 16 / 3;
+            uint16_t local_mean = (image[offset_input - 1] + image[offset_input] + image[offset_input + 1]) * 16 / 3;
 
             uint16_t sum_response = 0;
             uint16_t diff_response = 0;
@@ -94,6 +100,6 @@ void ChESS_response_5(      int16_t* restrict response,
                 mean += a + b + c + d;
             }
 
-            response[offset] = sum_response - diff_response - abs(mean - local_mean);
+            response[offset_response] = sum_response - diff_response - abs(mean - local_mean);
         }
 }
