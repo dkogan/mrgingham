@@ -1,0 +1,19 @@
+Runs the ChESS detector to compute a "cornerness" response
+
+Synopsis:
+
+    response = mrgingham.ChESS_response_5(image)
+
+The input is expected to be a numpy array containing unsigned 8-bit integers.
+The response has the same dimensions as the input, but contains signed 16-bit
+integers.
+
+This wraps the reference implementation described in this paper:
+
+  https://arxiv.org/abs/1301.5491
+
+Implementation obtained here:
+
+  http://www-sigproc.eng.cam.ac.uk/Main/SB476Chess
+
+Copyright 2010-2012 Stuart Bennett

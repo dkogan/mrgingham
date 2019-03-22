@@ -77,4 +77,21 @@ mrgingham-observe-pixel-uncertainty.pod: %.pod: %
 	cat footer.pod >> $@
 EXTRA_CLEAN += *.1 mrgingham-observe-pixel-uncertainty.pod README.org
 
+########## python stuff
+
+# In the python api I have to cast a PyCFunctionWithKeywords to a PyCFunction,
+# and the compiler complains. But that's how Python does it! So I tell the
+# compiler to chill
+mrgingham_pywrap.o: CFLAGS += -Wno-cast-function-type
+
+mrgingham_pywrap.o: CFLAGS += $(PY_MRBUILD_CFLAGS)
+mrgingham_pywrap.o: $(addsuffix .h,$(wildcard *.docstring))
+
+_mrgingham.so: mrgingham_pywrap.o libmrgingham.so
+	$(PY_MRBUILD_LINKER) $(PY_MRBUILD_LDFLAGS) $< -lmrgingham -o $@
+
+DIST_PY2_MODULES := _mrgingham.so
+
+all: _mrgingham.so
+
 include Makefile.common
