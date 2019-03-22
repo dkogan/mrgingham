@@ -6,7 +6,7 @@ Synopsis:
 
 The input is expected to be a numpy array containing unsigned 8-bit integers.
 The response has the same dimensions as the input, but contains signed 16-bit
-integers.
+integers. Broadcasting is fully supported.
 
 This wraps the reference implementation described in this paper:
 

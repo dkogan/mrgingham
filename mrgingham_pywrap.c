@@ -66,14 +66,6 @@ static PyObject* py_ChESS_response_5(PyObject* NPY_UNUSED(self),
         goto done;
     }
 
-    // This doesn't actually need to be true, but assuming it makes the
-    // broadcasting code below much simpler
-    if( !PyArray_IS_C_CONTIGUOUS(image) )
-    {
-        PyErr_SetString(PyExc_RuntimeError, "The input image array must be C-contiguous");
-        goto done;
-    }
-
     PyArrayObject* response =
         (PyArrayObject*)PyArray_SimpleNew(ndims, dims, NPY_INT16);
     if(response == NULL)
@@ -82,18 +74,32 @@ static PyObject* py_ChESS_response_5(PyObject* NPY_UNUSED(self),
         goto done;
     }
 
-    int Nslices = 1;
-    for(int i=0; i<ndims-2; i++)
-        Nslices *= dims[i];
+    // broadcast through all the slices
+    { // need a block to pacify the compiler
+        npy_intp islice[ndims];
+        islice[ndims - 1] = 0;
+        islice[ndims - 2] = 0;
 
-    int imagesize = dims[ndims-1] * dims[ndims-2];
-    for(int i=0; i<Nslices; i++)
-    {
-        // Everything is C-contiguous, so this is easy
-        mrgingham_ChESS_response_5( (int16_t*)&PyArray_BYTES(response)[i * imagesize*2],
-                                    (uint8_t*)&PyArray_BYTES(image)   [i * imagesize],
-                                    dims[ndims-1], dims[ndims-2],
-                                    strides[ndims-2]);
+        void loop_dim(int idim)
+        {
+            if(idim < 0)
+            {
+                int16_t* data_response = (int16_t*)PyArray_GetPtr(response, islice);
+                uint8_t* data_image    = (uint8_t*)PyArray_GetPtr(image,    islice);
+
+                mrgingham_ChESS_response_5( data_response, data_image,
+                                            dims[ndims-1], dims[ndims-2],
+                                            strides[ndims-2]);
+                return;
+            }
+
+            for(islice[idim]=0; islice[idim] < dims[idim]; islice[idim]++)
+                loop_dim(idim-1);
+        }
+
+        // The last 2 dimensions index each slice (x,y inside each image). The
+        // dimensions before that are for broadcasting
+        loop_dim(ndims-3);
     }
 
     result = Py_BuildValue("O", response);
