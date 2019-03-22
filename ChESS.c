@@ -52,9 +52,10 @@
  * @param    stride    the length (in bytes) of each row in memory of the input
  *                     image. If stored densely, w == stride
  */
-void ChESS_response_5(      int16_t* restrict response,
-                      const uint8_t* restrict image,
-                      int w, int h, int stride )
+__attribute__((visibility("default")))
+void mrgingham_ChESS_response_5(      int16_t* restrict response,
+                                const uint8_t* restrict image,
+                                int w, int h, int stride )
 {
     int x, y;
     // funny bounds due to sampling ring radius (5) and border of previously applied blur (2)

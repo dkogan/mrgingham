@@ -90,10 +90,10 @@ static PyObject* py_ChESS_response_5(PyObject* NPY_UNUSED(self),
     for(int i=0; i<Nslices; i++)
     {
         // Everything is C-contiguous, so this is easy
-        ChESS_response_5( (int16_t*)&PyArray_BYTES(response)[i * imagesize*2],
-                          (uint8_t*)&PyArray_BYTES(image)   [i * imagesize],
-                          dims[ndims-1], dims[ndims-2],
-                          strides[ndims-2]);
+        mrgingham_ChESS_response_5( (int16_t*)&PyArray_BYTES(response)[i * imagesize*2],
+                                    (uint8_t*)&PyArray_BYTES(image)   [i * imagesize],
+                                    dims[ndims-1], dims[ndims-2],
+                                    strides[ndims-2]);
     }
 
     result = Py_BuildValue("O", response);

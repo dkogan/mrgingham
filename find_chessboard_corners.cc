@@ -511,7 +511,7 @@ int _find_or_refine_chessboard_corners_from_image_array ( // out
     uint8_t* imageData    = image->data;
     int16_t* responseData = (int16_t*)response.data;
 
-    ChESS_response_5( responseData, imageData, w, h, w );
+    mrgingham_ChESS_response_5( responseData, imageData, w, h, w );
 
     if(debug && refinement_context==NULL)
     {

@@ -28,7 +28,7 @@
  * @param    stride    the length (in bytes) of each row in memory of the input
  *                     image. If stored densely, w == stride
  */
-void ChESS_response_5(      int16_t* response,
-                      const uint8_t* image,
-                      int w, int h,
-                      int stride);
+void mrgingham_ChESS_response_5(      int16_t* response,
+                                const uint8_t* image,
+                                int w, int h,
+                                int stride);
