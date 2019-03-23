@@ -1,3 +1,6 @@
+include Makefile.common.header
+
+
 PROJECT_NAME := mrgingham
 ABI_VERSION  := 1
 TAIL_VERSION := 1
@@ -99,4 +102,4 @@ DIST_PY2_MODULES := mrgingham.so
 
 all: mrgingham.so
 
-include Makefile.common
+include Makefile.common.footer
