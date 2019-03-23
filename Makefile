@@ -26,7 +26,7 @@ LDLIBS_CV   := $(shell pkg-config --libs   opencv)
 CCXXFLAGS += $(CXXFLAGS_CV)
 LDLIBS    += $(LDLIBS_CV) -lpthread
 
-$(addsuffix .o,$(basename $(LIB_SOURCES))): CCXXFLAGS += -fvisibility=hidden
+CCXXFLAGS += -fvisibility=hidden
 
 CFLAGS    += -std=gnu99
 CCXXFLAGS += -Wno-unused-function -Wno-missing-field-initializers -Wno-unused-parameter -Wno-strict-aliasing -Wno-int-to-pointer-cast -Wno-unused-variable
