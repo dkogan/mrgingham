@@ -95,11 +95,11 @@ mrgingham_pywrap.o: $(addsuffix .h,$(wildcard *.docstring))
 # normal way of creating a "mrgingham" subdirectory for all the python stuff
 # doesn't work here: I already have a directory entry called "mrgingham"; it's
 # the main commandline tool.
-mrgingham.so: mrgingham_pywrap.o mrgingham_pywrap_cplusplus_bridge.o libmrgingham.so
+mrgingham$(PY_EXT_SUFFIX): mrgingham_pywrap.o mrgingham_pywrap_cplusplus_bridge.o libmrgingham.so
 	$(PY_MRBUILD_LINKER) $(PY_MRBUILD_LDFLAGS) $^ -o $@
 
-DIST_PY2_MODULES := mrgingham.so
+DIST_PY2_MODULES := mrgingham$(PY_EXT_SUFFIX)
 
-all: mrgingham.so
+all: mrgingham$(PY_EXT_SUFFIX)
 
 include Makefile.common.footer
