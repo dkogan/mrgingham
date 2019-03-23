@@ -84,7 +84,7 @@ EXTRA_CLEAN += *.1 mrgingham-observe-pixel-uncertainty.pod README.org
 # compiler to chill
 mrgingham_pywrap.o: CFLAGS += -Wno-cast-function-type
 
-mrgingham_pywrap.o: CFLAGS += $(PY_MRBUILD_CFLAGS)
+mrgingham_pywrap.o mrgingham_pywrap_cplusplus_bridge.o: CCXXFLAGS += $(PY_MRBUILD_CFLAGS)
 mrgingham_pywrap.o: $(addsuffix .h,$(wildcard *.docstring))
 
 # The python library is called "mrgingham.so". This is confusing, but is the
@@ -92,7 +92,7 @@ mrgingham_pywrap.o: $(addsuffix .h,$(wildcard *.docstring))
 # normal way of creating a "mrgingham" subdirectory for all the python stuff
 # doesn't work here: I already have a directory entry called "mrgingham"; it's
 # the main commandline tool.
-mrgingham.so: mrgingham_pywrap.o libmrgingham.so
+mrgingham.so: mrgingham_pywrap.o mrgingham_pywrap_cplusplus_bridge.o libmrgingham.so
 	$(PY_MRBUILD_LINKER) $(PY_MRBUILD_LDFLAGS) $^ -o $@
 
 DIST_PY2_MODULES := mrgingham.so

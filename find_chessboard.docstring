@@ -1,0 +1,18 @@
+Runs the full mrgingham chessboard detector on an image
+
+Synopsis:
+
+    chessboard_points = mrgingham.find_chessboard(image)
+
+The input is the image, as a numpy array. The output is a numpy array of shape
+(N*N,2) containing ordered pixel coordinates of the chessboard. If no chessboard
+was found, None is returned.
+
+An optional argument "image_pyramid_level" can be given to operate on a
+downsampled version of the image. 0 means "original image", 1 means "downsample
+by a factor of 2 in each dimension", 2 means "downsample by a factor of 4 in
+each dimension" and so on. image_pyramid_level < 0 means "start with a
+downsampled image, and then refine the results by repeatedly reducing the
+downsampling. This is the default.
+
+No broadcasting is supported by this function

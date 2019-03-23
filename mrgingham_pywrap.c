@@ -1,4 +1,5 @@
 #define NPY_NO_DEPRECATED_API NPY_API_VERSION
+#define PY_ARRAY_UNIQUE_SYMBOL mrgingham_
 
 #include <stdbool.h>
 #include <Python.h>
@@ -7,6 +8,7 @@
 #include <signal.h>
 
 #include "ChESS.h"
+#include "mrgingham_pywrap_cplusplus_bridge.h"
 
 // Python is silly. There's some nuance about signal handling where it sets a
 // SIGINT (ctrl-c) handler to just set a flag, and the python layer then reads
@@ -111,14 +113,133 @@ static PyObject* py_ChESS_response_5(PyObject* NPY_UNUSED(self),
     return result;
 }
 
+static PyObject* find_chessboard_corners(PyObject* NPY_UNUSED(self),
+                                         PyObject* args,
+                                         PyObject* kwargs)
+{
+    PyArrayObject* image               = NULL;
+    PyObject*      result              = NULL;
+    int            image_pyramid_level = 0;
+
+    SET_SIGINT();
+
+    char* keywords[] = { "image", "image_pyramid_level",
+                         NULL };
+
+    if(!PyArg_ParseTupleAndKeywords( args, kwargs,
+                                     "O&|i",
+                                     keywords,
+                                     PyArray_Converter, &image,
+                                     &image_pyramid_level,
+                                     NULL))
+        goto done;
+
+    npy_intp* dims    = PyArray_DIMS   (image);
+    npy_intp* strides = PyArray_STRIDES(image);
+    int       ndims   = PyArray_NDIM   (image);
+    if( ndims != 2 )
+    {
+        PyErr_Format(PyExc_RuntimeError, "The input image array must have exactly 2 dims (broadcasting not supported here); got %d",
+                     PyArray_NDIM(image));
+        goto done;
+    }
+    if( PyArray_TYPE(image) != NPY_UINT8 )
+    {
+        PyErr_SetString(PyExc_RuntimeError, "The input image array must contain 8-bit unsigned data");
+        goto done;
+    }
+    if( strides[ndims-1] != 1 )
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Image rows must live in contiguous memory");
+        goto done;
+    }
+
+    result = (PyObject*)find_chessboard_corners_from_image_array_C
+        ( (PyObject*)image, image_pyramid_level );
+    if( result == NULL )
+    {
+        PyErr_SetString(PyExc_RuntimeError, "find_chessboard_corners_from_image_array_C() failed");
+        goto done;
+    }
+
+ done:
+    Py_XDECREF(image);
+    RESET_SIGINT();
+    return result;
+}
+
+static PyObject* find_chessboard(PyObject* NPY_UNUSED(self),
+                                 PyObject* args,
+                                 PyObject* kwargs)
+{
+    PyArrayObject* image               = NULL;
+    PyObject*      result              = NULL;
+    int            image_pyramid_level = -1;
+
+    SET_SIGINT();
+
+    char* keywords[] = { "image", "image_pyramid_level",
+                         NULL };
+
+    if(!PyArg_ParseTupleAndKeywords( args, kwargs,
+                                     "O&|i",
+                                     keywords,
+                                     PyArray_Converter, &image,
+                                     &image_pyramid_level,
+                                     NULL))
+        goto done;
+
+    npy_intp* dims    = PyArray_DIMS   (image);
+    npy_intp* strides = PyArray_STRIDES(image);
+    int       ndims   = PyArray_NDIM   (image);
+    if( ndims != 2 )
+    {
+        PyErr_Format(PyExc_RuntimeError, "The input image array must have exactly 2 dims (broadcasting not supported here); got %d",
+                     PyArray_NDIM(image));
+        goto done;
+    }
+    if( PyArray_TYPE(image) != NPY_UINT8 )
+    {
+        PyErr_SetString(PyExc_RuntimeError, "The input image array must contain 8-bit unsigned data");
+        goto done;
+    }
+    if( strides[ndims-1] != 1 )
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Image rows must live in contiguous memory");
+        goto done;
+    }
+
+    result = (PyObject*)find_chessboard_from_image_array_C
+        ( (PyObject*)image, image_pyramid_level );
+    if( result == NULL )
+    {
+        result = Py_None;
+        Py_INCREF(result);
+    }
+
+ done:
+    Py_XDECREF(image);
+    RESET_SIGINT();
+    return result;
+}
+
+__attribute__((visibility("default")))
 PyMODINIT_FUNC initmrgingham(void)
 {
     static const char py_ChESS_response_5_docstring[] =
 #include "ChESS_response_5.docstring.h"
         ;
+    static const char find_chessboard_corners_docstring[] =
+#include "find_chessboard_corners.docstring.h"
+        ;
+    static const char find_chessboard_docstring[] =
+#include "find_chessboard.docstring.h"
+        ;
     static PyMethodDef methods[] =
         {
-         PYMETHODDEF_ENTRY(py_,ChESS_response_5, METH_VARARGS),
+         PYMETHODDEF_ENTRY(py_,ChESS_response_5,        METH_VARARGS),
+         PYMETHODDEF_ENTRY(,   find_chessboard_corners, METH_VARARGS | METH_KEYWORDS),
+         PYMETHODDEF_ENTRY(,   find_chessboard,         METH_VARARGS | METH_KEYWORDS),
          {}
         };
 
