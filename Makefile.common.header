@@ -1,0 +1,90 @@
+# -*- Makefile -*-
+
+# This stuff defines variables (PY_EXT_SUFFIX) that could be used by the user
+# Makefile at parsing time. So this must be included BEFORE the rest of the user
+# Makefile
+
+PYTHON_VERSION_FOR_EXTENSIONS := 2 # 2 or 3
+# Flags for python extension modules. See
+# http://notes.secretsauce.net/notes/2017/11/14_python-extension-modules-without-setuptools-or-distutils.html
+#
+# I build the python extension module without any setuptools or anything.
+# Instead I ask python about the build flags it likes, and build the DSO
+# normally using those flags.
+#
+# There's some sillyness in Make I need to work around. First, I produce a
+# python script to query the various build flags, but replacing all whitespace
+# with __whitespace__. The string I get when running this script will then have
+# a number of whitespace-separated tokens, each setting ONE variable
+#
+# I set up a number of variables:
+#
+#   These come from Python queries. I ask Python about XXX and store the result
+#   into PY_XXX
+#
+#     PY_CC
+#     PY_CFLAGS
+#     PY_CCSHARED
+#     PY_INCLUDEPY
+#     PY_BLDSHARED
+#     PY_LDFLAGS
+#     PY_EXT_SUFFIX
+#
+#  These process the above into a single set of CFLAGS:
+#
+#    PY_MRBUILD_CFLAGS
+#
+#  These process the above into a single set of LDFLAGS:
+#
+#    PY_MRBUILD_LDFLAGS
+#
+#  These process the above into a DSO-building linker command
+#
+#    PY_MRBUILD_LINKER
+#
+# When the user Makefile evaluates ANY of these variables I query python, and
+# memoize the results. So the python is invoked at MOST one time. Any Makefiles
+# that don't touch the PY_... variables will not end up invoking the python
+# thing at all
+#
+# Variables to ask Python about
+_PYVARS_LIST := CC CFLAGS CCSHARED INCLUDEPY BLDSHARED LDFLAGS EXT_SUFFIX
+
+# Python script to query those variables
+define _PYVARS_SCRIPT
+from __future__ import print_function
+import sysconfig
+import re
+conf = sysconfig.get_config_vars()
+for v in ($(foreach v,$(_PYVARS_LIST),"$v",)):
+    if v in conf:
+        print(re.sub("[\t ]+", "__whitespace__", "PY_{}:={}".format(v, conf[v])))
+endef
+
+# I eval this to actually invoke the Python and to ingest its results. I only
+# eval this ONLY when necessary.
+define query_python_extension_building_flags
+_PYVARS := $$(shell python$(PYTHON_VERSION_FOR_EXTENSIONS) -c '$$(_PYVARS_SCRIPT)')
+# I then $(eval) these tokens one at a time, restoring the whitespace
+$$(foreach v,$$(_PYVARS),$$(eval $$(subst __whitespace__, ,$$v)))
+# pull out flags from CC, throw out the compiler itself, since I know better
+_FLAGS_FROM_PYCC    := $$(wordlist 2,$$(words $$(PY_CC)),$$(PY_CC))
+_PY_MRBUILD_CFLAGS  := $$(filter-out -O%,$$(_FLAGS_FROM_PYCC) $$(PY_CFLAGS) $$(PY_CCSHARED) -I$$(PY_INCLUDEPY))
+# I add an RPATH to the python extension DSO so that it runs in-tree. Will pull
+# it out at install time
+_PY_MRBUILD_LDFLAGS := $$(PY_LDFLAGS) -L$$(abspath .) -Wl,-rpath=$$(abspath .)
+_PY_MRBUILD_LINKER  := $$(PY_BLDSHARED)
+endef
+
+# List of variables a user Makefile could touch
+_PYVARS_API := $(foreach v,$(_PYVARS_LIST),PY_$v) PY_MRBUILD_CFLAGS PY_MRBUILD_LDFLAGS PY_MRBUILD_LINKER
+
+# The first time the user touches these variables, ask Python. Each subsequent
+# time, use the previously-returned value
+define _PY_DEFINE_API_VAR
+$1 = $$(if $$(_$1),,$$(eval $$(query_python_extension_building_flags)))$$(_$1)
+endef
+$(foreach v,$(_PYVARS_API),$(eval $(call _PY_DEFINE_API_VAR,$v)))
+
+# this is not set in python2
+PY_EXT_SUFFIX := $(or $(PY_EXT_SUFFIX),.so)

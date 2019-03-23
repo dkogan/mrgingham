@@ -1,14 +1,5 @@
 # -*- Makefile -*-
 
-
-# THIS IS A COPY OF THE MRBUILD Makefile from
-#
-#   https://github.com/dkogan/mrbuild
-#
-# I don't want to introduce a dependency, so I explicitly copied it over
-
-
-
 # This is a common Makefile that can be used as the core buildsystem for
 # projects providing a library and some executables using this library. Please
 # see README.build.org for the documentation.
@@ -166,6 +157,7 @@ moc_%.cpp: %.hh
 
 
 
+PYTHON_VERSION_FOR_EXTENSIONS := 2 # 2 or 3
 # Flags for python extension modules. See
 # http://notes.secretsauce.net/notes/2017/11/14_python-extension-modules-without-setuptools-or-distutils.html
 #
@@ -175,8 +167,8 @@ moc_%.cpp: %.hh
 #
 # There's some sillyness in Make I need to work around. First, I produce a
 # python script to query the various build flags, but replacing all whitespace
-# with __whitespace__. The string I get when running this script will have a
-# number of whitespace-separated tokens, each one setting ONE variable
+# with __whitespace__. The string I get when running this script will then have
+# a number of whitespace-separated tokens, each setting ONE variable
 #
 # I set up a number of variables:
 #
@@ -189,6 +181,7 @@ moc_%.cpp: %.hh
 #     PY_INCLUDEPY
 #     PY_BLDSHARED
 #     PY_LDFLAGS
+#     PY_EXT_SUFFIX
 #
 #  These process the above into a single set of CFLAGS:
 #
@@ -208,21 +201,24 @@ moc_%.cpp: %.hh
 # thing at all
 #
 # Variables to ask Python about
-_PYVARS_LIST := CC CFLAGS CCSHARED INCLUDEPY BLDSHARED LDFLAGS
+_PYVARS_LIST := CC CFLAGS CCSHARED INCLUDEPY BLDSHARED LDFLAGS EXT_SUFFIX
 
 # Python script to query those variables
 define _PYVARS_SCRIPT
+from __future__ import print_function
 import sysconfig
 import re
+conf = sysconfig.get_config_vars()
 for v in ($(foreach v,$(_PYVARS_LIST),"$v",)):
-    print re.sub("[\t ]+", "__whitespace__", "PY_{}:={}".format(v, sysconfig.get_config_var(v)))
+    if v in conf:
+        print(re.sub("[\t ]+", "__whitespace__", "PY_{}:={}".format(v, conf[v])))
 endef
 
 # I eval this to actually invoke the Python and to ingest its results. I only
-# eval this ONLY when necessary
+# eval this ONLY when necessary.
 define query_python_extension_building_flags
-_PYVARS := $$(shell python -c '$$(_PYVARS_SCRIPT)')
-# I then $$(eval) these tokens one at a time, restoring the whitespace
+_PYVARS := $$(shell python$(PYTHON_VERSION_FOR_EXTENSIONS) -c '$$(_PYVARS_SCRIPT)')
+# I then $(eval) these tokens one at a time, restoring the whitespace
 $$(foreach v,$$(_PYVARS),$$(eval $$(subst __whitespace__, ,$$v)))
 # pull out flags from CC, throw out the compiler itself, since I know better
 _FLAGS_FROM_PYCC    := $$(wordlist 2,$$(words $$(PY_CC)),$$(PY_CC))
@@ -242,6 +238,9 @@ define _PY_DEFINE_API_VAR
 $1 = $$(if $$(_$1),,$$(eval $$(query_python_extension_building_flags)))$$(_$1)
 endef
 $(foreach v,$(_PYVARS_API),$(eval $(call _PY_DEFINE_API_VAR,$v)))
+
+# this is not set in python2
+PY_EXT_SUFFIX := $(or $(PY_EXT_SUFFIX),.so)
 
 
 # Python docstring rules. I construct these from plain ASCII files to handle
