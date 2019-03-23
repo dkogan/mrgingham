@@ -87,11 +87,16 @@ mrgingham_pywrap.o: CFLAGS += -Wno-cast-function-type
 mrgingham_pywrap.o: CFLAGS += $(PY_MRBUILD_CFLAGS)
 mrgingham_pywrap.o: $(addsuffix .h,$(wildcard *.docstring))
 
-_mrgingham.so: mrgingham_pywrap.o libmrgingham.so
-	$(PY_MRBUILD_LINKER) $(PY_MRBUILD_LDFLAGS) $< -lmrgingham -o $@
+# The python library is called "mrgingham.so". This is confusing, but is the
+# best I could do. Because I want to be able to "import mrgingham"; and the
+# normal way of creating a "mrgingham" subdirectory for all the python stuff
+# doesn't work here: I already have a directory entry called "mrgingham"; it's
+# the main commandline tool.
+mrgingham.so: mrgingham_pywrap.o libmrgingham.so
+	$(PY_MRBUILD_LINKER) $(PY_MRBUILD_LDFLAGS) $^ -o $@
 
-DIST_PY2_MODULES := _mrgingham.so
+DIST_PY2_MODULES := mrgingham.so
 
-all: _mrgingham.so
+all: mrgingham.so
 
 include Makefile.common

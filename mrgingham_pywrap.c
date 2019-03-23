@@ -111,7 +111,7 @@ static PyObject* py_ChESS_response_5(PyObject* NPY_UNUSED(self),
     return result;
 }
 
-PyMODINIT_FUNC init_mrgingham(void)
+PyMODINIT_FUNC initmrgingham(void)
 {
     static const char py_ChESS_response_5_docstring[] =
 #include "ChESS_response_5.docstring.h"
@@ -122,7 +122,7 @@ PyMODINIT_FUNC init_mrgingham(void)
          {}
         };
 
-    PyObject* module = Py_InitModule3("_mrgingham", methods,
+    PyObject* module = Py_InitModule3("mrgingham", methods,
                                       "Chessboard-detection routines");
     import_array();
 }
