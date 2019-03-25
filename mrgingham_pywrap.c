@@ -1,5 +1,4 @@
 #define NPY_NO_DEPRECATED_API NPY_API_VERSION
-#define PY_ARRAY_UNIQUE_SYMBOL mrgingham_
 
 #include <stdbool.h>
 #include <Python.h>
@@ -154,10 +153,31 @@ static PyObject* find_chessboard_corners(PyObject* NPY_UNUSED(self),
         goto done;
     }
 
-    result = (PyObject*)find_chessboard_corners_from_image_array_C
-        ( (PyObject*)image, image_pyramid_level );
-    if( result == NULL )
+
+    bool init(int N)
     {
+        result = PyArray_SimpleNew(2,
+                                   ((npy_intp[]){N, 2}),
+                                   NPY_DOUBLE);
+        return (result != NULL);
+    }
+    bool add_point(int i, double x, double y)
+    {
+        double* out_data = (double*)PyArray_BYTES((PyArrayObject*)result);
+        out_data[2*i + 0] = x;
+        out_data[2*i + 1] = y;
+        return true;
+    }
+    if(! find_chessboard_corners_from_image_array_C(PyArray_DIMS(image)[0],
+                                                    PyArray_DIMS(image)[1],
+                                                    PyArray_STRIDES(image)[0],
+                                                    PyArray_BYTES(image),
+
+                                                    image_pyramid_level,
+                                                    &init, &add_point) )
+    {
+        Py_XDECREF(result);
+        result = NULL;
         PyErr_SetString(PyExc_RuntimeError, "find_chessboard_corners_from_image_array_C() failed");
         goto done;
     }
@@ -209,12 +229,37 @@ static PyObject* find_chessboard(PyObject* NPY_UNUSED(self),
         goto done;
     }
 
-    result = (PyObject*)find_chessboard_from_image_array_C
-        ( (PyObject*)image, image_pyramid_level );
-    if( result == NULL )
+    bool init(int N)
     {
-        result = Py_None;
-        Py_INCREF(result);
+        result = PyArray_SimpleNew(2,
+                                   ((npy_intp[]){N, 2}),
+                                   NPY_DOUBLE);
+        return (result != NULL);
+    }
+    bool add_point(int i, double x, double y)
+    {
+        double* out_data = (double*)PyArray_BYTES((PyArrayObject*)result);
+        out_data[2*i + 0] = x;
+        out_data[2*i + 1] = y;
+        return true;
+    }
+    if(! find_chessboard_from_image_array_C(PyArray_DIMS(image)[0],
+                                            PyArray_DIMS(image)[1],
+                                            PyArray_STRIDES(image)[0],
+                                            PyArray_BYTES(image),
+
+                                            image_pyramid_level,
+                                            &init, &add_point) )
+    {
+        // This is allowed to fail. We possibly found no chessboard. This is
+        // sloppy since it ignore other potential errors, but there shouldn't be
+        // any in this path
+        Py_XDECREF(result);
+        if( result == NULL )
+        {
+            result = Py_None;
+            Py_INCREF(result);
+        }
     }
 
  done:
