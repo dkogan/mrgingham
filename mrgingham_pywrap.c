@@ -103,8 +103,7 @@ static PyObject* py_ChESS_response_5(PyObject* NPY_UNUSED(self),
         loop_dim(ndims-3);
     }
 
-    result = Py_BuildValue("O", response);
-    Py_DECREF(response);
+    result = response;
 
  done:
     Py_XDECREF(image);
