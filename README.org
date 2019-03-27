@@ -2,7 +2,7 @@
 This is a library for finding calibration boards in observed camera images:
 
 #+BEGIN_EXAMPLE
-$ mrgingham --chessboard --clahe --level 1 /tmp/image*.jpg
+$ mrgingham --clahe --level 1 /tmp/image*.jpg
 
 # filename x y
 /tmp/image1.jpg - -
@@ -12,7 +12,7 @@ $ mrgingham --chessboard --clahe --level 1 /tmp/image*.jpg
 ...
 
 
-$ mrgingham --chessboard --clahe --level 1 /tmp/image.jpg |
+$ mrgingham --clahe --level 1 /tmp/image.jpg |
   vnl-filter -p x,y |
   feedgnuplot --domain --lines --points --image /tmp/image.jpg
 
@@ -174,7 +174,7 @@ NAME
     mrgingham - Extract chessboard corners from a set of images
 
 SYNOPSIS
-     $ mrgingham --chessboard --clahe --level 1 /tmp/image*.jpg
+     $ mrgingham --clahe --level 1 /tmp/image*.jpg
 
      # filename x y
      /tmp/image1.jpg - -
@@ -184,7 +184,7 @@ SYNOPSIS
      ...
 
 
-     $ mrgingham --chessboard --clahe --level 1 /tmp/image.jpg |
+     $ mrgingham --clahe --level 1 /tmp/image.jpg |
        vnl-filter -p x,y |
        feedgnuplot --domain --lines --points --image /tmp/image.jpg
 
@@ -263,12 +263,12 @@ ARGUMENTS
     The general usage is
 
      mrgingham [--debug] [--jobs N] [--clahe] [--blur radius]
-               [--level l] --blobs|--chessboard imageglobs imageglobs ...
+               [--level l] [--blobs] imageglobs imageglobs ...
 
     The arguments are
 
-    "--blobs" and "--chessboard"
-        Exactly one of these is required. Use "--chessboard"
+    "--blobs"
+        Find circle centers instead of chessboard corners. Note recommended
 
     "--clahe"
         Optional argument to control image preprocessing. This will apply

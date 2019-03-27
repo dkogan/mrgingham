@@ -2,7 +2,7 @@
 This is a library for finding calibration boards in observed camera images:
 
 #+BEGIN_EXAMPLE
-$ mrgingham --chessboard --clahe --level 1 /tmp/image*.jpg
+$ mrgingham --clahe --level 1 /tmp/image*.jpg
 
 # filename x y
 /tmp/image1.jpg - -
@@ -12,7 +12,7 @@ $ mrgingham --chessboard --clahe --level 1 /tmp/image*.jpg
 ...
 
 
-$ mrgingham --chessboard --clahe --level 1 /tmp/image.jpg |
+$ mrgingham --clahe --level 1 /tmp/image.jpg |
   vnl-filter -p x,y |
   feedgnuplot --domain --lines --points --image /tmp/image.jpg
 

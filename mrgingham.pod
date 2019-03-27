@@ -4,7 +4,7 @@ mrgingham - Extract chessboard corners from a set of images
 
 =head1 SYNOPSIS
 
- $ mrgingham --chessboard --clahe --level 1 /tmp/image*.jpg
+ $ mrgingham --clahe --level 1 /tmp/image*.jpg
 
  # filename x y
  /tmp/image1.jpg - -
@@ -14,7 +14,7 @@ mrgingham - Extract chessboard corners from a set of images
  ...
 
 
- $ mrgingham --chessboard --clahe --level 1 /tmp/image.jpg |
+ $ mrgingham --clahe --level 1 /tmp/image.jpg |
    vnl-filter -p x,y |
    feedgnuplot --domain --lines --points --image /tmp/image.jpg
 
@@ -124,15 +124,11 @@ came from the center of the circle on the calibration board.
 The general usage is
 
  mrgingham [--debug] [--jobs N] [--clahe] [--blur radius]
-           [--level l] --blobs|--chessboard imageglobs imageglobs ...
+           [--level l] [--blobs] imageglobs imageglobs ...
 
 The arguments are
 
 =over
-
-=item C<--blobs> and C<--chessboard>
-
-Exactly one of these is required. Use C<--chessboard>
 
 =item C<--clahe>
 
@@ -168,6 +164,10 @@ record with null C<x> and C<y>.
 If given, C<mrgingham> will dump various intermediate results into
 C</tmp> and it will report more stuff on the console. The output is
 self-documenting
+
+=item C<--blobs>
+
+Find circle centers instead of chessboard corners. Not recommended
 
 =back
 

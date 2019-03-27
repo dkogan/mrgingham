@@ -137,9 +137,9 @@ int main(int argc, char* argv[])
 {
     const char* usage =
         "Usage: %s [--debug] [--jobs N] [--clahe] [--blur radius]\n"
-        "                   [--level l] --blobs|--chessboard imageglobs imageglobs ...\n"
+        "                   [--level l] [--blobs] imageglobs imageglobs ...\n"
         "\n"
-        "  --blobs or --chessboard are required; these tell the tool what to do.\n"
+        "  We will look for chessboards, unless --blobs is given\n"
         "\n"
         "  --clahe is optional: it will pre-process the image with an adaptive histogram\n"
         "  equalization step. This is useful if the calibration board has a lighting\n"
@@ -175,7 +175,6 @@ int main(int argc, char* argv[])
 
     struct option opts[] = {
         { "blobs",             no_argument,       NULL, 'B' },
-        { "chessboard",        no_argument,       NULL, 'C' },
         { "blur",              required_argument, NULL, 'b' },
         { "clahe",             no_argument,       NULL, 'c' },
         { "level",             required_argument, NULL, 'l' },
@@ -188,8 +187,7 @@ int main(int argc, char* argv[])
     };
 
 
-    bool        have_doblobs        = false;
-    bool        doblobs             = false; // to pacify compiler
+    bool        doblobs             = false;
     bool        doclahe             = false;
     bool        do_refine           = true;
     bool        debug               = false;
@@ -214,16 +212,7 @@ int main(int argc, char* argv[])
             return 0;
 
         case 'B':
-        case 'C':
-            if( have_doblobs )
-            {
-                fprintf(stderr, "doubly-specified --blobs/--chessboard\n");
-                fprintf(stderr, usage, argv[0]);
-                return 1;
-
-            }
-            have_doblobs = true;
-            doblobs      = (opt == 'B');
+            doblobs = true;
             break;
 
         case 'c':
@@ -277,12 +266,6 @@ int main(int argc, char* argv[])
         }
     } while( opt != -1 );
 
-    if( !have_doblobs)
-    {
-        fprintf(stderr, "Need to know if --blobs or --chessboard\n");
-        fprintf(stderr, usage, argv[0]);
-        return 1;
-    }
     if( optind > argc-1)
     {
         fprintf(stderr, "Not enough arguments: need image globs\n");

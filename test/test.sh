@@ -9,7 +9,7 @@ failures=()
 
 for image ($imagedir/*)
 {
-    ./mrgingham --chessboard --clahe $image > /dev/null || failures+=$image
+    ./mrgingham --clahe $image > /dev/null || failures+=$image
 }
 
 if (($#failures)); then
