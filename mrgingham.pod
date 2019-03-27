@@ -144,7 +144,8 @@ I<extremely> helpful if the images aren't lit evenly; which is most of them.
 
 Optional argument to control image preprocessing. This will apply a gaussian
 blur to the image (after the histogram equalization). A light blurring is very
-helpful with CLAHE, since that makes noisy images.
+helpful with CLAHE, since that makes noisy images. By default we will blur with
+radius = 1. Set to <= 0 to disable
 
 =item C<--level L>
 

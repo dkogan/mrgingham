@@ -149,7 +149,8 @@ int main(int argc, char* argv[])
         "  adaptive histogram equalization step (using the CLAHE algorithm). This is\n"
         "  useful if the calibration board has a lighting gradient across it.\n"
         "\n"
-        "  --blur radius   applies a blur (after CLAHE) to the image before processing\n"
+        "  --blur radius   applies a blur (after CLAHE) to the image before processing.\n"
+        "  By default we will blur with a radius of 1. To disable, set the radius to <= 0\n"
         "\n"
         "  --level l   applies a downsampling to the image before processing it (after\n"
         "  CLAHE and --blur, if given) to the image before processing. Level 0 means\n"
@@ -196,7 +197,7 @@ int main(int argc, char* argv[])
     bool        debug               = false;
     bool        debug_sequence      = false;
     PointInt    debug_sequence_pt;
-    int         blur_radius         = -1;
+    int         blur_radius         = 1;
     int         image_pyramid_level = -1;
     int         jobs                = 1;
 
@@ -245,13 +246,6 @@ int main(int argc, char* argv[])
 
         case 'b':
             blur_radius = atoi(optarg);
-            if(blur_radius <= 0)
-            {
-                fprintf(stderr, "blur_radius < 0\n");
-                fprintf(stderr, usage, argv[0]);
-                return 1;
-
-            }
             break;
 
         case 'l':
