@@ -136,20 +136,23 @@ static void* worker( void* _ijob )
 int main(int argc, char* argv[])
 {
     const char* usage =
-        "Usage: %s [--debug] [--jobs N] [--clahe] [--blur radius]\n"
+        "Usage: %s [--debug] [--jobs N] [--noclahe] [--blur radius]\n"
         "                   [--level l] [--blobs] imageglobs imageglobs ...\n"
+        "\n"
+        "  By default we look for a chessboard. By default we apply adaptive histogram\n"
+        "  equalization, then blur with a radius of 1. We then use an adaptive level of\n"
+        "  downsampling when looking for the chessboard.\n"
         "\n"
         "  We will look for chessboards, unless --blobs is given\n"
         "\n"
-        "  --clahe is optional: it will pre-process the image with an adaptive histogram\n"
-        "  equalization step. This is useful if the calibration board has a lighting\n"
-        "  gradient across it.\n"
+        "  --noclahe is optional: unless given, we will pre-process the image with an\n"
+        "  adaptive histogram equalization step (using the CLAHE algorithm). This is\n"
+        "  useful if the calibration board has a lighting gradient across it.\n"
         "\n"
-        "  --blur radius   applies a blur (after --clahe, if given) to the image before\n"
-        "  processing\n"
+        "  --blur radius   applies a blur (after CLAHE) to the image before processing\n"
         "\n"
         "  --level l   applies a downsampling to the image before processing it (after\n"
-        "  --clahe and --blur, if given) to the image before processing. Level 0 means\n"
+        "  CLAHE and --blur, if given) to the image before processing. Level 0 means\n"
         "  'use the original image'. Level > 0 means downsample by 2**level. Level < 0\n"
         "  means 'try several different levels until we find one that works. This is the\n"
         "  default.\n"
@@ -176,7 +179,7 @@ int main(int argc, char* argv[])
     struct option opts[] = {
         { "blobs",             no_argument,       NULL, 'B' },
         { "blur",              required_argument, NULL, 'b' },
-        { "clahe",             no_argument,       NULL, 'c' },
+        { "noclahe",           no_argument,       NULL, 'C' },
         { "level",             required_argument, NULL, 'l' },
         { "no-refine",         no_argument,       NULL, 'R' },
         { "jobs",              required_argument, NULL, 'j' },
@@ -188,7 +191,7 @@ int main(int argc, char* argv[])
 
 
     bool        doblobs             = false;
-    bool        doclahe             = false;
+    bool        doclahe             = true;
     bool        do_refine           = true;
     bool        debug               = false;
     bool        debug_sequence      = false;
@@ -215,8 +218,8 @@ int main(int argc, char* argv[])
             doblobs = true;
             break;
 
-        case 'c':
-            doclahe = true;
+        case 'C':
+            doclahe = false;
             break;
 
         case 'R':
