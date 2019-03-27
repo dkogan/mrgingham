@@ -153,19 +153,16 @@ static PyObject* find_chessboard_corners(PyObject* NPY_UNUSED(self),
         goto done;
     }
 
-
-    bool init(int N)
+    bool add_points(int* xy, int N, double scale)
     {
         result = PyArray_SimpleNew(2,
                                    ((npy_intp[]){N, 2}),
                                    NPY_DOUBLE);
-        return (result != NULL);
-    }
-    bool add_point(int i, double x, double y)
-    {
+        if(result == NULL) return false;
+
         double* out_data = (double*)PyArray_BYTES((PyArrayObject*)result);
-        out_data[2*i + 0] = x;
-        out_data[2*i + 1] = y;
+        for(int i=0; i<2*N; i++)
+            out_data[i] = scale * (double)xy[i];
         return true;
     }
     if(! find_chessboard_corners_from_image_array_C(PyArray_DIMS(image)[0],
@@ -174,7 +171,7 @@ static PyObject* find_chessboard_corners(PyObject* NPY_UNUSED(self),
                                                     PyArray_BYTES(image),
 
                                                     image_pyramid_level,
-                                                    &init, &add_point) )
+                                                    &add_points) )
     {
         Py_XDECREF(result);
         result = NULL;
@@ -229,18 +226,15 @@ static PyObject* find_chessboard(PyObject* NPY_UNUSED(self),
         goto done;
     }
 
-    bool init(int N)
+    bool add_points(double* xy, int N)
     {
         result = PyArray_SimpleNew(2,
                                    ((npy_intp[]){N, 2}),
                                    NPY_DOUBLE);
-        return (result != NULL);
-    }
-    bool add_point(int i, double x, double y)
-    {
+        if(result == NULL) return false;
+
         double* out_data = (double*)PyArray_BYTES((PyArrayObject*)result);
-        out_data[2*i + 0] = x;
-        out_data[2*i + 1] = y;
+        memcpy(out_data, xy, 2*sizeof(double));
         return true;
     }
     if(! find_chessboard_from_image_array_C(PyArray_DIMS(image)[0],
@@ -249,7 +243,7 @@ static PyObject* find_chessboard(PyObject* NPY_UNUSED(self),
                                             PyArray_BYTES(image),
 
                                             image_pyramid_level,
-                                            &init, &add_point) )
+                                            &add_points) )
     {
         // This is allowed to fail. We possibly found no chessboard. This is
         // sloppy since it ignore other potential errors, but there shouldn't be

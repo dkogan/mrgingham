@@ -33,8 +33,7 @@ bool find_chessboard_corners_from_image_array_C( // in
                                                 // set to 0 to just use the image
                                                 int image_pyramid_level,
 
-                                                bool (*init)(int N),
-                                                bool (*add_point)(int i, double x, double y) )
+                                                bool (*add_points)(int* xy, int N, double scale) )
 {
     cv::Mat cvimage(Nrows, Ncols, CV_8UC1,
                     imagebuffer, stride);
@@ -44,14 +43,11 @@ bool find_chessboard_corners_from_image_array_C( // in
     bool result = find_chessboard_corners_from_image_array( &out_points, cvimage, image_pyramid_level );
     if( !result ) return false;
 
-    if(!(*init)(out_points.size())) return false;
-
-    for(int i=0; i<(int)out_points.size(); i++)
-        if(!( (*add_point)( i,
-                            (double)out_points[i].x / (double)FIND_GRID_SCALE,
-                            (double)out_points[i].y / (double)FIND_GRID_SCALE)))
-            return false;
-    return true;
+    static_assert( sizeof(mrgingham::PointInt) == 2*sizeof(int),
+                   "add_points() assumes PointInt is simply 2 ints");
+    return
+        (*add_points)( &out_points[0].x, (int)out_points.size(),
+                       1. / (double)FIND_GRID_SCALE);
 }
 
 extern "C"
@@ -65,8 +61,7 @@ bool find_chessboard_from_image_array_C( // in
                                         // good scaling level. Try this first
                                         int image_pyramid_level,
 
-                                        bool (*init)(int N),
-                                        bool (*add_point)(int i, double x, double y) )
+                                        bool (*add_points)(double* xy, int N) )
 {
     cv::Mat cvimage(Nrows, Ncols, CV_8UC1,
                     imagebuffer, stride);
@@ -76,11 +71,8 @@ bool find_chessboard_from_image_array_C( // in
     bool result = find_chessboard_from_image_array( out_points, cvimage, image_pyramid_level );
     if( !result ) return false;
 
-    if(!(*init)(out_points.size())) return false;
-
-    for(int i=0; i<(int)out_points.size(); i++)
-        if(!( (*add_point)( i,
-                            out_points[i].x, out_points[i].y)))
-            return false;
-    return true;
+    static_assert( sizeof(mrgingham::PointDouble) == 2*sizeof(double),
+                   "add_points() assumes PointDouble is simply 2 doubles");
+    return
+        (*add_points)( &out_points[0].x, (int)out_points.size() );
 }
