@@ -18,6 +18,11 @@ BuildRequires:  chrpath
 # --help'
 BuildRequires:  python
 
+# for the python interface
+BuildRequires: numpy
+BuildRequires: python-devel
+BuildRequires: python-libs
+
 Conflicts: mrgingham-tools <= 1.10
 
 %description
@@ -48,6 +53,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/*.so.*
 %{_bindir}/*
 %{_mandir}/*
+%{python2_sitelib}/*
 
 %files devel
 %{_libdir}/*.so
