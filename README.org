@@ -281,7 +281,8 @@ ARGUMENTS
         Optional argument to control image preprocessing. This will apply a
         gaussian blur to the image (after the histogram equalization). A
         light blurring is very helpful with CLAHE, since that makes noisy
-        images.
+        images. By default we will blur with radius = 1. Set to <= 0 to
+        disable
 
     "--level L"
         Optional argument to control image preprocessing. Applies a
