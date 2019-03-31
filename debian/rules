@@ -10,4 +10,8 @@ export PKG_CONFIG := $(DEB_HOST_GNU_TYPE)-pkg-config
 export DEB_BUILD_MAINT_OPTIONS=hardening=+all
 
 %:
-	dh $@
+	dh $@ --with python2
+
+override_dh_python2:
+	dh_numpy
+	dh_python2
