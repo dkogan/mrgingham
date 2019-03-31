@@ -1,3 +1,10 @@
+mrgingham (1.11) unstable; urgency=medium
+
+  * Added python interface
+  * mrgingham commandline tool has more reasonable defaults
+
+ -- Dima Kogan <dima@secretsauce.net>  Sat, 30 Mar 2019 20:43:11 -0700
+
 mrgingham (1.9) unstable; urgency=medium
 
   * Updates
