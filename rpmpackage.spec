@@ -18,6 +18,8 @@ BuildRequires:  chrpath
 # --help'
 BuildRequires:  python
 
+Conflicts: mrgingham-tools <= 1.10
+
 %description
 Library to find a grid of points; used for calibration routines
 
@@ -27,13 +29,6 @@ Summary:        Development files for mrgingham
 
 %description devel
 Headers and libraries for building applications using mrgingham
-
-%package tools
-Requires:       %{name}%{_isa} = %{version}-%{release}
-Summary:        Executable tools for mrgingham
-
-%description tools
-Executable tools for mrgingham
 
 %prep
 %setup -q
@@ -51,11 +46,9 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %doc
 %{_libdir}/*.so.*
+%{_bindir}/*
+%{_mandir}/*
 
 %files devel
 %{_libdir}/*.so
 %{_includedir}/*
-
-%files tools
-%{_bindir}/*
-%{_mandir}/*
