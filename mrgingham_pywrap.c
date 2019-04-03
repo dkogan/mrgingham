@@ -172,10 +172,22 @@ static PyObject* find_chessboard_corners(PyObject* NPY_UNUSED(self),
                                                     image_pyramid_level,
                                                     &add_points) )
     {
-        Py_XDECREF(result);
-        result = NULL;
-        PyErr_SetString(PyExc_RuntimeError, "find_chessboard_corners_from_image_array_C() failed");
-        goto done;
+        if(result == NULL)
+        {
+            // Detector didn't find anything. I don't flag an error,
+            // but simply return a no-data array
+            result = PyArray_SimpleNew(2,
+                                       ((npy_intp[]){0, 2}),
+                                       NPY_DOUBLE);
+        }
+        else
+        {
+            // an actual error occured. I complain
+            Py_DECREF(result);
+            result = NULL;
+            PyErr_SetString(PyExc_RuntimeError, "find_chessboard_corners_from_image_array_C() failed");
+            goto done;
+        }
     }
 
  done:
