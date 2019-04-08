@@ -136,7 +136,8 @@ static void* worker( void* _ijob )
 int main(int argc, char* argv[])
 {
     const char* usage =
-        "Usage: %s [--debug] [--jobs N] [--noclahe] [--blur radius]\n"
+        "Usage: %s [--debug] [--debug-sequence x,y]\n"
+        "                   [--jobs N] [--noclahe] [--blur radius]\n"
         "                   [--level l] [--blobs] imageglobs imageglobs ...\n"
         "\n"
         "  By default we look for a chessboard. By default we apply adaptive histogram\n"
