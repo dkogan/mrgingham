@@ -8,7 +8,7 @@ Synopsis:
     Evaluated 49 observations
     mean 1-sigma for independent x,y: 0.26
 
-  $ calibrate-cameras --observed-pixel-uncertainty 0.26 .....
+  $ mrcal-calibrate-cameras --observed-pixel-uncertainty 0.26 .....
   [ mrcal computes a camera calibration ]
 
 mrgingham has finite precision, so repeated observations of the same board will
@@ -16,7 +16,7 @@ produce slightly different corner coordinates. This tool takes in a set of
 images (assumed observing a chessboard, with both the camera and board
 stationary). It then outputs the 1-standard-deviation statistic for the
 distribution of detected corners. This can then be passed in to mrcal:
-'calibrate-cameras --observed-pixel-uncertainty ...'
+'mrcal-calibrate-cameras --observed-pixel-uncertainty ...'
 
 The distribution of the detected corners is assumed to be gaussian, and
 INDEPENDENT in the horizontal and vertical directions. If the x and y
