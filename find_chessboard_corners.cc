@@ -26,6 +26,8 @@ extern "C"
 // encountered in our component
 #define RESPONSE_MIN_THRESHOLD_RATIO_OF_MAX(response_max) (((uint16_t)(response_max)) >> 4)
 
+#define CONNECTED_COMPONENT_MIN_SIZE        2
+
 // When looking at a candidate corner (peak of a connected component), we look
 // at the variance of the intensities of the pixels in a region around the
 // candidate corner. This has to be "relatively high". If we somehow end up
@@ -219,7 +221,7 @@ static bool connected_component_is_valid(const connected_component_t* c,
     // constant in a chessboard square, and I throw out this candidate
     // then
     return
-        c->N > 1                                      &&
+        c->N >= CONNECTED_COMPONENT_MIN_SIZE          &&
         c->response_max > RESPONSE_MIN_PEAK_THRESHOLD &&
         high_variance(c->x_peak, c->y_peak,
                       w,h, image);
