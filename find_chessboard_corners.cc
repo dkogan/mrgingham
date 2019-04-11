@@ -523,11 +523,6 @@ int _find_or_refine_chessboard_corners_from_image_array ( // out
         cv::imwrite(CHESS_RESPONSE_FILENAME, out);
 
         fprintf(stderr, "Wrote a normalized ChESS response to " CHESS_RESPONSE_FILENAME "\n");
-
-        // for( int y = 0; y < h; y++ )
-        //     for( int x = 0; x < w; x++ )
-        //         printf("%d %d %d\n", x, y, responseData[x+y*w] );
-
     }
 
     // I set all responses <0 to "0". These are not valid as candidates, and
