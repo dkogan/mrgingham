@@ -486,7 +486,8 @@ apply_image_pyramid_scaling(// out
     return image;
 }
 
-#define CHESS_RESPONSE_FILENAME "/tmp/chess-response.png"
+#define CHESS_RESPONSE_FILENAME          "/tmp/chess-response.png"
+#define CHESS_RESPONSE_POSITIVE_FILENAME "/tmp/chess-response-positive.png"
 static
 int _find_or_refine_chessboard_corners_from_image_array ( // out
                                                           std::vector<mrgingham::PointInt>* points_scaled_out,
@@ -534,6 +535,15 @@ int _find_or_refine_chessboard_corners_from_image_array ( // out
     for( int xy = 0; xy < w*h; xy++ )
         if(responseData[xy] < 0)
             responseData[xy] = 0;
+
+    if(debug && refinement_context==NULL)
+    {
+        cv::Mat out;
+        cv::normalize(response, out, 0, 255, cv::NORM_MINMAX);
+        cv::imwrite(CHESS_RESPONSE_POSITIVE_FILENAME, out);
+
+        fprintf(stderr, "Wrote positive-only, normalized ChESS response to " CHESS_RESPONSE_POSITIVE_FILENAME "\n");
+    }
 
     // I have responses. I
     //
