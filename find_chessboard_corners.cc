@@ -114,6 +114,7 @@ static void xylist_reset_with(struct xylist_t* l, int16_t x, int16_t y)
 static void xylist_free(struct xylist_t* l)
 {
     free(l->xy);
+    l->xy = NULL;
     l->N = -1;
 }
 static void xylist_push(struct xylist_t* l, int16_t x, int16_t y)
