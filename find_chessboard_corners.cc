@@ -176,14 +176,10 @@ connected_component_t connected_component_init(void)
     return c;
 }
 
-static int16_t response_at(int16_t x, int16_t y, int16_t w, const int16_t* d)
-{
-    return d[x + y*w];
-}
 static bool is_valid(int16_t x, int16_t y, int16_t w, int16_t h, const int16_t* d,
                      const connected_component_t* c)
 {
-    int16_t response = response_at(x,y,w,d);
+    int16_t response = d[x+y*w];
 
     return
         response > RESPONSE_MIN_THRESHOLD &&
@@ -192,7 +188,7 @@ static bool is_valid(int16_t x, int16_t y, int16_t w, int16_t h, const int16_t* 
 static void accumulate(int16_t x, int16_t y, int16_t w, int16_t h, const int16_t* d,
                        connected_component_t* c)
 {
-    int16_t response = response_at(x,y,w,d);
+    int16_t response = d[x+y*w];
     if( response > c->response_max)
     {
         c->response_max = response;
@@ -240,7 +236,7 @@ static void check_and_push_candidate(struct xylist_t* l,
         return;
     }
 
-    if( response_at(x, y, w,d) <= 0 )
+    if( d[x+y*w] <= 0 )
         return;
 
     xylist_push(l, x, y);
