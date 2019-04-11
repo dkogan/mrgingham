@@ -170,11 +170,6 @@ typedef struct
     uint16_t x_peak, y_peak;
     int16_t  response_max;
 }  connected_component_t;
-connected_component_t connected_component_init(void)
-{
-    connected_component_t c = {};
-    return c;
-}
 
 static bool is_valid(int16_t x, int16_t y, int16_t w, int16_t h, const int16_t* d,
                      const connected_component_t* c)
@@ -241,10 +236,6 @@ static void check_and_push_candidate(struct xylist_t* l,
 
     xylist_push(l, x, y);
 }
-static void mark_invalid(int16_t x, int16_t y, int16_t w, int16_t h, int16_t* d)
-{
-    d[x + y*w] = 0;
-}
 static bool follow_connected_component(PointDouble* out,
 
                                        struct xylist_t* l,
@@ -253,7 +244,7 @@ static bool follow_connected_component(PointDouble* out,
                                        const uint8_t* image,
                                        int margin)
 {
-    connected_component_t c = connected_component_init();
+    connected_component_t c = {};
 
     bool touched_margin = false;
 
@@ -264,7 +255,7 @@ static bool follow_connected_component(PointDouble* out,
             continue;
 
         accumulate  (x,y,w,h,d, &c);
-        mark_invalid(x,y,w,h,d);
+        d[x + y*w] = 0; // mark invalid
 
         check_and_push_candidate(l, &touched_margin, x+1, y,   w,h,d,margin);
         check_and_push_candidate(l, &touched_margin, x-1, y,   w,h,d,margin);
