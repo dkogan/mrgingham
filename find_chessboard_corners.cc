@@ -338,7 +338,7 @@ static void process_connected_components(int w, int h, int16_t* d,
 
     // I assume that points_scaled_out and refinement_context aren't both non-NULL
 
-    // I loop through al the pixels in the image. For each one I expand it into
+    // I loop through all the pixels in the image. For each one I expand it into
     // the connected component that contains it. If I'm refining, I only look
     // for the connected component around the points I'm interested in
     if(points_scaled_out != NULL)
