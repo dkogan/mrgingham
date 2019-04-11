@@ -252,7 +252,10 @@ static bool follow_connected_component(PointDouble* out,
     while( xylist_pop(l, &x, &y))
     {
         if(!is_valid(x,y,w,h,d, &c))
+        {
+            d[x + y*w] = 0; // mark invalid; just in case
             continue;
+        }
 
         accumulate  (x,y,w,h,d, &c);
         d[x + y*w] = 0; // mark invalid
