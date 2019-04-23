@@ -31,11 +31,6 @@ CCXXFLAGS += -fvisibility=hidden
 CFLAGS    += -std=gnu99
 CCXXFLAGS += -Wno-unused-function -Wno-missing-field-initializers -Wno-unused-parameter -Wno-strict-aliasing -Wno-int-to-pointer-cast -Wno-unused-variable
 
-# opencv is a ridiculous library that keeps breaking their APIs for some reason.
-# On opencv2 I do this:
-AM_OLD_RH7 := $(shell grep "release 7" /etc/redhat-release 2>/dev/null)
-CCXXFLAGS  += -DOLD_OPENCV=$(if $(AM_OLD_RH7),1,0)
-
 # On opencv4 I do this:
 ifneq ($(wildcard /usr/include/opencv4),)
 CCXXFLAGS += -D CV_LOAD_IMAGE_GRAYSCALE=cv::IMREAD_GRAYSCALE

@@ -23,14 +23,9 @@ bool find_blobs_from_image_array( std::vector<PointInt>* points,
 
     std::vector<cv::KeyPoint> keypoints;
 
-#if defined OLD_OPENCV && OLD_OPENCV
-    cv::SimpleBlobDetector blobDetector(blobDetectorParams);
-    blobDetector.detect(image, keypoints);
-#else
     cv::SimpleBlobDetector* blobDetector =
         cv::SimpleBlobDetector::create(blobDetectorParams);
     blobDetector->detect(image, keypoints);
-#endif
 
     for(std::vector<cv::KeyPoint>::iterator it = keypoints.begin();
         it != keypoints.end();
