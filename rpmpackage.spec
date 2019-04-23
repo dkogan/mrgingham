@@ -9,7 +9,7 @@ License:        LGPL-2.1+
 URL:            https://github.com/dkogan/mrgingham/
 Source0:        https://github.com/dkogan/mrgingham/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
 
-BuildRequires:  opencv-devel ( >= 3.4.4 )
+BuildRequires:  opencv-devel >= 3.2
 BuildRequires:  boost-devel
 BuildRequires:  chrpath
 
