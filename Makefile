@@ -83,7 +83,7 @@ EXTRA_CLEAN += *.1 mrgingham-observe-pixel-uncertainty.pod README.org
 mrgingham_pywrap.o: CFLAGS += -Wno-cast-function-type
 
 mrgingham_pywrap.o: CCXXFLAGS += $(PY_MRBUILD_CFLAGS)
- mrgingham_pywrap_cplusplus_bridge.o: CCXXFLAGS += -fPIC
+mrgingham_pywrap_cplusplus_bridge.o: CCXXFLAGS += -fPIC
 mrgingham_pywrap.o: $(addsuffix .h,$(wildcard *.docstring))
 
 # The python library is called "mrgingham.so". This is confusing, but is the
