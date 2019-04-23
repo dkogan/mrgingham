@@ -9,19 +9,19 @@ License:        LGPL-2.1+
 URL:            https://github.com/dkogan/mrgingham/
 Source0:        https://github.com/dkogan/mrgingham/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
 
-BuildRequires:  opencv-devel
+BuildRequires:  opencv-devel ( >= 3.4.4 )
 BuildRequires:  boost-devel
 BuildRequires:  chrpath
 
 
 # to build the manpages I need to run 'mrgingham-observe-pixel-uncertainty
 # --help'
-BuildRequires:  python
+BuildRequires:  python36
 
 # for the python interface
-BuildRequires: numpy
-BuildRequires: python-devel
-BuildRequires: python-libs
+BuildRequires: python36-numpy
+BuildRequires: python36-devel
+BuildRequires: python36-libs
 
 Conflicts: mrgingham-tools <= 1.10
 
@@ -53,7 +53,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/*.so.*
 %{_bindir}/*
 %{_mandir}/*
-%{python2_sitelib}/*
+%{python3_sitelib}/*
 
 %files devel
 %{_libdir}/*.so

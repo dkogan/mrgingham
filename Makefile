@@ -99,7 +99,7 @@ mrgingham_pywrap.o: $(addsuffix .h,$(wildcard *.docstring))
 mrgingham$(PY_EXT_SUFFIX): mrgingham_pywrap.o mrgingham_pywrap_cplusplus_bridge.o libmrgingham.so
 	$(PY_MRBUILD_LINKER) $(PY_MRBUILD_LDFLAGS) $^ -o $@
 
-DIST_PY2_MODULES := mrgingham$(PY_EXT_SUFFIX)
+DIST_PY3_MODULES := mrgingham$(PY_EXT_SUFFIX)
 
 all: mrgingham$(PY_EXT_SUFFIX)
 

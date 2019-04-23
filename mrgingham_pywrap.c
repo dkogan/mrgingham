@@ -273,27 +273,48 @@ static PyObject* find_chessboard(PyObject* NPY_UNUSED(self),
     return result;
 }
 
+static const char py_ChESS_response_5_docstring[] =
+#include "ChESS_response_5.docstring.h"
+    ;
+static const char find_chessboard_corners_docstring[] =
+#include "find_chessboard_corners.docstring.h"
+    ;
+static const char find_chessboard_docstring[] =
+#include "find_chessboard.docstring.h"
+    ;
+static PyMethodDef methods[] =
+    {
+     PYMETHODDEF_ENTRY(py_,ChESS_response_5,        METH_VARARGS),
+     PYMETHODDEF_ENTRY(,   find_chessboard_corners, METH_VARARGS | METH_KEYWORDS),
+     PYMETHODDEF_ENTRY(,   find_chessboard,         METH_VARARGS | METH_KEYWORDS),
+     {}
+    };
+
+#if PY_MAJOR_VERSION == 2
+
 __attribute__((visibility("default")))
 PyMODINIT_FUNC initmrgingham(void)
 {
-    static const char py_ChESS_response_5_docstring[] =
-#include "ChESS_response_5.docstring.h"
-        ;
-    static const char find_chessboard_corners_docstring[] =
-#include "find_chessboard_corners.docstring.h"
-        ;
-    static const char find_chessboard_docstring[] =
-#include "find_chessboard.docstring.h"
-        ;
-    static PyMethodDef methods[] =
-        {
-         PYMETHODDEF_ENTRY(py_,ChESS_response_5,        METH_VARARGS),
-         PYMETHODDEF_ENTRY(,   find_chessboard_corners, METH_VARARGS | METH_KEYWORDS),
-         PYMETHODDEF_ENTRY(,   find_chessboard,         METH_VARARGS | METH_KEYWORDS),
-         {}
-        };
-
-    PyObject* module = Py_InitModule3("mrgingham", methods,
-                                      "Chessboard-detection routines");
+    Py_InitModule3("mrgingham", methods,
+                   "Chessboard-detection routines");
     import_array();
 }
+
+#else
+
+static struct PyModuleDef module_def =
+    {
+     PyModuleDef_HEAD_INIT,
+     "mrgingham",
+     "Chessboard-detection routines",
+     -1,
+     methods
+    };
+
+PyMODINIT_FUNC PyInit_mrgingham(void)
+{
+    import_array();
+    return PyModule_Create(&module_def);
+}
+
+#endif
