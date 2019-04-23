@@ -1,3 +1,5 @@
+PYTHON_VERSION_FOR_EXTENSIONS := 3
+
 include Makefile.common.header
 
 
