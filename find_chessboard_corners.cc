@@ -500,7 +500,11 @@ int _find_or_refine_chessboard_corners_from_image_array ( // out
 
     const int w = image->cols;
     const int h = image->rows;
-    cv::Mat response( h, w, CV_16S );
+
+    // I don't NEED to zero this out, but it makes the debugging easier.
+    // Otherwise the edges will contain uninitialized garbage, and the actual
+    // data will be hard to see in the debug images
+    cv::Mat response = cv::Mat::zeros( cv::Size(w, h), CV_16S );
 
     uint8_t* imageData    = image->data;
     int16_t* responseData = (int16_t*)response.data;
