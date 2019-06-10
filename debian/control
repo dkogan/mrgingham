@@ -1,16 +1,16 @@
 Source: mrgingham
 Priority: optional
 Section: devel
-Build-Depends: debhelper (>= 9), dh-python,
+Build-Depends: debhelper (>= 9), dh-python, python-numpy,
  libopencv-dev,
  libboost-dev,
  pkg-config,
  chrpath,
- python,
+ python3,
  perl,
  mawk,
- libpython-all-dev,
- python-numpy
+ libpython3-all-dev,
+ python3-numpy
 Maintainer: Dima Kogan <dima@secretsauce.net>
 Standards-Version: 3.9.8
 Homepage: https://github.com/dkogan/mrgingham/
@@ -33,10 +33,10 @@ Description: Chessboard finder for visual calibration routines
 Package: mrgingham
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libmrgingham1 (= ${binary:Version}),
-  python-vnlog,
-  python-numpysane,
-  python-gnuplotlib,
-  python-minimal:any
+  python3-vnlog,
+  python3-numpysane,
+  python3-gnuplotlib,
+  python3-minimal:any
 Description: Chessboard finder for visual calibration routines
  Given an observed image containing a chessboard or a grid of circles, mrgingham
  locates the board in the image, and precisely computes the locatino of the
@@ -58,13 +58,13 @@ Description: Chessboard finder for visual calibration routines
  .
  This package provides the development C libraries
 
-Package: python-mrgingham
+Package: python3-mrgingham
 Section: python
 Architecture: any
 Multi-Arch: same
 Depends: ${shlibs:Depends}, ${misc:Depends}, libmrgingham1 (= ${binary:Version}),
-         ${python:Depends}
-Provides: ${python:Provides}
+         ${python3:Depends}
+Provides: ${python3:Provides}
 Description: Chessboard finder for visual calibration routines
  Given an observed image containing a chessboard or a grid of circles, mrgingham
  locates the board in the image, and precisely computes the locatino of the
