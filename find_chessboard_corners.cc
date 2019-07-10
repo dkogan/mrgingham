@@ -15,11 +15,11 @@ extern "C"
 
 // When we find a connected component of high-enough corner responses, the peak
 // must have a response at least this strong for the component to be accepted
-#define RESPONSE_MIN_PEAK_THRESHOLD         200
+#define RESPONSE_MIN_PEAK_THRESHOLD         120
 
 // Corner responses must be at least this strong to be included into our
 // connected component
-#define RESPONSE_MIN_THRESHOLD              20
+#define RESPONSE_MIN_THRESHOLD              15
 
 // Corner responses must be at least this strong to be included into our
 // connected component. This is based on the maximum response we have so far
@@ -36,7 +36,7 @@ extern "C"
 // low. These parameters set the size of this search window and the threshold
 // for the standard deviation (sqrt(variance))
 #define CONSTANCY_WINDOW_R                  5
-#define STDEV_THRESHOLD                     25
+#define STDEV_THRESHOLD                     20
 
 
 
