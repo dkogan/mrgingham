@@ -4,21 +4,31 @@ mrgingham - Extract chessboard corners from a set of images
 
 =head1 SYNOPSIS
 
- $ mrgingham --level 1 /tmp/image*.jpg
+ $ mrgingham /tmp/image*.jpg
 
- # filename x y
+ # filename x y level
  /tmp/image1.jpg - -
- /tmp/image2.jpg 1385.433000 1471.719000
- /tmp/image2.jpg 1483.597000 1469.825000
- /tmp/image2.jpg 1582.086000 1467.561000
+ /tmp/image2.jpg 1385.433000 1471.719000 0
+ /tmp/image2.jpg 1483.597000 1469.825000 0
+ /tmp/image2.jpg 1582.086000 1467.561000 1
  ...
 
 
- $ mrgingham --level 1 /tmp/image.jpg |
+ $ mrgingham /tmp/image.jpg |
    vnl-filter -p x,y |
    feedgnuplot --domain --lines --points --image /tmp/image.jpg
 
  [ image pops up with the detected grid plotted on top ]
+
+
+ $ mrgingham /tmp/image.jpg |
+   vnl-filter -p x,y,level |
+   feedgnuplot --domain
+               --with 'linespoints pt 7 ps 2 palette'
+               --tuplesizeall 3 --image /tmp/image.jpg
+
+ [ fancy image pops up with the detected grid plotted on top, detections
+   colored by their decimation level ]
 
 =head1 DESCRIPTION
 

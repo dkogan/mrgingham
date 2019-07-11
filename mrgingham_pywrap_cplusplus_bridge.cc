@@ -68,7 +68,13 @@ bool find_chessboard_from_image_array_C( // in
 
     std::vector<mrgingham::PointDouble> out_points;
 
-    bool result = find_chessboard_from_image_array( out_points, cvimage, image_pyramid_level );
+    signed char* refinement_level = NULL;
+    bool result =
+        (find_chessboard_from_image_array( out_points,
+                                           &refinement_level,
+                                           cvimage,
+                                           image_pyramid_level ) >= 0);
+    free(refinement_level);
     if( !result ) return false;
 
     static_assert( sizeof(mrgingham::PointDouble) == 2*sizeof(double),

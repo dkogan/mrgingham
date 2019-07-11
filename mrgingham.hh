@@ -38,10 +38,19 @@ namespace mrgingham
     //
     // image_pyramid_level < 0 means we try several levels, taking the first one
     // that produces results
-    bool find_chessboard_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
+    //
+    // If we want to refine each reported point, pass a pointer to a buffer into
+    // refinement_level. I'll realloc() the buffer as needed, and I'll return
+    // the pyramid level of each point on exit.
+    //
+    // *refinement_level is managed by realloc(). IT IS THE CALLER'S
+    // *RESPONSIBILITY TO free() IT
+    //
+    // Returns the pyramid level where we found the grid, or <0 on failure
+    int find_chessboard_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
+                                           signed char**                        refinement_level,
                                            const cv::Mat&                       image,
                                            int                                  image_pyramid_level  = -1,
-                                           bool                                 do_refine            = true,
                                            bool                                 debug                = false,
                                            debug_sequence_t                     debug_sequence = debug_sequence_t(),
                                            const char*                          debug_image_filename = NULL);
@@ -54,12 +63,21 @@ namespace mrgingham
     //
     // image_pyramid_level < 0 means we try several levels, taking the first one
     // that produces results
-    bool find_chessboard_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
-                                          const char*                          filename,
-                                          int                                  image_pyramid_level = -1,
-                                          bool                                 do_refine           = true,
-                                          bool                                 debug               = false,
-                                          debug_sequence_t                     debug_sequence = debug_sequence_t());
+    //
+    // If we want to refine each reported point, pass a pointer to a buffer into
+    // refinement_level. I'll realloc() the buffer as needed, and I'll return
+    // the pyramid level of each point on exit.
+    //
+    // *refinement_level is managed by realloc(). IT IS THE CALLER'S
+    // *RESPONSIBILITY TO free() IT
+    //
+    // Returns the pyramid level where we found the grid, or <0 on failure
+    int find_chessboard_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
+                                         signed char**                        refinement_level,
+                                         const char*                          filename,
+                                         int                                  image_pyramid_level = -1,
+                                         bool                                 debug               = false,
+                                         debug_sequence_t                     debug_sequence = debug_sequence_t());
 
     bool find_grid_from_points( std::vector<mrgingham::PointDouble>& points_out,
                                 const std::vector<mrgingham::PointInt>& points,

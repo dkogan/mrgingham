@@ -136,25 +136,6 @@ static bool xylist_pop(struct xylist_t* l, int16_t *x, int16_t *y)
     return true;
 }
 
-
-typedef struct
-{
-    int                                  Nrefined;
-    std::vector<mrgingham::PointDouble>* points;
-    bool*                                point_refinable;
-} refinement_context_t;
-
-static
-refinement_context_t refinement_context_init(std::vector<mrgingham::PointDouble>* points,
-                                             bool* point_refinable = NULL)
-{
-    refinement_context_t ctx = {};
-    ctx.points          = points;
-    ctx.point_refinable = point_refinable;
-    return ctx;
-
-}
-
 typedef struct
 {
     uint64_t sum_w_x, sum_w_y, sum_w;
@@ -292,20 +273,21 @@ static PointDouble scale_image_coord(const PointDouble* pt, double scale)
 
 #define DUMP_FILENAME_CORNERS_BASE   "/tmp/mrgingham-1-corners"
 #define DUMP_FILENAME_CORNERS        DUMP_FILENAME_CORNERS_BASE ".vnl"
-static void process_connected_components(int w, int h, int16_t* d,
+static int process_connected_components(int w, int h, int16_t* d,
 
-                                         const uint8_t* image,
-                                         std::vector<PointInt>* points_scaled_out,
-                                         refinement_context_t* refinement_context,
-                                         bool debug, const char* debug_image_filename,
-                                         int image_pyramid_level,
-                                         int margin)
+                                        const uint8_t* image,
+                                        std::vector<PointInt>* points_scaled_out,
+                                        std::vector<mrgingham::PointDouble>* points_refinement,
+                                        signed char*                         level_refinement,
+                                        bool debug, const char* debug_image_filename,
+                                        int image_pyramid_level,
+                                        int margin)
 {
     FILE* debugfp = NULL;
     const char* debug_filename = NULL;
     if(debug)
     {
-        if(refinement_context == NULL)
+        if(points_refinement == NULL)
             debug_filename = DUMP_FILENAME_CORNERS;
         else
         {
@@ -330,7 +312,9 @@ static void process_connected_components(int w, int h, int16_t* d,
 
     struct xylist_t l = xylist_alloc();
 
-    // I assume that points_scaled_out and refinement_context aren't both non-NULL
+    int N = 0;
+
+    // I assume that points_scaled_out and points_refinement aren't both non-NULL
 
     // I loop through all the pixels in the image. For each one I expand it into
     // the connected component that contains it. If I'm refining, I only look
@@ -359,15 +343,18 @@ static void process_connected_components(int w, int h, int16_t* d,
                                                           (int)(0.5 + pt.y * FIND_GRID_SCALE)));
                 }
             }
+        N = points_scaled_out->size();
     }
-    else if(refinement_context != NULL)
+    else if(points_refinement != NULL)
     {
-        for(unsigned i=0; i<refinement_context->points->size(); i++)
+        for(unsigned i=0; i<points_refinement->size(); i++)
         {
-            if( !refinement_context->point_refinable[i] )
+            // I can only refine the current estimate if it was computed at one
+            // level higher than what I'm at now
+            if( level_refinement[i] != image_pyramid_level+1 )
                 continue;
 
-            PointDouble& pt_full = (*refinement_context->points)[i];
+            PointDouble& pt_full = (*points_refinement)[i];
 
             // The point pt indexes the full-size image, while the
             // connected-component stuff looks at a downsampled image. I convert
@@ -389,10 +376,9 @@ static void process_connected_components(int w, int h, int16_t* d,
                 pt_full = scale_image_coord(&pt, (double)coord_scale);
                 if( debugfp )
                     fprintf(debugfp, "%f %f\n", pt_full.x, pt_full.y);
-                refinement_context->Nrefined++;
+                level_refinement[i] = image_pyramid_level;
+                N++;
             }
-            else
-                refinement_context->point_refinable[i] = false;
         }
     }
 
@@ -406,6 +392,8 @@ static void process_connected_components(int w, int h, int16_t* d,
               S_IWUSR | S_IWGRP |
               S_IXUSR | S_IXGRP | S_IXOTH);
     }
+
+    return N;
 }
 
 // returns a scaled image, or NULL on failure
@@ -483,7 +471,8 @@ static
 int _find_or_refine_chessboard_corners_from_image_array ( // out
                                                           std::vector<mrgingham::PointInt>* points_scaled_out,
 
-                                                          refinement_context_t* refinement_context,
+                                                          std::vector<mrgingham::PointDouble>* points_refinement,
+                                                          signed char*                         level_refinement,
 
                                                           // in
                                                           const cv::Mat& image_input,
@@ -495,7 +484,7 @@ int _find_or_refine_chessboard_corners_from_image_array ( // out
     cv::Mat _image;
     const cv::Mat* image = apply_image_pyramid_scaling(_image,
                                                        image_input, image_pyramid_level,
-                                                       debug && refinement_context==NULL);
+                                                       debug && points_refinement==NULL);
     if( image == NULL ) return 0;
 
     const int w = image->cols;
@@ -511,7 +500,7 @@ int _find_or_refine_chessboard_corners_from_image_array ( // out
 
     mrgingham_ChESS_response_5( responseData, imageData, w, h, w );
 
-    if(debug && refinement_context==NULL)
+    if(debug && points_refinement==NULL)
     {
         cv::Mat out;
         cv::normalize(response, out, 0, 255, cv::NORM_MINMAX);
@@ -526,7 +515,7 @@ int _find_or_refine_chessboard_corners_from_image_array ( // out
         if(responseData[xy] < 0)
             responseData[xy] = 0;
 
-    if(debug && refinement_context==NULL)
+    if(debug && points_refinement==NULL)
     {
         cv::Mat out;
         cv::normalize(response, out, 0, 255, cv::NORM_MINMAX);
@@ -543,42 +532,42 @@ int _find_or_refine_chessboard_corners_from_image_array ( // out
 
     // This serves both to throw away duplicate nearby points at the same corner
     // and to provide sub-pixel-interpolation for the corner location
-    process_connected_components(w, h, responseData,
-                                 (uint8_t*)image->data,
-                                 points_scaled_out,
-                                 refinement_context,
-                                 debug, debug_image_filename,
-                                 image_pyramid_level,
+    return
+        process_connected_components(w, h, responseData,
+                                     (uint8_t*)image->data,
+                                     points_scaled_out,
+                                     points_refinement, level_refinement,
+                                     debug, debug_image_filename,
+                                     image_pyramid_level,
 
-                                 // The ChESS response is invalid at a 7-pixel
-                                 // margin around the image. This is a property
-                                 // of the ChESS implementation. Anything that
-                                 // needs to touch pixels in this 7-pixel-wide
-                                 // ring is invalid
-                                 7);
-
-    return points_scaled_out ? points_scaled_out->size() : refinement_context->Nrefined;
+                                     // The ChESS response is invalid at a 7-pixel
+                                     // margin around the image. This is a property
+                                     // of the ChESS implementation. Anything that
+                                     // needs to touch pixels in this 7-pixel-wide
+                                     // ring is invalid
+                                     7);
 }
 
 __attribute__((visibility("default")))
 bool find_chessboard_corners_from_image_array( // out
 
-                                               // integers scaled up by
-                                               // FIND_GRID_SCALE to get more
-                                               // resolution
-                                               std::vector<mrgingham::PointInt>* points_scaled_out,
+                                              // integers scaled up by
+                                              // FIND_GRID_SCALE to get more
+                                              // resolution
+                                              std::vector<mrgingham::PointInt>* points_scaled_out,
 
-                                               // in
-                                               const cv::Mat& image_input,
+                                              // in
+                                              const cv::Mat& image_input,
 
-                                               // set to 0 to just use the image
-                                               int image_pyramid_level,
-                                               bool debug,
-                                               const char* debug_image_filename)
+                                              // set to 0 to just use the image
+                                              int image_pyramid_level,
+                                              bool debug,
+                                              const char* debug_image_filename)
 {
-    return _find_or_refine_chessboard_corners_from_image_array(points_scaled_out, NULL,
-                                                               image_input, image_pyramid_level,
-                                                               debug, debug_image_filename) > 0;
+    return
+        _find_or_refine_chessboard_corners_from_image_array(points_scaled_out, NULL, NULL,
+                                                            image_input, image_pyramid_level,
+                                                            debug, debug_image_filename) > 0;
 }
 
 // Returns how many points were refined
@@ -589,13 +578,15 @@ int refine_chessboard_corners_from_image_array( // out/int
                                                 // refined coordinates on output
                                                 std::vector<mrgingham::PointDouble>* points,
 
-                                                // if(!point_refinable[ipoint])
-                                                // then that point shouldn't be
-                                                // refined. If we try and fail
-                                                // to refine a point, we set
-                                                // point_refinable[ipoint] to
-                                                // false
-                                                bool* point_refinable,
+                                                // level[ipoint] is the
+                                                // decimation level used to
+                                                // compute that point.
+                                                // if(level[ipoint] ==
+                                                // image_pyramid_level+1) then
+                                                // that point could be refined.
+                                                // If I successfully refine a
+                                                // point, I update level[ipoint]
+                                                signed char* level,
 
                                                 // in
                                                 const cv::Mat& image_input,
@@ -604,11 +595,9 @@ int refine_chessboard_corners_from_image_array( // out/int
                                                 bool debug,
                                                 const char* debug_image_filename)
 {
-    refinement_context_t ctx = refinement_context_init(points,
-                                                       point_refinable);
-
     return
-        _find_or_refine_chessboard_corners_from_image_array( NULL, &ctx,
+        _find_or_refine_chessboard_corners_from_image_array( NULL,
+                                                             points, level,
                                                              image_input, image_pyramid_level,
                                                              debug, debug_image_filename);
 }

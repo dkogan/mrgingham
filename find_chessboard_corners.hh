@@ -54,13 +54,15 @@ int refine_chessboard_corners_from_image_array( // out/int
                                                 // refined coordinates on output
                                                 std::vector<mrgingham::PointDouble>* points,
 
-                                                // if(!point_refinable[ipoint])
-                                                // then that point shouldn't be
-                                                // refined. If we try and fail
-                                                // to refine a point, we set
-                                                // point_refinable[ipoint] to
-                                                // false
-                                                bool* point_refinable,
+                                                // level[ipoint] is the
+                                                // decimation level used to
+                                                // compute that point.
+                                                // if(level[ipoint] ==
+                                                // image_pyramid_level+1) then
+                                                // that point could be refined.
+                                                // If I successfully refine a
+                                                // point, I update level[ipoint]
+                                                signed char* level,
 
                                                 // in
                                                 const cv::Mat& image_input,

@@ -38,6 +38,9 @@ static void* worker( void* _ijob )
         clahe->setClipLimit(8);
     }
 
+    // The buffer. I'll realloc() this as I go. MUST free at the end
+    signed char* refinement_level = NULL;
+
     for(int i_image=ijob; i_image<(int)ctx._glob->gl_pathc; i_image += ctx.Njobs)
     {
         const char* filename = ctx._glob->gl_pathv[i_image];
@@ -107,28 +110,45 @@ static void* worker( void* _ijob )
         }
         std::vector<PointDouble> points_out;
         bool result;
+        int found_pyramid_level; // need this because ctx.image_pyramid_level could be -1
+
         if(ctx.doblobs)
-            result = find_circle_grid_from_image_array(points_out, image,
+        {
+            result = find_circle_grid_from_image_array(points_out,
+                                                       image,
                                                        ctx.debug, ctx.debug_sequence);
+            // ctx.image_pyramid_level == 0 here. cmdline parser makes sure.
+            found_pyramid_level = 0;
+        }
         else
-            result = find_chessboard_from_image_array (points_out, image, ctx.image_pyramid_level, ctx.do_refine,
-                                                       ctx.debug, ctx.debug_sequence,
-                                                       filename);
+        {
+            found_pyramid_level =
+                find_chessboard_from_image_array (points_out,
+                                                  ctx.do_refine ? &refinement_level : NULL,
+                                                  image,
+                                                  ctx.image_pyramid_level,
+                                                  ctx.debug, ctx.debug_sequence,
+                                                  filename);
+            result = (found_pyramid_level >= 0);
+        }
 
         flockfile(stdout);
         {
             if( result )
             {
                 for(int i=0; i<(int)points_out.size(); i++)
-                    printf( "%s %f %f\n", filename,
+                    printf( "%s %f %f %d\n", filename,
                             points_out[i].x,
-                            points_out[i].y);
+                            points_out[i].y,
+                            (refinement_level == NULL) ? found_pyramid_level : (int)refinement_level[i]);
             }
             else
                 printf("%s - -\n", filename);
         }
         funlockfile(stdout);
     }
+
+    free(refinement_level);
 
     return NULL;
 }
@@ -278,7 +298,8 @@ int main(int argc, char* argv[])
     }
     if( doblobs && image_pyramid_level >= 0)
     {
-        fprintf(stderr, "warning: 'image_pyramid_level' only implemented for chessboards. Will be ignored\n");
+        fprintf(stderr, "ERROR: 'image_pyramid_level' only implemented for chessboards.\n");
+        return 1;
     }
 
     glob_t _glob;
@@ -318,7 +339,7 @@ int main(int argc, char* argv[])
         printf(" %s", argv[i]);
     printf("\n");
 
-    printf("# filename x y\n");
+    printf("# filename x y level\n");
 
     // I'm done with the preliminaries. I now spawn the child threads. Note that
     // in this implementation it is important that these are THREADS and not a
