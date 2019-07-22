@@ -127,7 +127,7 @@ namespace mrgingham
                                            const cv::Mat& image,
                                            int image_pyramid_level = -1 );
 
-    bool find_chessboard_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
+    int  find_chessboard_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
                                           const char* filename,
                                           int image_pyramid_level = -1 );
 
