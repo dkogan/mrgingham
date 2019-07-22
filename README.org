@@ -123,11 +123,16 @@ namespace mrgingham
     bool find_circle_grid_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
                                            const char* filename );
 
-    bool find_chessboard_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
+
+    // the following 2 are missing refinement_level. It's an awkward API since
+    // this isn't optional. I should be able to ask for refinement without
+    // requiring a pointer to be passed-in and deallocated later
+
+    int  find_chessboard_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
                                            const cv::Mat& image,
                                            int image_pyramid_level = -1 );
 
-    bool find_chessboard_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
+    int  find_chessboard_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
                                           const char* filename,
                                           int image_pyramid_level = -1 );
 
@@ -184,21 +189,31 @@ NAME
     mrgingham - Extract chessboard corners from a set of images
 
 SYNOPSIS
-     $ mrgingham --level 1 /tmp/image*.jpg
+     $ mrgingham /tmp/image*.jpg
 
-     # filename x y
+     # filename x y level
      /tmp/image1.jpg - -
-     /tmp/image2.jpg 1385.433000 1471.719000
-     /tmp/image2.jpg 1483.597000 1469.825000
-     /tmp/image2.jpg 1582.086000 1467.561000
+     /tmp/image2.jpg 1385.433000 1471.719000 0
+     /tmp/image2.jpg 1483.597000 1469.825000 0
+     /tmp/image2.jpg 1582.086000 1467.561000 1
      ...
 
 
-     $ mrgingham --level 1 /tmp/image.jpg |
+     $ mrgingham /tmp/image.jpg |
        vnl-filter -p x,y |
        feedgnuplot --domain --lines --points --image /tmp/image.jpg
 
      [ image pops up with the detected grid plotted on top ]
+
+
+     $ mrgingham /tmp/image.jpg |
+       vnl-filter -p x,y,level |
+       feedgnuplot --domain
+                   --with 'linespoints pt 7 ps 2 palette'
+                   --tuplesizeall 3 --image /tmp/image.jpg
+
+     [ fancy image pops up with the detected grid plotted on top, detections
+       colored by their decimation level ]
 
 DESCRIPTION
     This tool uses the "mrgingham" library to detect chessboard corners from
@@ -391,3 +406,11 @@ later version.
 Copyright 2017-2018 California Institute of Technology
 
 Copyright 2017-2018 Dima Kogan (=dima@secretsauce.net=)
+
+
+need to talk about refining of things
+manpage needs to talk about refinement
+should mention that the uncertainty will look bimodal without it
+should mention that --clahe more or less requires --blur
+
+mrgingham-observe-pixel-uncertainty: document new --show stuff. and I need to depend on more recent gnuplotlib for the histograms
