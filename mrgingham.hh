@@ -47,7 +47,7 @@ namespace mrgingham
     // *RESPONSIBILITY TO free() IT
     //
     // Returns the pyramid level where we found the grid, or <0 on failure
-    int find_chessboard_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
+    int  find_chessboard_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
                                            signed char**                        refinement_level,
                                            const cv::Mat&                       image,
                                            int                                  image_pyramid_level  = -1,
