@@ -397,7 +397,7 @@ static int process_connected_components(int w, int h, int16_t* d,
 }
 
 // returns a scaled image, or NULL on failure
-#define SCALED_IMAGE_FILENAME   "/tmp/mrgingham-scaled.png"
+#define SCALED_PROCESSED_IMAGE_FILENAME   "/tmp/mrgingham-scaled-processed-level%d.png"
 static const cv::Mat*
 apply_image_pyramid_scaling(// out
 
@@ -429,24 +429,20 @@ apply_image_pyramid_scaling(// out
     const cv::Mat* image;
 
     if(image_pyramid_level == 0)
-    {
         image = &image_input;
-        if( debug )
-            fprintf(stderr, "This is level-0 so I'm not rescaling the image, and not writing the scaled version to disk\n");
-    }
     else
     {
         double scale = 1.0 / ((double)(1 << image_pyramid_level));
         cv::resize( image_input, image_buffer_output, cv::Size(), scale, scale, cv::INTER_LINEAR );
         image = &image_buffer_output;
-
-        if( debug )
-        {
-            cv::imwrite(SCALED_IMAGE_FILENAME, *image);
-            fprintf(stderr, "Wrote scaled image to " SCALED_IMAGE_FILENAME "\n");
-        }
     }
-
+    if( debug )
+    {
+        char filename[256];
+        sprintf(filename, SCALED_PROCESSED_IMAGE_FILENAME, image_pyramid_level);
+        cv::imwrite(filename, *image);
+        fprintf(stderr, "Wrote scaled,processed image to %s\n", filename);
+    }
 
     if( !image->isContinuous() )
     {
