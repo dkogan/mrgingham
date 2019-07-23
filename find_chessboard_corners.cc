@@ -461,8 +461,8 @@ apply_image_pyramid_scaling(// out
     return image;
 }
 
-#define CHESS_RESPONSE_FILENAME          "/tmp/chess-response.png"
-#define CHESS_RESPONSE_POSITIVE_FILENAME "/tmp/chess-response-positive.png"
+#define CHESS_RESPONSE_FILENAME                     "/tmp/mrgingham-chess-response%s-level%d.png"
+#define CHESS_RESPONSE_POSITIVE_FILENAME            "/tmp/mrgingham-chess-response%s-level%d-positive.png"
 static
 int _find_or_refine_chessboard_corners_from_image_array ( // out
                                                           std::vector<mrgingham::PointInt>* points_scaled_out,
@@ -496,13 +496,16 @@ int _find_or_refine_chessboard_corners_from_image_array ( // out
 
     mrgingham_ChESS_response_5( responseData, imageData, w, h, w );
 
-    if(debug && points_refinement==NULL)
+    if(debug)
     {
         cv::Mat out;
         cv::normalize(response, out, 0, 255, cv::NORM_MINMAX);
-        cv::imwrite(CHESS_RESPONSE_FILENAME, out);
-
-        fprintf(stderr, "Wrote a normalized ChESS response to " CHESS_RESPONSE_FILENAME "\n");
+        char filename[256];
+        sprintf(filename, CHESS_RESPONSE_FILENAME,
+                (points_refinement==NULL) ? "" : "-refinement",
+                image_pyramid_level);
+        cv::imwrite(filename, out);
+        fprintf(stderr, "Wrote a normalized ChESS response to %s\n", filename);
     }
 
     // I set all responses <0 to "0". These are not valid as candidates, and
@@ -511,13 +514,16 @@ int _find_or_refine_chessboard_corners_from_image_array ( // out
         if(responseData[xy] < 0)
             responseData[xy] = 0;
 
-    if(debug && points_refinement==NULL)
+    if(debug)
     {
         cv::Mat out;
         cv::normalize(response, out, 0, 255, cv::NORM_MINMAX);
-        cv::imwrite(CHESS_RESPONSE_POSITIVE_FILENAME, out);
-
-        fprintf(stderr, "Wrote positive-only, normalized ChESS response to " CHESS_RESPONSE_POSITIVE_FILENAME "\n");
+        char filename[256];
+        sprintf(filename, CHESS_RESPONSE_POSITIVE_FILENAME,
+                (points_refinement==NULL) ? "" : "-refinement",
+                image_pyramid_level);
+        cv::imwrite(filename, out);
+        fprintf(stderr, "Wrote positive-only, normalized ChESS response to %s\n", filename);
     }
 
     // I have responses. I
