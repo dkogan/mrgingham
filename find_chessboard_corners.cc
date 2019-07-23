@@ -35,7 +35,7 @@ extern "C"
 // the region will be relatively flat (same color), and the variance will be too
 // low. These parameters set the size of this search window and the threshold
 // for the standard deviation (sqrt(variance))
-#define CONSTANCY_WINDOW_R                  5
+#define CONSTANCY_WINDOW_R                  10
 #define STDEV_THRESHOLD                     20
 
 
