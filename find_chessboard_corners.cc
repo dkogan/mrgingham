@@ -105,6 +105,10 @@ static struct xylist_t xylist_alloc()
 
     return l;
 }
+static void xylist_reset(struct xylist_t* l)
+{
+    l->N = 0;
+}
 static void xylist_reset_with(struct xylist_t* l, int16_t x, int16_t y)
 {
     l->N = 1;
@@ -155,6 +159,10 @@ typedef struct
 static bool is_valid(int16_t x, int16_t y, int16_t w, int16_t h, const int16_t* d,
                      const connected_component_t* c)
 {
+    if(x<0 || x>=w ||
+       y<0 || y>=h)
+        return false;
+
     int16_t response = d[x+y*w];
 
     return
@@ -362,10 +370,16 @@ static int process_connected_components(int w, int h, int16_t* d,
 
             int x = (int)(pt_downsampled.x + 0.5);
             int y = (int)(pt_downsampled.y + 0.5);
-            if( !is_valid(x,y,w,h,d, NULL) )
-                continue;
 
-            xylist_reset_with(&l,x,y);
+            // I seed my refinement from the 3x3 neighborhood around the
+            // previous center point. It is possible for the ChESS response
+            // right in the center to be invalid, and I'll then not be able to
+            // refine the point at all
+            xylist_reset(&l);
+            for(int dx = -1; dx<=1; dx++)
+                for(int dy = -1; dy<=1; dy++)
+                    if( is_valid(x+dx,y+dy,w,h,d, NULL))
+                        xylist_push(&l,x+dx,y+dy);
 
             PointDouble pt;
             if(follow_connected_component(&pt,
