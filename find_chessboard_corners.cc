@@ -480,7 +480,7 @@ int _find_or_refine_chessboard_corners_from_image_array ( // out
     cv::Mat _image;
     const cv::Mat* image = apply_image_pyramid_scaling(_image,
                                                        image_input, image_pyramid_level,
-                                                       debug && points_refinement==NULL);
+                                                       debug);
     if( image == NULL ) return 0;
 
     const int w = image->cols;
