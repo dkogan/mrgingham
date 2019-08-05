@@ -1,8 +1,19 @@
+mrgingham (1.15) unstable; urgency=medium
+
+  * Loosened ChESS thresholds
+  * I now report the decimation level of each computed point
+  * scaled debugging files written in all cases, with different filenames
+  * higher constancy-checking window
+  * I debug-output the ChESS responses when refining
+  * refinement: I seed from a neighborhood
+
+ -- Dima Kogan <dima@secretsauce.net>  Mon, 05 Aug 2019 16:12:49 -0700
+
 mrgingham (1.14) unstable; urgency=medium
 
   * Updates
 
- -- Dima Kogan <Dmitriy.Kogan@jpl.nasa.gov>  Mon, 10 Jun 2019 14:40:45 -0700
+ -- Dima Kogan <dima@secretsauce.net>  Mon, 10 Jun 2019 14:40:45 -0700
 
 mrgingham (1.11) unstable; urgency=medium
 
@@ -60,4 +71,4 @@ mrgingham (1.1) unstable; urgency=medium
 
   * Initial release
 
- -- Dima Kogan <Dmitriy.Kogan@jpl.nasa.gov>  Tue, 23 Jan 2018 17:49:55 -0800
+ -- Dima Kogan <dima@secretsauce.net>  Tue, 23 Jan 2018 17:49:55 -0800
