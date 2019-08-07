@@ -123,12 +123,7 @@ namespace mrgingham
     bool find_circle_grid_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
                                            const char* filename );
 
-
-    // the following 2 are missing refinement_level. It's an awkward API since
-    // this isn't optional. I should be able to ask for refinement without
-    // requiring a pointer to be passed-in and deallocated later
-
-    int  find_chessboard_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
+    bool find_chessboard_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
                                            const cv::Mat& image,
                                            int image_pyramid_level = -1 );
 
@@ -406,11 +401,3 @@ later version.
 Copyright 2017-2018 California Institute of Technology
 
 Copyright 2017-2018 Dima Kogan (=dima@secretsauce.net=)
-
-
-need to talk about refining of things
-manpage needs to talk about refinement
-should mention that the uncertainty will look bimodal without it
-should mention that --clahe more or less requires --blur
-
-mrgingham-observe-pixel-uncertainty: document new --show stuff. and I need to depend on more recent gnuplotlib for the histograms
