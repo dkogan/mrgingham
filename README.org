@@ -1,5 +1,5 @@
 * SYNOPSIS
-This is a library for finding calibration boards in observed camera images:
+Detect calibration boards in observed camera images
 
 #+BEGIN_EXAMPLE
 $ mrgingham /tmp/image*.jpg
@@ -82,7 +82,10 @@ is less likely to fail. This would ensure that we see exactly 10 points in a row
 with the expected spacing, not 12. I haven't tried with an even 10x10 board, so
 I don't know if this is a real issue.
 
-The recommended pattern can be printed from this file: [[chessboard.pdf]]
+The recommended pattern can be printed from this file: [[chessboard.pdf]]. Wherever
+the pattern comes from, it is /strongly/ recommended to leave a margin around
+the edges. This reduces the chances of a false corner detection interfering with
+the grid finder.
 
 *** Circles
 *This isn't recommended, and exists for legacy compatibility only*
@@ -212,7 +215,15 @@ SYNOPSIS
 
 DESCRIPTION
     This tool uses the "mrgingham" library to detect chessboard corners from
-    images stored on disk.
+    images stored on disk. Images are given on the commandline, as globs.
+    Each glob is expanded, and each image is processed (possibly in parallel
+    if "-j" was given). The output is a vnlog
+    <https://www.github.com/dkogan/vnlog> containing the filename,
+    coordinates of the chessboard corners and the decimation level used to
+    compute each corner. For diagnostics, pass in "--debug". This produces a
+    number of self-plotting files that describe the results of the
+    intermediate steps. Each diagnostic file is reported on the console when
+    it is written.
 
     Both chessboard and a non-offset grid of circles are supported.
     Chessboard are the *strongly* preferred choice; the circle detector is

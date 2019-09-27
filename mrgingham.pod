@@ -33,7 +33,13 @@ mrgingham - Extract chessboard corners from a set of images
 =head1 DESCRIPTION
 
 This tool uses the C<mrgingham> library to detect chessboard corners from images
-stored on disk.
+stored on disk. Images are given on the commandline, as globs. Each glob is
+expanded, and each image is processed (possibly in parallel if C<-j> was given).
+The output is a L<vnlog|https://www.github.com/dkogan/vnlog> containing the
+filename, coordinates of the chessboard corners and the decimation level used to
+compute each corner. For diagnostics, pass in C<--debug>. This produces a number
+of self-plotting files that describe the results of the intermediate steps. Each
+diagnostic file is reported on the console when it is written.
 
 Both chessboard and a non-offset grid of circles are supported. Chessboard are
 the I<strongly> preferred choice; the circle detector is mostly here for
