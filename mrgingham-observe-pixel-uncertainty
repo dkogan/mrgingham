@@ -16,7 +16,7 @@ produce slightly different corner coordinates. This tool takes in a set of
 images (assumed observing a chessboard, with both the camera and board
 stationary). It then outputs the 1-standard-deviation statistic for the
 distribution of detected corners. This can then be passed in to mrcal:
-'mrcal-calibrate-cameras --observed-pixel-uncertainty ...'
+'calibrate-cameras --observed-pixel-uncertainty ...'
 
 The distribution of the detected corners is assumed to be gaussian, and
 INDEPENDENT in the horizontal and vertical directions. If the x and y
