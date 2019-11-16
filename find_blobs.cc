@@ -23,7 +23,7 @@ bool find_blobs_from_image_array( std::vector<PointInt>* points,
 
     std::vector<cv::KeyPoint> keypoints;
 
-    cv::SimpleBlobDetector* blobDetector =
+    cv::Ptr<cv::SimpleBlobDetector> blobDetector =
         cv::SimpleBlobDetector::create(blobDetectorParams);
     blobDetector->detect(image, keypoints);
 
