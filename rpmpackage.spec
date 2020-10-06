@@ -22,9 +22,6 @@ BuildRequires:  python36
 BuildRequires: python36-numpy
 BuildRequires: python36-devel
 BuildRequires: python36-libs
-# need this too for the /usr/include/numpy link. It points to the same place as
-# the link in python36-numpy would point to, if they bothered to make one
-BuildRequires: python2-numpy
 
 Conflicts: mrgingham-tools <= 1.10
 
