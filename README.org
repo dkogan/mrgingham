@@ -354,7 +354,7 @@ SYNOPSIS
         Evaluated 49 observations
         mean 1-sigma for independent x,y: 0.26
 
-      $ calibrate-cameras --observed-pixel-uncertainty 0.26 .....
+      $ mrcal-calibrate-cameras --observed-pixel-uncertainty 0.26 .....
       [ mrcal computes a camera calibration ]
 
 DESCRIPTION
