@@ -45,7 +45,9 @@ static void* worker( void* _ijob )
     {
         const char* filename = ctx._glob->gl_pathv[i_image];
 
-        cv::Mat image = cv::imread(filename, CV_LOAD_IMAGE_GRAYSCALE);
+        cv::Mat image = cv::imread(filename,
+                                   cv::IMREAD_IGNORE_ORIENTATION |
+                                   cv::IMREAD_GRAYSCALE);
         if( image.data == NULL )
         {
             fprintf(stderr, "Couldn't open image '%s'\n", filename);

@@ -50,7 +50,9 @@ bool find_blobs_from_image_file( std::vector<PointInt>* points,
                                  const char* filename,
                                  bool dodump )
 {
-    cv::Mat image = cv::imread(filename, CV_LOAD_IMAGE_GRAYSCALE);
+    cv::Mat image = cv::imread(filename,
+                               cv::IMREAD_IGNORE_ORIENTATION |
+                               cv::IMREAD_GRAYSCALE);
     if( image.data == NULL )
     {
         fprintf(stderr, "%s:%d in %s(): Couldn't open image '%s'."

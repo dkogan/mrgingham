@@ -143,7 +143,9 @@ namespace mrgingham
                                          bool debug,
                                          debug_sequence_t debug_sequence)
     {
-        cv::Mat image = cv::imread(filename, CV_LOAD_IMAGE_GRAYSCALE);
+        cv::Mat image = cv::imread(filename,
+                                   cv::IMREAD_IGNORE_ORIENTATION |
+                                   cv::IMREAD_GRAYSCALE);
         if( image.data == NULL )
         {
             fprintf(stderr, "%s:%d in %s(): Couldn't open image '%s'."

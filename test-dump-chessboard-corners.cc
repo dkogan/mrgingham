@@ -96,7 +96,9 @@ int main(int argc, char* argv[])
 
     const char* filename = argv[argc-1];
 
-    cv::Mat image = cv::imread(filename, CV_LOAD_IMAGE_GRAYSCALE);
+    cv::Mat image = cv::imread(filename,
+                               cv::IMREAD_IGNORE_ORIENTATION |
+                               cv::IMREAD_GRAYSCALE);
     if( image.data == NULL )
     {
         fprintf(stderr, "Couldn't open image '%s'\n", filename);
