@@ -158,6 +158,10 @@ enum ClassificationType
 
 struct CandidateSequence
 {
+    // First two cells. The rest of the sequence is constructed by following the
+    // best path from these two cells. The rules that define this "best" path
+    // are consistent, so we don't store the path itself, but recompute it each
+    // time it is needed
     const VORONOI::cell_type* c0;
     const VORONOI::cell_type* c1;
 
@@ -970,7 +974,7 @@ static void write_output( std::vector<PointDouble>& points_out,
             const PointInt* pt1 = &points[it->c1->source_index()];
 
             PointInt delta({ pt1->x - pt0->x,
-                          pt1->y - pt0->y});
+                             pt1->y - pt0->y});
             write_along_sequence( points_out, &delta, it->c1, Nwant-2, points);
         }
     }
