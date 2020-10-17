@@ -144,6 +144,35 @@ grid finding.
 
 
 
+#define CLASSIFICATION_TYPE_LIST(_)             \
+    _(UNCLASSIFIED, = 0)                        \
+    _(HORIZONTAL,      )                        \
+    _(VERTICAL,        )                        \
+    _(OUTLIER,         )
+
+#define ENUM_ELEMENT(type,init) type init,
+enum ClassificationType
+{
+ CLASSIFICATION_TYPE_LIST(ENUM_ELEMENT)
+};
+
+struct CandidateSequence
+{
+    const VORONOI::cell_type* c0;
+    const VORONOI::cell_type* c1;
+
+    PointDouble delta_mean;
+    double      spacing_angle;
+    double      spacing_length;
+
+    union
+    {
+        ClassificationType type;
+        int bin_index_neg; // if <0, then this is valid
+    };
+};
+
+
 
 
 struct HypothesisStatistics
@@ -418,31 +447,29 @@ static void dump_interval( FILE* fp,
 }
 
 static void dump_intervals_along_sequence( FILE* fp,
+                                           const CandidateSequence* cs,
                                            int i_candidate,
-                                           const PointInt* delta,
-                                           const VORONOI::cell_type* c,
-                                           int N_remaining,
 
                                            const std::vector<PointInt>& points)
 {
+    int N_remaining = Nwant-2;
+
+    dump_interval(fp, i_candidate, 0, cs->c0, cs->c1, points);
+
+    const PointInt* pt0 = &points[cs->c0->source_index()];
+    const PointInt* pt1 = &points[cs->c1->source_index()];
+
+    PointInt _delta({ pt1->x - pt0->x,
+                      pt1->y - pt0->y});
+    const PointInt* delta = &_delta;
+
+    const VORONOI::cell_type* c = cs->c1;
+
     FOR_MATCHING_ADJACENT_CELLS(-1)
     {
         dump_interval(fp, i_candidate, i+1, c, c_adjacent, points);
     } FOR_MATCHING_ADJACENT_CELLS_END();
 }
-
-
-#define CLASSIFICATION_TYPE_LIST(_)             \
-    _(UNCLASSIFIED, = 0)                        \
-    _(HORIZONTAL,      )                        \
-    _(VERTICAL,        )                        \
-    _(OUTLIER,         )
-
-#define ENUM_ELEMENT(type,init) type init,
-enum ClassificationType
-{
- CLASSIFICATION_TYPE_LIST(ENUM_ELEMENT)
-};
 
 static const char* type_string(ClassificationType type)
 {
@@ -453,22 +480,6 @@ static const char* type_string(ClassificationType type)
     default: return "unknown";
     }
 }
-
-struct CandidateSequence
-{
-    const VORONOI::cell_type* c0;
-    const VORONOI::cell_type* c1;
-
-    PointDouble delta_mean;
-    double      spacing_angle;
-    double      spacing_length;
-
-    union
-    {
-        ClassificationType type;
-        int bin_index_neg; // if <0, then this is valid
-    };
-};
 
 double get_spacing_angle( double y, double x )
 {
@@ -925,18 +936,9 @@ static void dump_candidates(const v_CS* sequence_candidates,
     fprintf(fp, "# candidateid pointid fromx fromy tox toy deltax deltay len angle\n");
     int N = sequence_candidates->size();
     for( int i=0; i<N; i++ )
-    {
-        const CandidateSequence* cs = &(*sequence_candidates)[i];
-
-        dump_interval(fp, i, 0, cs->c0, cs->c1, points);
-
-        const PointInt* pt0 = &points[cs->c0->source_index()];
-        const PointInt* pt1 = &points[cs->c1->source_index()];
-
-        PointInt delta({ pt1->x - pt0->x,
-                      pt1->y - pt0->y});
-        dump_intervals_along_sequence( fp, i, &delta, cs->c1, Nwant-2, points);
-    }
+        dump_intervals_along_sequence( fp,
+                                       &(*sequence_candidates)[i],
+                                       i, points);
     fclose(fp);
     fprintf(stderr, "Wrote detailed sequence-candidate dump to %s\n",
             dump_filename_sequence_candidates_dense);
