@@ -500,7 +500,7 @@ static void push_to_bin( CandidateSequence* cs,
                          int bin_index )
 {
     // I want to accumulate the vector with a consistent absolute direction
-    // (angle modu0 180)
+    // (angle modulo 180)
     if(bin->delta_mean_sum.x * cs->delta_mean.x +
        bin->delta_mean_sum.y * cs->delta_mean.y >= 0.0 )
     {
