@@ -432,8 +432,17 @@ static void dump_interval( FILE* fp,
                            const std::vector<PointInt>& points )
 {
     const PointInt* pt0 = &points[c0->source_index()];
-    const PointInt* pt1 = &points[c1->source_index()];
 
+    if( c1 == NULL )
+    {
+        fprintf(fp,
+                "%d %d %f %f - - - - - -\n",
+                i_candidate, i_pt,
+                (double)pt0->x / (double)FIND_GRID_SCALE, (double)pt0->y / (double)FIND_GRID_SCALE);
+        return;
+    }
+
+    const PointInt* pt1 = &points[c1->source_index()];
     double dx = (double)(pt1->x - pt0->x) / (double)FIND_GRID_SCALE;
     double dy = (double)(pt1->y - pt0->y) / (double)FIND_GRID_SCALE;
     double length = hypot(dx,dy);
@@ -452,7 +461,7 @@ static void dump_intervals_along_sequence( FILE* fp,
 
                                            const std::vector<PointInt>& points)
 {
-    int N_remaining = Nwant-2;
+    int N_remaining = Nwant-1;
 
     dump_interval(fp, i_candidate, 0, cs->c0, cs->c1, points);
 
@@ -467,7 +476,9 @@ static void dump_intervals_along_sequence( FILE* fp,
 
     FOR_MATCHING_ADJACENT_CELLS(-1)
     {
-        dump_interval(fp, i_candidate, i+1, c, c_adjacent, points);
+        dump_interval(fp, i_candidate, i+1, c,
+                      i+1 == Nwant-1 ? NULL : c_adjacent,
+                      points);
     } FOR_MATCHING_ADJACENT_CELLS_END();
 }
 
