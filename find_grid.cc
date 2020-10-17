@@ -37,23 +37,109 @@ typedef voronoi_diagram<double> VORONOI;
 #define Nwant     10
 
 
+/*
+Voronoi library terminology. Each "cell" c has an edge = c->incident_edge(). The
+edge e points FROM the cell e->cell(). The edges are a linked list. e->next() is
+the next edge from c, moving clockwise. e->prev() moves counterclockwise(). An
+edge e A->B has an inverse e->twin() B->A.
 
+For any voronoi vertex ("cell" in the terminology of this voronoi library) I
+want look at all the neighboring cells. The simplest thing to do is to look at
+all the vertices directly connected to this vertex with an edge. This works most
+of the time. But for very skewed views of a chessboard this sometimes isn't
+enough, and I look at the in-between vertices too. From vertex A below I would
+previously consider E and B and C as neighbors, but I now also want to consider
+D
+
+E--B-----D
+| / \   /
+|/   \ /
+A-----C
+
+How do I find D? Let e be A->B. Then D =
+e->twin()->prev()->prev()->twin()->cell()
+
+There're a few topological wrinkles that this scheme creates. First off, at the
+boundary of the graph, there may not exist an "inbetween" vertex. In the example
+above there's no vertex between C and E from A (looking clockwise). I check by
+making sure that e->twin()->prev()->twin()->cell() == e->next()->twin()->cell().
+In the "good" example of D being between B and C, both should point to C.
+
+I can also have more complex topologies, which would create duplicate neighbors.
+For instance if I have this:
+
+    ---F
+  -/  /|
+ /   / |
+A---H  |
+ \   \ |
+  -\  \|
+    ---G
+
+Looking from A, vertex G lies between F,H. But G is directly connected to A, so
+I would already use this as a neighbor. There's a whole class of such issues,
+and I avoid them by only selecting vertices that are monotonic in angle, moving
+around A. So in the above example the midpoint MUST lie to the right of F and to
+the left of H. But G lies to the right of H, so I do not report an in-between
+vertex between F and H.
+
+This is all a bit heuristic, but is sufficient for the purposes of chessboard
+grid finding.
+
+ */
 #define FOR_ALL_ADJACENT_CELLS(c) do {                                  \
-    const PointInt*        pt = &points[c->source_index()];                \
-    const VORONOI::edge_type* const e0 = c->incident_edge();            \
-    bool first = true;                                                  \
-    for(const VORONOI::edge_type* e = e0;                               \
-        e0 != NULL && (e != e0 || first);                               \
-        e = e->next(), first=false)                                     \
+    const PointInt*        pt = &points[c->source_index()];             \
+    const VORONOI::edge_type* const __e0 = c->incident_edge();          \
+    bool __first = true;                                                \
+    for(const VORONOI::edge_type* __e = __e0;                           \
+        __e0 != NULL && (__e != __e0 || __first);                       \
+        __e = __e->next(), __first=false)                               \
     {                                                                   \
-        const VORONOI::cell_type* c_adjacent = e->twin()->cell();       \
+        /* Look for two neighbors using this edge. The edge itself, */  \
+        /* and the vertex between this edge and the next edge */        \
+        for(int __i=0; __i<2; __i++)                                    \
+        {                                                               \
+            const VORONOI::cell_type* c_adjacent = __e->twin()->cell(); \
+            const PointInt* pt_adjacent = &points[c_adjacent->source_index()]; \
+            if(__i == 0)                                                \
+                ; /* use c_adjacent, pt_adjacent above */               \
+            else                                                        \
+            {                                                           \
+                const VORONOI::cell_type* c0 = c_adjacent;              \
+                const PointInt* pt0 = pt_adjacent;                      \
+                const VORONOI::cell_type* c1 = __e->next()->twin()->cell(); \
+                const PointInt* pt1 = &points[c1->source_index()];      \
+                PointInt v0( pt0->x - pt->x, pt0->y - pt->y );          \
+                PointInt v1( pt1->x - pt->x, pt1->y - pt->y );          \
                                                                         \
-        const PointInt* pt_adjacent = &points[c_adjacent->source_index()]; \
+                /* check for out-of-bounds midpoints in two ways */     \
+                /* just one method is probably enough, but I want to make sure */ \
                                                                         \
-        PointInt delta( pt_adjacent->x - pt->x,                            \
-                        pt_adjacent->y - pt->y );
+                /* if this edge and the next edge don't form an acute angle, */ \
+                /* then we're at a graph boundary, and there's no midpoint */ \
+                if((long)v1.x*(long)v0.y > (long)v0.x*(long)v1.y) \
+                    continue;                                           \
+                                                                        \
+                /* if this and the next edge don't form a triangle, */ \
+                /* then we're at a graph boundary, and there's no midpoint */ \
+                if(__e->twin()->prev()->twin()->cell() != __e->next()->twin()->cell() ) \
+                    continue;                                           \
+                                                                        \
+                /* get the midpoint vertex. It must lie angularly between its two neighbors */ \
+                c_adjacent = __e->twin()->prev()->prev()->twin()->cell(); \
+                const PointInt* ptmid = &points[c_adjacent->source_index()]; \
+                PointInt vmid( ptmid->x - pt->x, ptmid->y - pt->y );    \
+                if((long)v1  .x*(long)vmid.y > (long)vmid.x*(long)v1  .y) \
+                    continue;                                           \
+                if((long)vmid.x*(long)v0  .y > (long)v0  .x*(long)vmid.y) \
+                    continue;                                           \
+                pt_adjacent = &points[c_adjacent->source_index()];      \
+            }                                                           \
+                                                                        \
+            PointInt delta( pt_adjacent->x - pt->x,                     \
+                            pt_adjacent->y - pt->y );
 
-#define FOR_ALL_ADJACENT_CELLS_END() }} while(0)
+#define FOR_ALL_ADJACENT_CELLS_END() }}} while(0)
 
 
 
