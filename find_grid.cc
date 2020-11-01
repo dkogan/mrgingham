@@ -1,6 +1,9 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <vector>
+#include <map>
+#include <set>
+#include <climits>
 #include <boost/polygon/voronoi.hpp>
 #include <assert.h>
 #include "point.hh"
@@ -144,36 +147,19 @@ grid finding.
 
 
 
-#define CLASSIFICATION_TYPE_LIST(_)             \
-    _(UNCLASSIFIED, = 0)                        \
-    _(HORIZONTAL,      )                        \
-    _(VERTICAL,        )                        \
-    _(OUTLIER,         )
-
-#define ENUM_ELEMENT(type,init) type init,
-enum ClassificationType
-{
- CLASSIFICATION_TYPE_LIST(ENUM_ELEMENT)
-};
-
 struct CandidateSequence
 {
-    // First two cells. The rest of the sequence is constructed by following the
-    // best path from these two cells. The rules that define this "best" path
-    // are consistent, so we don't store the path itself, but recompute it each
-    // time it is needed
+    // First two cells and the last cell. The rest of the sequence is
+    // constructed by following the best path from these two cells. The rules
+    // that define this "best" path are consistent, so we don't store the path
+    // itself, but recompute it each time it is needed
     const VORONOI::cell_type* c0;
     const VORONOI::cell_type* c1;
+    const VORONOI::cell_type* clast;
 
     PointDouble delta_mean;
     double      spacing_angle;
     double      spacing_length;
-
-    union
-    {
-        ClassificationType type;
-        int bin_index_neg; // if <0, then this is valid
-    };
 };
 
 
@@ -200,7 +186,7 @@ static void fill_initial_hypothesis_statistics(// out
 
 
 
-
+// need delta, N_remaining, c, points
 #define FOR_MATCHING_ADJACENT_CELLS(debug_sequence_pointscale) do {     \
     HypothesisStatistics stats;                                         \
     fill_initial_hypothesis_statistics(&stats, delta);                  \
@@ -338,55 +324,75 @@ get_adjacent_cell_along_sequence( // out,in.
     return NULL;
 }
 
-static bool search_along_sequence( // out
-                                  PointDouble* delta_mean,
+static
+const VORONOI::cell_type* search_along_sequence( // out
+                                                PointDouble* delta_mean,
 
-                                  // in
-                                  const PointInt* delta,
-                                  const VORONOI::cell_type* c,
-                                  int N_remaining,
+                                                // in
+                                                const PointInt* delta,
+                                                const VORONOI::cell_type* c,
+                                                int N_remaining,
 
-                                  const std::vector<PointInt>& points,
-                                  int debug_sequence_pointscale )
+                                                const std::vector<PointInt>& points,
+                                                int debug_sequence_pointscale )
 {
     delta_mean->x = (double)delta->x;
     delta_mean->y = (double)delta->y;
 
+    const VORONOI::cell_type* clast = NULL;
     FOR_MATCHING_ADJACENT_CELLS(debug_sequence_pointscale)
     {
         if( c_adjacent == NULL )
-            return false;
+            return NULL;
         delta_mean->x += (double)stats.delta_last.x;
         delta_mean->y += (double)stats.delta_last.y;
+
+        if(i == N_remaining-1)
+            clast = c_adjacent;
     }
     FOR_MATCHING_ADJACENT_CELLS_END();
 
     delta_mean->x /= (double)(N_remaining+1);
     delta_mean->y /= (double)(N_remaining+1);
 
-    return true;
+    return clast;
 }
 
-static void write_cell_center( std::vector<PointDouble>& points_out,
-                               const VORONOI::cell_type* c,
-                               const std::vector<PointInt>& points )
+static void output_point( std::vector<PointDouble>& points_out,
+                          const VORONOI::cell_type* c,
+                          const std::vector<PointInt>& points )
 {
     const PointInt* pt = &points[c->source_index()];
     points_out.push_back( PointDouble( (double)pt->x / (double)FIND_GRID_SCALE,
                                        (double)pt->y / (double)FIND_GRID_SCALE) );
 }
 
-static void write_along_sequence( std::vector<PointDouble>& points_out,
-                                  const PointInt* delta,
-                                  const VORONOI::cell_type* c,
-                                  int N_remaining,
+static void output_points_along_sequence( std::vector<PointDouble>& points_out,
+                                          const PointInt* delta,
+                                          const VORONOI::cell_type* c,
+                                          int N_remaining,
 
-                                  const std::vector<PointInt>& points)
+                                          const std::vector<PointInt>& points)
 {
     FOR_MATCHING_ADJACENT_CELLS(-1)
     {
-        write_cell_center(points_out, c_adjacent, points);
+        output_point(points_out, c_adjacent, points);
     } FOR_MATCHING_ADJACENT_CELLS_END();
+}
+
+static void output_row( std::vector<PointDouble>& points_out,
+                        const CandidateSequence& row,
+                        const std::vector<PointInt>& points )
+{
+    output_point(points_out, row.c0, points);
+    output_point(points_out, row.c1, points);
+
+    const PointInt* pt0 = &points[row.c0->source_index()];
+    const PointInt* pt1 = &points[row.c1->source_index()];
+
+    PointInt delta({ pt1->x - pt0->x,
+                     pt1->y - pt0->y});
+    output_points_along_sequence( points_out, &delta, row.c1, Nwant-2, points);
 }
 
 // dumps the voronoi diagram to a self-plotting vnlog
@@ -486,16 +492,7 @@ static void dump_intervals_along_sequence( FILE* fp,
     } FOR_MATCHING_ADJACENT_CELLS_END();
 }
 
-static const char* type_string(ClassificationType type)
-{
-#define CASE_RETURN_STRING(type, init) case type: return #type;
-    switch(type)
-    {
-        CLASSIFICATION_TYPE_LIST(CASE_RETURN_STRING)
-    default: return "unknown";
-    }
-}
-
+static
 double get_spacing_angle( double y, double x )
 {
     double angle = 180.0/M_PI * atan2(y,x);
@@ -503,7 +500,15 @@ double get_spacing_angle( double y, double x )
     return angle;
 }
 
-typedef std::vector<CandidateSequence> v_CS;
+typedef std::vector<CandidateSequence>  v_CS;
+
+typedef std::map<unsigned int, std::vector<int> > SequenceIndicesFromPoint;
+
+struct outer_cycle
+{
+    short e[4];
+};
+
 
 static void get_sequence_candidates( // out
                                      v_CS* sequence_candidates,
@@ -557,205 +562,21 @@ static void get_sequence_candidates( // out
                         pt_adjacent->y / debug_sequence_pointscale);
 
             PointDouble delta_mean;
-            if( search_along_sequence( &delta_mean,
+            const VORONOI::cell_type* clast =
+                search_along_sequence( &delta_mean,
                                        &delta, c_adjacent, Nwant-2, points,
-                                       (c == tracing_c) ? debug_sequence_pointscale : -1 ) )
+                                       (c == tracing_c) ? debug_sequence_pointscale : -1 );
+            if( clast )
             {
                 double spacing_angle  = get_spacing_angle(delta_mean.y, delta_mean.x);
                 double spacing_length = hypot(delta_mean.x, delta_mean.y);
 
-                sequence_candidates->push_back( CandidateSequence({c, c_adjacent, delta_mean,
+                sequence_candidates->push_back( CandidateSequence({c, c_adjacent, clast, delta_mean,
                                                                    spacing_angle, spacing_length}) );
             }
         } FOR_ALL_ADJACENT_CELLS_END();
     }
 }
-
-struct ClassificationBin
-{
-    PointDouble delta_mean_sum;
-    int N;
-};
-
-#define THRESHOLD_BINFIT_LENGTH (120.0*(double)FIND_GRID_SCALE)
-#define THRESHOLD_BINFIT_ANGLE  40.0
-
-static bool fits_in_bin( const CandidateSequence* cs,
-                         const ClassificationBin* bin,
-
-                         double threshold_binfit_length,
-                         double threshold_binfit_angle)
-{
-    if( bin->N == 0 ) return true;
-
-    double dx         = bin->delta_mean_sum.x/(double)bin->N;
-    double dy         = bin->delta_mean_sum.y/(double)bin->N;
-    double bin_length = hypot(dx,dy);
-    double bin_angle  = get_spacing_angle(dy, dx);
-
-    double length_err = cs->spacing_length - bin_length;
-    if(length_err*length_err > threshold_binfit_length*threshold_binfit_length) return false;
-
-    double angle_err = cs->spacing_angle - bin_angle;
-
-    // I want the angular error to be in [-90:90]
-    angle_err += 10.0 * 180.0;
-    angle_err = remainder(angle_err, 180.0);
-
-    if(angle_err*angle_err > threshold_binfit_angle*threshold_binfit_angle) return false;
-
-    return true;
-}
-
-static void push_to_bin( CandidateSequence* cs,
-                         ClassificationBin* bin,
-                         int bin_index )
-{
-    // I want to accumulate the vector with a consistent absolute direction
-    // (angle modulo 180)
-    if(bin->delta_mean_sum.x * cs->delta_mean.x +
-       bin->delta_mean_sum.y * cs->delta_mean.y >= 0.0 )
-    {
-        bin->delta_mean_sum.x += cs->delta_mean.x;
-        bin->delta_mean_sum.y += cs->delta_mean.y;
-    }
-    else
-    {
-        bin->delta_mean_sum.x -= cs->delta_mean.x;
-        bin->delta_mean_sum.y -= cs->delta_mean.y;
-    }
-
-    cs->bin_index_neg = -bin_index - 1;
-    bin->N++;
-}
-
-static int gather_unclassified(ClassificationBin* bin,
-                               v_CS* sequence_candidates,
-                               int bin_index)
-{
-    int Nremaining = 0;
-
-    *bin = ClassificationBin({});
-
-    for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
-    {
-        CandidateSequence* cs = &(*it);
-
-        if( cs->type != UNCLASSIFIED )
-            continue;
-
-        if( fits_in_bin(cs, bin, THRESHOLD_BINFIT_LENGTH, THRESHOLD_BINFIT_ANGLE) )
-            push_to_bin(cs, bin, bin_index);
-        else
-            Nremaining++;
-    }
-
-    return Nremaining;
-}
-
-static void mark_outliers( v_CS* sequence_candidates,
-                           int bin_index )
-{
-    for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
-    {
-        CandidateSequence* cs = &(*it);
-
-        if( // if we're calling everything remaining and outlier
-           (bin_index < 0 && cs->type == UNCLASSIFIED) ||
-
-            // or we're looking at THIS bin
-           (cs->bin_index_neg == -bin_index - 1) )
-        {
-            cs->type = OUTLIER;
-        }
-    }
-}
-
-static void mark_orientation( v_CS* sequence_candidates,
-                              const enum ClassificationType* types )
-{
-    for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
-    {
-        CandidateSequence* cs = &(*it);
-
-        if(      cs->bin_index_neg == -1 ) cs->type = types[0];
-        else if( cs->bin_index_neg == -2 ) cs->type = types[1];
-    }
-}
-
-static bool cluster_sequence_candidates( v_CS* sequence_candidates )
-{
-    // I looked through all my points, and I have candidate sets of points that
-    // are
-    //
-    // - linear-ish
-    // - have constant-ish spacing
-    //
-    // I'm looking for a grid of points. So the spacing angles, lengths should
-    // cluster nicely
-
-    // I should have exactly two clusters in spacing_angle/spacing_length space
-    // I make an extra bin for outliers
-    ClassificationBin bins[3];
-
-    int bin_index = 0;
-    while(true)
-    {
-        ClassificationBin* bin = &bins[bin_index];
-        int Nremaining = gather_unclassified( bin, sequence_candidates, bin_index );
-
-        if( bin->N < Nwant*2 ) // should have enough for both directions
-        {
-            // this is a bin full of outliers
-            mark_outliers( sequence_candidates, bin_index );
-            if( Nremaining == 0)
-                // we threw away all the data, and nothing was good.
-                return false;
-            continue;
-        }
-
-        // This was supposedly a good "bin". The last bin is for the outliers,
-        // so if it was deemed good, something is off
-        if( bin_index >= 2 )
-        {
-            // too many "good" bins
-            return false;
-        }
-
-        bin_index++;
-        if( Nremaining < Nwant*2 ) // should have enough for both directions
-        {
-            // only stragglers left. Mark them as outliers and call it good.
-            mark_outliers(sequence_candidates, -1);
-            break;
-        }
-    }
-
-    // alrighty. I now have exactly two bins of exactly the right size. One is
-    // "HORIZONTAL" and the other is "VERTICAL". Mark them as such
-
-    // the two orientations should be markedly different from one another. The
-    // clustering should have already done this, but I make sure
-    enum ClassificationType bin_orientation[2];
-    for(int i=0; i<2; i++)
-    {
-        double angle = get_spacing_angle(bins[i].delta_mean_sum.y, bins[i].delta_mean_sum.x);
-
-        #warning "horizontal/vertical could be ambiguous"
-        if( angle > 90-45 && angle < 90+45 )
-            bin_orientation[i] = VERTICAL;
-        else
-            bin_orientation[i] = HORIZONTAL;
-    }
-    if(bin_orientation[0] == VERTICAL && bin_orientation[1] == VERTICAL)
-        return false;
-    if(bin_orientation[0] == HORIZONTAL && bin_orientation[1] == HORIZONTAL)
-        return false;
-
-    mark_orientation( sequence_candidates, bin_orientation );
-    return true;
-}
-
 
 static void get_candidate_point( unsigned int* cs_point,
                                  const VORONOI::cell_type* c )
@@ -791,280 +612,518 @@ static void get_candidate_points( unsigned int* cs_points,
     get_candidate_points_along_sequence(&cs_points[2], &delta, cs->c1, Nwant-2, points);
 }
 
-static bool compare_reverse_along_sequence( const unsigned int* cs_points_other,
-
-                                            const PointInt* delta,
-                                            const VORONOI::cell_type* c,
-                                            int N_remaining,
-
-                                            const std::vector<PointInt>& points)
-{
-    FOR_MATCHING_ADJACENT_CELLS(-1)
-    {
-        if(*cs_points_other != c_adjacent->source_index())
-            return false;
-        cs_points_other--;
-    } FOR_MATCHING_ADJACENT_CELLS_END();
-
-    return true;
-}
-static bool is_reverse_sequence( const unsigned int* cs_points_other,
-                                 const CandidateSequence* cs,
-                                 const std::vector<PointInt>& points )
-{
-    if( cs->c0->source_index() != cs_points_other[Nwant-1] ) return false;
-    if( cs->c1->source_index() != cs_points_other[Nwant-2] ) return false;
-
-    const PointInt* pt0 = &points[cs->c0->source_index()];
-    const PointInt* pt1 = &points[cs->c1->source_index()];
-
-    PointInt delta({ pt1->x - pt0->x,
-                  pt1->y - pt0->y});
-    return compare_reverse_along_sequence(&cs_points_other[Nwant-3], &delta, cs->c1, Nwant-2, points);
-}
-
-static bool matches_direction(CandidateSequence* cs,
-                              ClassificationType orientation )
-{
-    if( orientation == HORIZONTAL ) return cs->delta_mean.x > 0.0;
-    return cs->delta_mean.y > 0.0;
-}
-
-static void filter_bidirectional( v_CS* sequence_candidates,
-                                  const std::vector<PointInt>& points,
-                                  ClassificationType orientation )
-{
-    // I loop through the candidates list, and try to find a matching other
-    // candidate that is THIS candidate in the opposite order.
-    //
-    // If no such match is found, I throw away the candidate.
-    // If such match IS found, I throw away one of the two
-    int N = sequence_candidates->size();
-    for( int i=0; i<N; i++ )
-    {
-        CandidateSequence* cs0 = &(*sequence_candidates)[i];
-        if(cs0->type != orientation) continue;
-
-        unsigned int cs0_points[Nwant];
-        get_candidate_points(cs0_points, cs0, points);
-
-        bool found = false;
-        for( int j=i+1; j<N; j++ )
-        {
-            CandidateSequence* cs1 = &(*sequence_candidates)[j];
-            if(cs1->type != orientation) continue;
-
-            if( !is_reverse_sequence( cs0_points, cs1, points ) )
-                continue;
-
-            // bam. found reverse sequence. Throw away one of the matches. I
-            // keep the one that matches the canonical direction the best ([1,0]
-            // for "horizontal" and [0,1] for "vertical")
-            if( !matches_direction(cs0, orientation) )
-                *cs0 = *cs1;
-            cs1->type = OUTLIER;
-            found = true;
-            break;
-        }
-        if( !found )
-            // this candidate doesn't have a match. Throw out self
-            cs0->type = OUTLIER;
-    }
-}
-
-
-// Looks through our classification and determines whether things look valid or
-// not. Makes no changes to anything
-static bool validate_clasification(const v_CS* sequence_candidates)
-{
-    // I should have exactly Nwant horizontal lines and Nwant vertical lines
-    int Nhorizontal = 0;
-    int Nvertical   = 0;
-
-    for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
-    {
-        if(      it->type == HORIZONTAL ) Nhorizontal++;
-        else if( it->type == VERTICAL   ) Nvertical++;
-    }
-    if( Nhorizontal != Nwant ) return false;
-    if( Nvertical   != Nwant ) return false;
-
-
-    // OK then. The horizontal lines should each
-
-    // I'm tired. Let's call this good enough for now
-#warning complete
-    return true;
-
-}
 
 // dumps a terse self-plotting vnlog visualization of sequence candidates, and a
 // more detailed vnlog containing more data
-#define DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE_BEFORE "/tmp/mrgingham-3-candidates.vnl"
-#define DUMP_FILENAME_SEQUENCE_CANDIDATES_DENSE_BEFORE  "/tmp/mrgingham-3-candidates-detailed.vnl"
-#define DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE_AFTER  "/tmp/mrgingham-4-candidates.vnl"
-#define DUMP_FILENAME_SEQUENCE_CANDIDATES_DENSE_AFTER   "/tmp/mrgingham-4-candidates-detailed.vnl"
-static void dump_candidates(const v_CS* sequence_candidates,
-                            const std::vector<PointInt>& points,
-                            bool post_filter)
+#define DUMP_BASENAME_ALL_SEQUENCE_CANDIDATES     "/tmp/mrgingham-3-candidates"
+#define DUMP_BASENAME_OUTER_EDGES                 "/tmp/mrgingham-4-outer-edges"
+#define DUMP_BASENAME_OUTER_EDGE_CYCLES           "/tmp/mrgingham-5-outer-edge-cycles"
+#define DUMP_BASENAME_IDENTIFIED_OUTER_EDGE_CYCLE "/tmp/mrgingham-6-identified-outer-edge-cycle"
+#define dump_candidates(basename, sequence_candidates, outer_edges, points) \
+    _dump_candidates( basename".vnl", basename"-detailed.vnl",  \
+                      sequence_candidates, outer_edges, points )
+static void _dump_candidates(const char* filename_sparse,
+                             const char* filename_dense,
+                             const v_CS* sequence_candidates,
+                             const std::vector<int>* outer_edges,
+                             const std::vector<PointInt>& points)
 {
-    const char* dump_filename_sequence_candidates_sparse = post_filter ?
-        DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE_AFTER :
-        DUMP_FILENAME_SEQUENCE_CANDIDATES_SPARSE_BEFORE;
-    const char* dump_filename_sequence_candidates_dense = post_filter ?
-        DUMP_FILENAME_SEQUENCE_CANDIDATES_DENSE_AFTER :
-        DUMP_FILENAME_SEQUENCE_CANDIDATES_DENSE_BEFORE;
+    FILE* fp = fopen(filename_sparse, "w");
+    assert(fp);
 
-    FILE* fp = fopen(dump_filename_sequence_candidates_sparse, "w");
+    // the kernel limits the #! line to 127 characters, so I abbreviate
+    fprintf(fp, "#!/usr/bin/feedgnuplot --dom --aut --square --rangesizea 3 --w 'vec size screen 0.01,20 fixed fill' --set 'yr [:] rev'\n");
+    fprintf(fp, "# fromx type fromy deltax deltay\n");
+
+    if(outer_edges == NULL)
+        for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
+        {
+            const CandidateSequence* cs = &(*it);
+            const PointInt*          pt = &points[cs->c0->source_index()];
+
+            fprintf(fp,
+                    "%f %f %f %f\n",
+                    (double)(pt->x) / (double)FIND_GRID_SCALE,
+                    (double)(pt->y) / (double)FIND_GRID_SCALE,
+                    cs->delta_mean.x / (double)FIND_GRID_SCALE,
+                    cs->delta_mean.y / (double)FIND_GRID_SCALE);
+        }
+    else
+        for( auto it = outer_edges->begin(); it != outer_edges->end(); it++ )
+        {
+            const CandidateSequence* cs = &((*sequence_candidates)[*it]);
+            const PointInt*          pt = &points[cs->c0->source_index()];
+
+            fprintf(fp,
+                    "%f %f %f %f\n",
+                    (double)(pt->x) / (double)FIND_GRID_SCALE,
+                    (double)(pt->y) / (double)FIND_GRID_SCALE,
+                    cs->delta_mean.x / (double)FIND_GRID_SCALE,
+                    cs->delta_mean.y / (double)FIND_GRID_SCALE);
+        }
+
+    fclose(fp);
+    chmod(filename_sparse,
+          S_IRUSR | S_IRGRP | S_IROTH |
+          S_IWUSR | S_IWGRP |
+          S_IXUSR | S_IXGRP | S_IXOTH);
+    fprintf(stderr, "Wrote self-plotting sequence-candidate dump to %s\n",
+            filename_sparse);
+
+
+    // detailed
+    fp = fopen(filename_dense, "w");
+    assert(fp);
+
+    fprintf(fp, "# candidateid pointid fromx fromy tox toy deltax deltay len angle\n");
+
+    if(outer_edges == NULL)
+    {
+        int N = sequence_candidates->size();
+        for( int i=0; i<N; i++ )
+            dump_intervals_along_sequence( fp,
+                                           &(*sequence_candidates)[i],
+                                           i, points);
+    }
+    else
+    {
+        int N = outer_edges->size();
+        for( int i=0; i<N; i++ )
+            dump_intervals_along_sequence( fp,
+                                           &(*sequence_candidates)[(*outer_edges)[i]],
+                                           i, points);
+    }
+    fclose(fp);
+    fprintf(stderr, "Wrote detailed sequence-candidate dump to %s\n",
+            filename_dense);
+}
+
+static void dump_outer_edge_cycles(const std::vector<outer_cycle>& outer_cycles,
+                                   const std::vector<int>&         outer_edges,
+                                   const v_CS&                     sequence_candidates,
+                                   const std::vector<PointInt>&    points)
+{
+    FILE* fp = fopen(DUMP_BASENAME_OUTER_EDGE_CYCLES, "w");
     assert(fp);
 
     // the kernel limits the #! line to 127 characters, so I abbreviate
     fprintf(fp, "#!/usr/bin/feedgnuplot --datai --dom --aut --square --rangesizea 3 --w 'vec size screen 0.01,20 fixed fill' --set 'yr [:] rev'\n");
     fprintf(fp, "# fromx type fromy deltax deltay\n");
 
-    for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
+    for( int i_cycle=0; i_cycle<(int)outer_cycles.size(); i_cycle++ )
     {
-        const CandidateSequence* cs = &(*it);
-        const PointInt*             pt = &points[cs->c0->source_index()];
+        for(int i_edge = 0; i_edge<4; i_edge++ )
+        {
+            const CandidateSequence* cs = &sequence_candidates[outer_edges[ outer_cycles[i_cycle].e[i_edge] ]];
+            const PointInt*          pt = &points[cs->c0->source_index()];
 
-        fprintf(fp,
-                "%f %s %f %f %f\n",
-                (double)(pt->x) / (double)FIND_GRID_SCALE,
-                type_string(cs->type),
-                (double)(pt->y) / (double)FIND_GRID_SCALE,
-                cs->delta_mean.x / (double)FIND_GRID_SCALE,
-                cs->delta_mean.y / (double)FIND_GRID_SCALE);
+            fprintf(fp,
+                    "%f %d %f %f %f\n",
+                    (double)(pt->x) / (double)FIND_GRID_SCALE,
+                    i_cycle,
+                    (double)(pt->y) / (double)FIND_GRID_SCALE,
+                    cs->delta_mean.x / (double)FIND_GRID_SCALE,
+                    cs->delta_mean.y / (double)FIND_GRID_SCALE);
+        }
     }
+
     fclose(fp);
-    chmod(dump_filename_sequence_candidates_sparse,
+    chmod(DUMP_BASENAME_OUTER_EDGE_CYCLES,
           S_IRUSR | S_IRGRP | S_IROTH |
           S_IWUSR | S_IWGRP |
           S_IXUSR | S_IXGRP | S_IXOTH);
-    fprintf(stderr, "Wrote self-plotting sequence-candidate dump to %s\n",
-            dump_filename_sequence_candidates_sparse);
+    fprintf(stderr, "Wrote outer edge cycle dump to %s\n",
+            DUMP_BASENAME_OUTER_EDGE_CYCLES);
+}
 
+static void dump_outer_edge_cycles_identified(const std::vector<outer_cycle>& outer_cycles,
+                                              const std::vector<int>&         outer_edges,
+                                              const v_CS&                     sequence_candidates,
+                                              const std::vector<PointInt>&    points,
 
-    // detailed
-    fp = fopen(dump_filename_sequence_candidates_dense, "w");
+                                              const int* outer_cycle_pair, int iclockwise,
+                                              const int* iedge_top)
+
+{
+    FILE* fp = fopen(DUMP_BASENAME_IDENTIFIED_OUTER_EDGE_CYCLE, "w");
     assert(fp);
 
-    fprintf(fp, "# candidateid pointid fromx fromy tox toy deltax deltay len angle\n");
-    int N = sequence_candidates->size();
-    for( int i=0; i<N; i++ )
-        dump_intervals_along_sequence( fp,
-                                       &(*sequence_candidates)[i],
-                                       i, points);
-    fclose(fp);
-    fprintf(stderr, "Wrote detailed sequence-candidate dump to %s\n",
-            dump_filename_sequence_candidates_dense);
-}
+    // the kernel limits the #! line to 127 characters, so I abbreviate
+    fprintf(fp, "#!/usr/bin/feedgnuplot --datai --dom --aut --square --rangesizea 3 --w 'vec size screen 0.01,20 fixed fill' --set 'yr [:] rev'\n");
+    fprintf(fp, "# fromx type fromy deltax deltay\n");
 
-static void write_output( std::vector<PointDouble>& points_out,
-                          const v_CS* sequence_candidates,
-                          const std::vector<PointInt>& points )
-{
-    for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
+    for( int i_cycle=0; i_cycle<2; i_cycle++ )
     {
-        if( it->type == HORIZONTAL )
+        for(int i_edge = 0; i_edge<4; i_edge++ )
         {
-            write_cell_center(points_out, it->c0, points);
-            write_cell_center(points_out, it->c1, points);
+            const CandidateSequence* cs = &sequence_candidates[outer_edges[ outer_cycles[outer_cycle_pair[i_cycle]].e[i_edge] ]];
+            const PointInt*          pt = &points[cs->c0->source_index()];
 
-            const PointInt* pt0 = &points[it->c0->source_index()];
-            const PointInt* pt1 = &points[it->c1->source_index()];
+            char what[128];
+            sprintf(what, "%s%s",
+                    (i_cycle == iclockwise) ? "clockwise" : "counterclockwise",
+                    iedge_top[i_cycle] == i_edge ? "-top" : "");
 
-            PointInt delta({ pt1->x - pt0->x,
-                             pt1->y - pt0->y});
-            write_along_sequence( points_out, &delta, it->c1, Nwant-2, points);
+            fprintf(fp,
+                    "%f %s %f %f %f\n",
+                    (double)(pt->x) / (double)FIND_GRID_SCALE,
+                    what,
+                    (double)(pt->y) / (double)FIND_GRID_SCALE,
+                    cs->delta_mean.x / (double)FIND_GRID_SCALE,
+                    cs->delta_mean.y / (double)FIND_GRID_SCALE);
         }
     }
+
+    fclose(fp);
+    chmod(DUMP_BASENAME_IDENTIFIED_OUTER_EDGE_CYCLE,
+          S_IRUSR | S_IRGRP | S_IROTH |
+          S_IWUSR | S_IWGRP |
+          S_IXUSR | S_IXGRP | S_IXOTH);
+    fprintf(stderr, "Wrote outer edge cycle dump to %s\n",
+            DUMP_BASENAME_IDENTIFIED_OUTER_EDGE_CYCLE);
 }
 
-static void sort_candidates(v_CS* sequence_candidates,
-                            const std::vector<PointInt>& points )
+static bool is_crossing( unsigned int line0_pt0, unsigned int line0_pt1,
+                         unsigned int line1_pt0, unsigned int line1_pt1,
+                         const std::vector<PointInt>&    points)
 {
-    // I sort my vertical sequences in order of increasing x
-    //
-    // I sort my horizontal sequences in order of increasing y
+    // First I translate everything so that line0_pt0 is at the origin
+    float l0pt1[2] =
+        { (float)(points[line0_pt1].x - points[line0_pt0].x),
+          (float)(points[line0_pt1].y - points[line0_pt0].y) };
+    float l1pt0[2] =
+        { (float)(points[line1_pt0].x - points[line0_pt0].x),
+          (float)(points[line1_pt0].y - points[line0_pt0].y) };
+    float l1pt1[2] =
+        { (float)(points[line1_pt1].x - points[line0_pt0].x),
+          (float)(points[line1_pt1].y - points[line0_pt0].y) };
 
+    // Now I rotate the 3 points such that l0pt1 ends up aligned on the x axis.
+    // I don't bother to divide by the hypotenuse, so l0pt1 is at (d^2, 0)
+    float d2 = l0pt1[0]*l0pt1[0] + l0pt1[1]*l0pt1[1];
 
-    struct S{
-        bool operator() ( const CandidateSequence& a,
-                          const CandidateSequence& b) const
+    float l1pt0_rotated[2] =
+        {  l1pt0[0]*l0pt1[0] + l1pt0[1]*l0pt1[1],
+          -l1pt0[0]*l0pt1[1] + l1pt0[1]*l0pt1[0] };
+    float l1pt1_rotated[2] =
+        {  l1pt1[0]*l0pt1[0] + l1pt1[1]*l0pt1[1],
+          -l1pt1[0]*l0pt1[1] + l1pt1[1]*l0pt1[0] };
+
+    // In this rotated space, the two points must have opposite-sign y (lie on
+    // both sides of the line).
+    if( l1pt0_rotated[1]*l1pt1_rotated[1] > 0 )
+        return false;
+
+    // To cross the line, both x coords can't be off the edge
+    if( (l1pt0_rotated[0] < 0  && l1pt1_rotated[0] < 0) ||
+        (l1pt0_rotated[0] > d2 && l1pt1_rotated[0] > d2) )
+        return false;
+
+    // OK, maybe they do cross. I actually compute the intersection
+    // a + k(b-a) = [..., 0] -> k = a1/(a1-b1)
+    float k = l1pt0_rotated[1] / (l1pt0_rotated[1] - l1pt1_rotated[1]);
+    float x = l1pt0_rotated[0] + k * (l1pt1_rotated[0] - l1pt0_rotated[0]);
+    return x >= 0.0f && x <= d2;
+}
+
+// recursively search for 4-cycle sequences of outer edges. On success, returns
+// true, with the cycle reported in edges
+static bool next_outer_edge(// this iteration
+                            outer_cycle* edges,      // edge sequence being
+                            // evaluated. Output
+                            // returned here
+                            int          edge_count, // how many edges we've got,
+                            // including this one
+
+                            // context
+                            unsigned int                    point_initial,
+                            const std::vector<int>&         outer_edges,
+                            const v_CS&                     sequence_candidates,
+                            const SequenceIndicesFromPoint& outer_edges_from_point,
+                            const std::vector<PointInt>&    points,
+                            bool                            debug)
+{
+    bool        found_cycle = false;
+    outer_cycle outer_cycle_found = {};
+
+    int i_edge = (int)edges->e[edge_count-1];
+    unsigned int first_point_this_edge = sequence_candidates[outer_edges[i_edge]].c0   ->source_index();
+    unsigned int last_point_this_edge  = sequence_candidates[outer_edges[i_edge]].clast->source_index();
+
+    const std::vector<int>* next_edges;
+    try
+    {
+        next_edges = &outer_edges_from_point.at(last_point_this_edge);
+    }
+    catch(...)
+    {
+        if(debug)
+            fprintf(stderr, "No opposing outer edge\n");
+        return false;
+    }
+    int Nedges_from_here = next_edges->size();
+    for(int i=0; i<Nedges_from_here; i++)
+    {
+        // I make sure to not follow edges that are inverses of the immediately
+        // previous edge, and I make sure that the 4th edge forms a loop AND
+        // that a non-4th edge does NOT go back to the start. This is enough,
+        // and I don't need any more already-visited logic:
+        //
+        // - 1st edge is given
+        // - 2nd edge can go anywhere except directly backwards
+        // - 3rd edge can go anywhere except the edges 1 (the start) and 2 (the
+        //   previous point)
+        // - 4th edge can go only to the start point
+        unsigned int last_point_next_edge = sequence_candidates[outer_edges[ (*next_edges)[i] ]].clast->source_index();
+
+        if( last_point_next_edge == first_point_this_edge )
+            // This next edge is an inverse of this edge. It's not a part of my
+            // 4-cycle
+            continue;
+
+        // I need to ignore X structures. In the below, ACBDA is valid,
+        // but ABCDA is NOT valid.
+        //
+        //   A  C
+        //   |\/|
+        //   |/\|
+        //   D  B
+        //
+        // Thus I make sure that
+        // edge 3 does not cross edge 1 and that
+        // edge 4 does not cross edge 2
+        if(edge_count != 3)
         {
-            if( a.type != b.type )
+            // This is not the last edge. It may not go to the start
+            if( last_point_next_edge == point_initial )
+                continue;
+
+            if(edge_count == 2)
             {
-                // HORIZONTAL is 1st, VERTICAL is 2nd, and I don't care about the others
-                if( a.type == HORIZONTAL ) return true;
-                if( b.type == HORIZONTAL ) return false;
-                if( a.type == VERTICAL   ) return true;
-                if( b.type == VERTICAL   ) return false;
-                return a.type < b.type;
+                if( is_crossing(sequence_candidates[outer_edges[ edges->e[0]      ]].c0   ->source_index(),
+                                sequence_candidates[outer_edges[ edges->e[0]      ]].clast->source_index(),
+                                sequence_candidates[outer_edges[ (*next_edges)[i] ]].c0   ->source_index(),
+                                sequence_candidates[outer_edges[ (*next_edges)[i] ]].clast->source_index(),
+                                points ))
+                    continue;
             }
 
-            if( a.type == HORIZONTAL )
-                return _points[a.c0->source_index()].y < _points[b.c0->source_index()].y;
-            return _points[a.c0->source_index()].x < _points[b.c0->source_index()].x;
+            edges->e[edge_count] = (short)(*next_edges)[i];
+            if(!next_outer_edge( edges, edge_count+1,
+                                 point_initial,
+                                 outer_edges,
+                                 sequence_candidates,
+                                 outer_edges_from_point,
+                                 points,
+                                 debug))
+                continue;
+
+            // Got a successful result. It must be unique
+            if(found_cycle)
+            {
+                if(debug)
+                    fprintf(stderr, "Found non-unique 4-cycle\n");
+                return false;
+            }
+            found_cycle = true;
+            outer_cycle_found = *edges;
         }
-
-        const std::vector<PointInt>& _points;
-        S(const std::vector<PointInt>& __points) : _points(__points) {}
-    } sequence_comparator(points);
-
-    std::sort( sequence_candidates->begin(), sequence_candidates->end(),
-               sequence_comparator );
-}
-
-static CandidateSequence* get_first(v_CS* sequence_candidates,
-                                    ClassificationType orientation)
-{
-    int N = sequence_candidates->size();
-    for( int i=0; i<N; i++ )
-    {
-        CandidateSequence* cs = &(*sequence_candidates)[i];
-        if( cs->type == orientation ) return cs;
-    }
-    return NULL;
-}
-
-static bool filter_bounds(v_CS* sequence_candidates,
-                          ClassificationType orientation,
-                          const std::vector<PointInt>& points)
-{
-    // I look at the first horizontal sequence and make sure that it consists of
-    // the first points of all the vertical sequences, in order. And vice versa
-    //
-    // This function will mark extra sequences as outliers, and it will return
-    // false if anything is missing
-    ClassificationType orientation_other;
-    if( orientation == HORIZONTAL ) orientation_other = VERTICAL;
-    else                            orientation_other = HORIZONTAL;
-
-    CandidateSequence* cs_ref    = get_first(sequence_candidates, orientation);
-    CandidateSequence* cs_others = get_first(sequence_candidates, orientation_other);
-    if( cs_ref    == NULL ) return false;
-    if( cs_others == NULL ) return false;
-
-    unsigned int cs_ref_points[Nwant];
-    get_candidate_points( cs_ref_points, cs_ref, points );
-    int i;
-    for(i=0; i<Nwant; i++, cs_others++)
-    {
-        if( cs_others->type != orientation_other )
-            // no more valid other sequences to follow
-            break;
-
-        if( cs_ref_points[i] != cs_others->c0->source_index() )
+        else
         {
-            // mismatch! One of these sequences is an outlier
-#warning handle this
+            // Last edge. May only go back to the start
+            if( last_point_next_edge != point_initial )
+                continue;
+
+            if( is_crossing(sequence_candidates[outer_edges[ edges->e[1]      ]].c0   ->source_index(),
+                            sequence_candidates[outer_edges[ edges->e[1]      ]].clast->source_index(),
+                            sequence_candidates[outer_edges[ (*next_edges)[i] ]].c0   ->source_index(),
+                            sequence_candidates[outer_edges[ (*next_edges)[i] ]].clast->source_index(),
+                            points ))
+            {
+                // I already found the last edge, but it's crossing itself. I
+                // know there aren't any more solutions here, so I exit
+                return false;
+            }
+
+            edges->e[3] = (short)(*next_edges)[i];
+            return true;
+        }
+    }
+
+    if(!found_cycle) return false;
+
+    *edges = outer_cycle_found;
+    return true;
+}
+
+static bool is_equalAndOpposite_cycle(const outer_cycle& cycle0,
+                                      const outer_cycle& cycle1,
+
+                                      // context
+                                      const std::vector<int>& outer_edges,
+                                      const v_CS&             sequence_candidates,
+                                      bool                    debug)
+{
+    // Pick an arbitrary starting point: initial point of the first edge of the
+    // first cycle
+    int          iedge0 = 0;
+    unsigned int ipt0   = sequence_candidates[outer_edges[cycle0.e[iedge0]]].c0->source_index();
+
+    // find the edge in the potentially-opposite cycle that ends at this point
+    int iedge1 = -1;
+    for(int _iedge1 = 0; _iedge1 < 4; _iedge1++)
+        if(ipt0 == sequence_candidates[outer_edges[ cycle1.e[_iedge1] ]].clast->source_index())
+        {
+            iedge1 = _iedge1;
+            break;
+        }
+    if( iedge1 < 0)
+    {
+        if(debug)
+            fprintf(stderr, "Given outer cycles are NOT equal and opposite: couldn't find a corresponding point in the two cycles\n");
+        return false;
+    }
+
+    // Now I traverse the two cycles, and compare. I traverse the second cycle
+    // backwards, and compare the back/front and front/back
+    for(int i=0; i<4; i++)
+    {
+        unsigned int cycle0_points[2] =
+            { (unsigned int)sequence_candidates[outer_edges[cycle0.e[iedge0]]].c0   ->source_index(),
+              (unsigned int)sequence_candidates[outer_edges[cycle0.e[iedge0]]].clast->source_index()};
+        unsigned int cycle1_points[2] =
+            { (unsigned int)sequence_candidates[outer_edges[cycle1.e[iedge1]]].c0   ->source_index(),
+              (unsigned int)sequence_candidates[outer_edges[cycle1.e[iedge1]]].clast->source_index() };
+        if(cycle0_points[0] != cycle1_points[1] ||
+           cycle0_points[1] != cycle1_points[0] )
+        {
+            if(debug)
+                fprintf(stderr, "Given outer cycles are NOT equal and opposite\n");
             return false;
         }
+
+        iedge0 = (iedge0+1) % 4;
+        iedge1 = (iedge1+3) % 4;
     }
-    return i == Nwant;
+    return true;
 }
 
+// assumes the two given cycles are equal and opposite
+//
+// returns
+//   0  if cycle0 is clockwise
+//   1  if cycle1 is clockwise
+//   <0 if the cycle is not convex
+//
+// Convexity is determined by connecting the corners with straight lines. I
+// guess maybe a lens could be so distorted that you get nonconvex polygon, but
+// I can't quite imagine that. The polygon would have to look like this:
+/*
 
+            /\
+           /  \
+          /    \
+         /      \
+        /   /\   \
+       /  --  --  \
+      /__/      \__\
+*/
+static int select_clockwise_cycle_and_find_top(// out
+                                               int iedge_top[2],
+
+                                               const outer_cycle& cycle0,
+                                               const outer_cycle& cycle1,
+
+                                               // context
+                                               const std::vector<int>&      outer_edges,
+                                               const v_CS&                  sequence_candidates,
+                                               const std::vector<PointInt>& points,
+                                               bool                         debug)
+{
+    // I pick a cycle, and look at the sign of the cross-product of each
+    // consecutive direction. The sign should be constant for all consecutive
+    // directions. Non-convexity would generate a different sign. And the sign
+    // tells me if the thing is clockwise or not
+
+    // 4 segments, each direction has an x and a y
+    int v[4][2];
+    for(int i=0; i<4; i++)
+    {
+        unsigned int ipt0 = sequence_candidates[outer_edges[cycle0.e[i]]].c0   ->source_index();
+        unsigned int ipt1 = sequence_candidates[outer_edges[cycle0.e[i]]].clast->source_index();
+
+        v[i][0] = (points[ipt1].x - points[ipt0].x) / FIND_GRID_SCALE_APPROX_POWER2 ;
+        v[i][1] = (points[ipt1].y - points[ipt0].y) / FIND_GRID_SCALE_APPROX_POWER2 ;
+    }
+
+    bool sign[4];
+    for(int i0=0; i0<4; i0++)
+    {
+        int i1 = (i0+1)%4;
+        sign[i0] = v[i1][0]*v[i0][1] < v[i0][0]*v[i1][1];
+    }
+
+    int i_clockwise;
+    if(      sign[0] &&  sign[1] &&  sign[2] &&  sign[3]) i_clockwise = 0;
+    else if(!sign[0] && !sign[1] && !sign[2] && !sign[3]) i_clockwise = 1;
+    else
+    {
+        if(debug)
+            fprintf(stderr, "The outer edge cycles aren't convex!\n");
+        return -1;
+    }
+
+
+    // To find the "top", I pick the edge with the lowest y coord of its center
+    // point. Everything is assumed to be sorta square
+    const outer_cycle* cycles[2] = {&cycle0, &cycle1};
+    for( int icycle=0; icycle<2; icycle++)
+    {
+        int ymid2_min = INT_MAX;
+        int iedge_min = -1;
+
+        for(int i=0; i<4; i++)
+        {
+            unsigned int ipt0 = sequence_candidates[outer_edges[cycles[icycle]->e[i]]].c0   ->source_index();
+            unsigned int ipt1 = sequence_candidates[outer_edges[cycles[icycle]->e[i]]].clast->source_index();
+
+            int ymid2 = (int)(points[ipt0].y + points[ipt1].y);
+            if(ymid2 < ymid2_min)
+            {
+                ymid2_min = ymid2;
+                iedge_min = i;
+            }
+        }
+
+        iedge_top[icycle] = iedge_min;
+    }
+
+    return i_clockwise;
+}
+
+static int find_sequence_from_to( // inputs
+                                  unsigned int from, unsigned int to,
+
+                                  // context
+                                  const v_CS&  sequence_candidates,
+                                  const SequenceIndicesFromPoint& sequences_from_point )
+{
+    try
+    {
+        const std::vector<int>& sequences = sequences_from_point.at(from);
+        for(int i=0; i<(int)sequences.size(); i++)
+        {
+            const CandidateSequence* cs = &sequence_candidates[sequences[i]];
+            if(cs->clast->source_index() == to)
+                return sequences[i];
+        }
+        return -1;
+    }
+    catch(...)
+    {
+        return -1;
+    }
+}
 
 __attribute__((visibility("default")))
 bool mrgingham::find_grid_from_points( // out
@@ -1085,52 +1144,211 @@ bool mrgingham::find_grid_from_points( // out
     get_sequence_candidates(&sequence_candidates, &voronoi, points,
                             debug_sequence);
 
-
     if(debug)
     {
-        dump_candidates(&sequence_candidates, points, false);
+        dump_candidates(DUMP_BASENAME_ALL_SEQUENCE_CANDIDATES,
+                        &sequence_candidates, NULL, points);
 
         fprintf(stderr, "got %zd points\n", points.size());
         fprintf(stderr, "got %zd sequence candidates\n", sequence_candidates.size());
     }
 
-    if( !cluster_sequence_candidates(&sequence_candidates))
+    // I have all the sequence candidates. I find all the sequences that could
+    // be edges of my grid: each one begins at a cell that's the start of at
+    // least two sequences
+    std::vector<int> outer_edges;
+    // I likely only need 8, but I don't want to ever reallocate this thing
+    outer_edges.reserve(20);
+    std::map<unsigned int, int> sequences_initiated_count;
+    int Ncs = sequence_candidates.size();
+    for( int i=0; i<Ncs; i++ )
+    {
+        const CandidateSequence* cs = &sequence_candidates[i];
+        sequences_initiated_count[cs->c0->source_index()]++;
+    }
+    for( int i=0; i<Ncs; i++ )
+    {
+        const CandidateSequence* cs = &sequence_candidates[i];
+        if(sequences_initiated_count[cs->c0->source_index()] >= 2)
+            outer_edges.push_back(i);
+    }
+
+    // I now have potential outer edges: all sequences that begin with a cell
+    // that initiates at least two sequences (this one and at least one other)
+    if( outer_edges.size() < 8 )
+    {
+        // need at least 8 outer edges: 4 in each direction
+        if(debug)
+        {
+            fprintf(stderr, "Too few candidates for an outer edge of the grid. Needed at least 8, got %d\n",
+                    (int)outer_edges.size());
+        }
+        return false;
+    }
+    if(debug)
+        dump_candidates(DUMP_BASENAME_OUTER_EDGES,
+                        &sequence_candidates, &outer_edges, points);
+
+    // I won't have very many of these outer edges, so I don't worry too much
+    // about efficient algorithms here.
+    //
+    // I look for 2 cyclical sequences of length 4 each. Equal and opposite to
+    // each other
+    int Nouter_edges = outer_edges.size();
+
+    SequenceIndicesFromPoint outer_edges_from_point;
+    for( int i=0; i<Nouter_edges; i++ )
+    {
+        const CandidateSequence* cs = &sequence_candidates[outer_edges[i]];
+        outer_edges_from_point[cs->c0->source_index()].push_back(i);
+    }
+
+    std::vector<outer_cycle> outer_cycles;
+    std::set<int> outer_edges_in_found_cycles;
+    for( int i=0; i<Nouter_edges; i++ )
+    {
+        if( outer_edges_in_found_cycles.count(i) )
+            // I already processed this edge
+            continue;
+
+        outer_cycle outer_cycle_found;
+        outer_cycle_found.e[0] = i;
+        if(!next_outer_edge(// this iteration
+                            &outer_cycle_found,
+                            1,
+
+                            // context
+                            sequence_candidates[outer_edges[i]].c0->source_index(),
+                            outer_edges,
+                            sequence_candidates,
+                            outer_edges_from_point,
+                            points,
+                            debug))
+            continue;
+
+        outer_cycles.push_back( outer_cycle_found );
+        for(int i=0; i<4; i++)
+            outer_edges_in_found_cycles.insert(outer_cycle_found.e[i]);
+    }
+
+    if(debug && outer_cycles.size())
+        dump_outer_edge_cycles(outer_cycles, outer_edges, sequence_candidates, points);
+
+    if(outer_cycles.size() < 2)
     {
         if(debug)
-            fprintf(stderr, "cluster_sequence_candidates() failed. No grid detected\n");
+            fprintf(stderr, "Found too few 4-cycles. Needed at least 2, got %d\n",
+                    (int)outer_cycles.size());
         return false;
     }
 
-    filter_bidirectional(&sequence_candidates, points, HORIZONTAL);
-    filter_bidirectional(&sequence_candidates, points, VERTICAL);
+    // I should have exactly one set of an equal/opposite cycles
+    int outer_cycle_pair[2] = {-1,-1};
+    for(int i0=0; i0<(int)outer_cycles.size(); i0++)
+        for(int i1=i0+1; i1<(int)outer_cycles.size(); i1++)
+        {
+            if(is_equalAndOpposite_cycle(outer_cycles[i0], outer_cycles[i1],
+                                         outer_edges, sequence_candidates,
+                                         debug))
+            {
+                if(outer_cycle_pair[0] >= 0)
+                {
+                    if(debug)
+                        fprintf(stderr, "Found more than one equal-and-opposite pair of outer-edge cycles. Giving up\n");
+                    return false;
+                }
+                outer_cycle_pair[0] = i0;
+                outer_cycle_pair[1] = i1;
+            }
+        }
+    if(outer_cycle_pair[0] < 0)
+    {
+        if(debug)
+            fprintf(stderr, "Didn't find any equal-and-opposite pairs of outer-edge cycles. Giving up\n");
+        return false;
+    }
+
+    // I have my equal-and-opposite pair of cycles. I find the clockwise one. It
+    // contains the top edge, which is the first in the sequence I'm going to
+    // end up reporting
+    int iedge_top[2];
+    int iclockwise =
+        select_clockwise_cycle_and_find_top(// out
+                                            iedge_top,
+
+                                            // cycles I'm looking at
+                                            outer_cycles[outer_cycle_pair[0]],
+                                            outer_cycles[outer_cycle_pair[1]],
+
+                                            // context
+                                            outer_edges, sequence_candidates,
+                                            points,
+                                            debug);
+    if(iclockwise < 0)
+        return false;
 
     if(debug)
-        dump_candidates(&sequence_candidates, points, true);
+        dump_outer_edge_cycles_identified(outer_cycles, outer_edges, sequence_candidates,
+                                          points,
+                                          outer_cycle_pair, iclockwise,
+                                          iedge_top);
 
-    // This is relatively slow (I'm moving lots of stuff around by value), but
-    // I'm likely to not feel it anyway
-    sort_candidates(&sequence_candidates, points);
-
-    if( !filter_bounds(&sequence_candidates, HORIZONTAL, points) )
+    // All done with the outer edges of the board. I now fill-in the internal
+    // grid
+    SequenceIndicesFromPoint sequences_from_point;
+    for( int i=0; i<(int)sequence_candidates.size(); i++ )
     {
-        if(debug)
-            fprintf(stderr, "Horizontal sequence candidates out of bounds. No grid detected\n");
-        return false;
-    }
-    if( !filter_bounds(&sequence_candidates, VERTICAL,   points) )
-    {
-        if(debug)
-            fprintf(stderr, "Vertical sequence candidates out of bounds. No grid detected\n");
-        return false;
-    }
-    if(!validate_clasification(&sequence_candidates))
-    {
-        if(debug)
-            fprintf(stderr, "validate_clasification() failed. No grid detected\n");
-        return false;
+        const CandidateSequence* cs = &sequence_candidates[i];
+        sequences_from_point[cs->c0->source_index()].push_back(i);
     }
 
-    write_output(points_out, &sequence_candidates, points);
+    // sequences in sequence_candidates[]
+    int horizontal_rows[Nwant];
+    int vertical_left, vertical_right;
+
+    horizontal_rows[0] = outer_edges[outer_cycles[outer_cycle_pair[  iclockwise]].e[  iedge_top[  iclockwise]          ]];
+    vertical_left      = outer_edges[outer_cycles[outer_cycle_pair[1-iclockwise]].e[ (iedge_top[1-iclockwise] + 1) % 4 ]];
+    vertical_right     = outer_edges[outer_cycles[outer_cycle_pair[  iclockwise]].e[ (iedge_top[  iclockwise] + 1) % 4 ]];
+
+    unsigned int vertical_left_points [Nwant];
+    unsigned int vertical_right_points[Nwant];
+    get_candidate_points( vertical_left_points,  &sequence_candidates[vertical_left ], points );
+    get_candidate_points( vertical_right_points, &sequence_candidates[vertical_right], points );
+
+    for(int i=1; i<Nwant; i++)
+    {
+        // I fill in horizontal_rows[i]. I know each row must start at
+        // vertical_left[i] and end at vertical_right[i]
+        int sequence =
+            find_sequence_from_to( vertical_left_points[i], vertical_right_points[i],
+                                   sequence_candidates, sequences_from_point );
+
+        if( sequence < 0 )
+        {
+            if(debug)
+                fprintf(stderr, "Couldn't find sequence in row %d\n", i);
+            return false;
+        }
+
+        horizontal_rows[i] = sequence;
+
+        // Let's make sure the sequence from the other direction also works
+        sequence =
+            find_sequence_from_to( vertical_right_points[i], vertical_left_points[i],
+                                   sequence_candidates, sequences_from_point );
+        if(sequence < 0)
+        {
+            if(debug)
+                fprintf(stderr, "Row %d: left-to-right sequence was found, but right-to-left sequence doesn't exist!\n", i);
+            return false;
+        }
+    }
+
+    // DO AGAIN AS A TRANSPOSED THING TO CONFIRM
+
+    for(int i=0; i<Nwant; i++)
+        output_row(points_out, sequence_candidates[horizontal_rows[i]], points);
+
     if(debug)
         fprintf(stderr, "Success. Found grid\n");
     return true;
