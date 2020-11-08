@@ -1,3 +1,14 @@
+mrgingham (1.17) unstable; urgency=medium
+
+  * Massive rework of the grid finder, and some grin-finding settings
+  * Finer-grained selection of neighboring vertices in a voronoi graph
+  * Image loading ignores exif orientation
+  * Build works with opencv4 on Debian
+  * I don't need python2-numpy to build anymore
+  * mrgingham --blobs works again
+
+ -- Dima Kogan <dima@secretsauce.net>  Sun, 08 Nov 2020 14:22:55 -0800
+
 mrgingham (1.15) unstable; urgency=medium
 
   * Loosened ChESS thresholds
