@@ -1,7 +1,7 @@
 Source: mrgingham
 Priority: optional
 Section: devel
-Build-Depends: debhelper (>= 9), dh-python, python-numpy,
+Build-Depends: debhelper (>= 9), dh-python, python3-numpy,
  libopencv-dev,
  libboost-dev,
  pkg-config,
