@@ -316,7 +316,7 @@ get_adjacent_cell_along_sequence( // out,in.
         stats->delta_last        = delta;
 
         if(debug_sequence_pointscale > 0)
-            fprintf(stderr, "..... accepting!\n");
+            fprintf(stderr, "..... accepting!\n\n");
         return c_adjacent;
 
     } FOR_ALL_ADJACENT_CELLS_END();
@@ -557,7 +557,7 @@ static void get_sequence_candidates( // out
         FOR_ALL_ADJACENT_CELLS(c)
         {
             if(c == tracing_c)
-                fprintf(stderr, "====== Looking at adjacent point (%d,%d)\n",
+                fprintf(stderr, "\n\n====== Looking at adjacent point (%d,%d)\n",
                         pt_adjacent->x / debug_sequence_pointscale,
                         pt_adjacent->y / debug_sequence_pointscale);
 
