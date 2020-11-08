@@ -203,7 +203,6 @@ static void fill_initial_hypothesis_statistics(// out
 
 // tight bound on angle error, loose bound on length error. This is because
 // perspective distortion can vary the lengths, but NOT the orientations
-#define THRESHOLD_SPACING_LENGTH                 (80.*FIND_GRID_SCALE)
 #define THRESHOLD_SPACING_COS                    0.984 /* 10 degrees */
 #define THRESHOLD_SPACING_LENGTH_RATIO_MIN       0.7
 #define THRESHOLD_SPACING_LENGTH_RATIO_MAX       1.4
@@ -267,16 +266,6 @@ get_adjacent_cell_along_sequence( // out,in.
             if(debug_sequence_pointscale > 0)
                 fprintf(stderr, "..... rejecting. Angle is wrong. I wanted cos_err>=threshold, but saw %f<%f\n",
                         cos_err, THRESHOLD_SPACING_COS);
-            continue;
-        }
-
-        double length_err = delta_last_length - delta_length;
-        if( length_err < -THRESHOLD_SPACING_LENGTH ||
-            length_err >  THRESHOLD_SPACING_LENGTH )
-        {
-            if(debug_sequence_pointscale > 0)
-                fprintf(stderr, "..... rejecting. Lengths are wrong. I wanted abs(length_err)<=threshold, but saw %f>%f\n",
-                        fabs(length_err), THRESHOLD_SPACING_LENGTH);
             continue;
         }
 
