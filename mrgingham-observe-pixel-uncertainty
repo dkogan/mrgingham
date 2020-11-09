@@ -50,6 +50,11 @@ def parse_args():
                         help='''If we're processing images, these are the arguments given to
                         mrgingham. If we are reading a pre-computed file, this does
                         nothing''')
+    parser.add_argument('--num-corners',
+                        type=int,
+                        default=100,
+                        help='''How many corners to expect in each image. If this is wrong I will throw an
+                        error. Defaults to 100''')
     parser.add_argument('input',
                         type=str,
                         help='''Either 1: A glob that matches images observing a stationary calibration
@@ -94,24 +99,33 @@ else:
 
 
 
-# shape (Nobservations,Npoints_board,2)
-points = np.array(())
+# shape (Nobservations,num_corners,2)
+points = np.zeros((0, args.num_corners, 2))
 
-# shape (Npoints_board,2)
-points_here = np.array(())
+# shape (num_corners,2)
+points_here = np.zeros((args.num_corners, 2))
+ipt = 0
 
-path = ''
+
+path = None
 vnlparser = vnlog.vnlog()
 def finish_image(path_new):
-    global points, points_here, path
-    try:
-        points = nps.glue(points, points_here, axis=-3)
-    except:
-        raise Exception("I assume that all image observations have the same number of points.\n" + \
-                        "So far had {} points per image, but image '{}' has {} points per image". \
-                        format(points.shape[-2], path, points_here.shape[-2]))
-    points_here = np.array(())
-    path        = path_new
+    global points, points_here, path, ipt
+
+    if path is not None:
+
+        if ipt != args.num_corners:
+            raise Exception(f"Unexpected num_points in image {path}. Expected {args.num_corners}, but got {ipt}")
+
+        try:
+            points = nps.glue(points, points_here, axis=-3)
+        except:
+            raise Exception("I assume that all image observations have the same number of points.\n" + \
+                            "So far had {} points per image, but image '{}' has {} points per image". \
+                            format(points.shape[-2], path, points_here.shape[-2]))
+
+    path = path_new
+    ipt  = 0
 
 for l in pipe_corners_read:
     vnlparser.parse(l)
@@ -119,10 +133,13 @@ for l in pipe_corners_read:
     d = vnlparser.values_dict()
     if not d or d['x'] is None:
         continue
+
     if path != d['filename']:
         finish_image(d['filename'])
 
-    points_here = nps.glue(points_here, np.array((float(d['x']),float(d['y']))), axis=-2)
+    points_here[ipt][0] = float(d['x'])
+    points_here[ipt][1] = float(d['y'])
+    ipt += 1
 
 finish_image('')
 
