@@ -40,6 +40,7 @@ def parse_args():
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--show',
                         required=False,
+                        choices = ('geometry', 'histograms'),
                         help='''Visualize something. Arguments can be: "geometry": show the 1-stdev ellipses
                         of the distribution for each chessboard corner
                         separately. "histograms": show the distribution of all
@@ -55,6 +56,11 @@ def parse_args():
                         default=100,
                         help='''How many corners to expect in each image. If this is wrong I will throw an
                         error. Defaults to 100''')
+    parser.add_argument('--imagersize',
+                        type  = int,
+                        nargs = 2,
+                        help='''Optional imager dimensions: width and height. This is optional. If given, we
+                        use it to size the "--show geometry" plot''')
     parser.add_argument('input',
                         type=str,
                         help='''Either 1: A glob that matches images observing a stationary calibration
@@ -70,9 +76,6 @@ def parse_args():
 
 
 args = parse_args()
-if args.show is not None and not re.match('^(geometry|histograms)$', args.show):
-    sys.stderr.write("ERROR: --show MUST be followed by 'geometry' or 'histograms'\n")
-    sys.exit(1)
 
 
 # I do these after the arg-parsing so that --help can work without all of this
@@ -136,6 +139,9 @@ for l in pipe_corners_read:
 
     if path != d['filename']:
         finish_image(d['filename'])
+
+
+    # should look at decimation levels
 
     points_here[ipt][0] = float(d['x'])
     points_here[ipt][1] = float(d['y'])
@@ -208,14 +214,27 @@ import gnuplotlib as gp
 if args.show == 'geometry':
     C       = np.mean( nps.outer(points_centered, points_centered), axis=0 )
     rad_major,rad_minor,rad_x,rad_y,angle = nps.transpose(ellipse_stats(C))
+
+    _xrange = None
+    _yrange = None
+    _yinv   = None
+    if args.imagersize is not None:
+        _xrange = [0,                    args.imagersize[0]-1]
+        _yrange = [args.imagersize[1]-1, 0]
+    else:
+        _yinv = True
+
     gp.plot((points_mean[:,0], points_mean[:,1], 2*rad_major,2*rad_minor, angle*180.0/np.pi,
-             dict(_with='ellipses', tuplesize=5, _legend='1-sigma: dependent x,y')),
+             dict(_with = 'ellipses', tuplesize=5, _legend='1-sigma: dependent x,y')),
             (points_mean[:,0], points_mean[:,1], 2*rad_x, 2*rad_y,
-             dict(_with='ellipses', tuplesize=4, _legend='1-sigma: independent x,y')),
+             dict(_with = 'ellipses', tuplesize=4, _legend='1-sigma: independent x,y')),
             (points[...,0].ravel(), points[...,1].ravel(),
-             dict(_with='points')),
-            square = 1,
-            wait   = 1)
+             dict(_with = 'points')),
+            square      = 1,
+            _xrange     = _xrange,
+            _yrange     = _yrange,
+            _yinv       = _yinv,
+            wait        = 1)
 
 elif args.show == 'histograms':
 
