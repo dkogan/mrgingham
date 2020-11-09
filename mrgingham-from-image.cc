@@ -54,7 +54,7 @@ static void* worker( void* _ijob )
             flockfile(stdout);
             {
                 printf("## Couldn't open image '%s'\n", filename);
-                printf("%s - -\n", filename);
+                printf("%s - - -\n", filename);
             }
             funlockfile(stdout);
             break;
@@ -145,7 +145,7 @@ static void* worker( void* _ijob )
                             (refinement_level == NULL) ? found_pyramid_level : (int)refinement_level[i]);
             }
             else
-                printf("%s - -\n", filename);
+                printf("%s - - -\n", filename);
         }
         funlockfile(stdout);
     }
