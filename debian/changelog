@@ -1,3 +1,9 @@
+mrgingham (1.18) unstable; urgency=medium
+
+  * missed detections write the correct number of -
+
+ -- Dima Kogan <dima@secretsauce.net>  Sat, 12 Dec 2020 12:41:29 -0800
+
 mrgingham (1.17) unstable; urgency=medium
 
   * Massive rework of the grid finder, and some grin-finding settings
