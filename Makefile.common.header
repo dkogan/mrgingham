@@ -1,5 +1,11 @@
 # -*- Makefile -*-
 
+
+# Copied from mrbuild at git hash 9224398
+
+
+
+
 # This is a part of the mrbuild project: https://github.com/dkogan/mrbuild
 #
 # Released under an MIT-style license. Modify and distribute as you like:
@@ -28,7 +34,7 @@
 # Makefile at parsing time. So this must be included BEFORE the rest of the user
 # Makefile
 
-PYTHON_VERSION_FOR_EXTENSIONS ?= 2 # 2 or 3
+PYTHON_VERSION_FOR_EXTENSIONS ?= 3 # 2 or 3
 # Flags for python extension modules. See
 # http://notes.secretsauce.net/notes/2017/11/14_python-extension-modules-without-setuptools-or-distutils.html
 #
@@ -89,29 +95,52 @@ endef
 # I eval this to actually invoke the Python and to ingest its results. I only
 # eval this ONLY when necessary.
 define query_python_extension_building_flags
-_PYVARS := $$(shell python$(PYTHON_VERSION_FOR_EXTENSIONS) -c '$$(_PYVARS_SCRIPT)')
+_PYVARS = $(shell python$(PYTHON_VERSION_FOR_EXTENSIONS) -c '$(_PYVARS_SCRIPT)')
 # I then $(eval) these tokens one at a time, restoring the whitespace
-$$(foreach setvarcmd,$$(_PYVARS),$$(eval $$(subst __whitespace__, ,$$(setvarcmd))))
+$(foreach setvarcmd,$(_PYVARS),$(eval $(subst __whitespace__, ,$(setvarcmd))))
 # pull out flags from CC, throw out the compiler itself, since I know better
-_FLAGS_FROM_PYCC    := $$(wordlist 2,$$(words $$(PY_CC)),$$(PY_CC))
-_PY_MRBUILD_CFLAGS  := $$(filter-out -O%,$$(_FLAGS_FROM_PYCC) $$(PY_CFLAGS) $$(PY_CCSHARED) -I$$(PY_INCLUDEPY))
-# I add an RPATH to the python extension DSO so that it runs in-tree. Will pull
-# it out at install time
-_PY_MRBUILD_LDFLAGS := $$(PY_LDFLAGS) -L$$(abspath .) -Wl,-rpath=$$(abspath .)
-_PY_MRBUILD_LINKER  := $$(PY_BLDSHARED) $$(PY_BLDLIBRARY)
+_FLAGS_FROM_PYCC    = $(wordlist 2,$(words $(_PY_CC)),$(_PY_CC))
+_PY_MRBUILD_CFLAGS  = $(filter-out -O%,$(_FLAGS_FROM_PYCC) $(_PY_CFLAGS) $(_PY_CCSHARED) -I$(_PY_INCLUDEPY))
+
+SPACE :=
+SPACE := $(SPACE) $(SPACE)
+dirs_to_dotdot = $(subst $(SPACE),/,$(patsubst %,..,$(subst /, ,$1)))
+get_parentdir_relative_to_childdir = /$(call dirs_to_dotdot,$(patsubst $1%,%,$2))
+
+_PY_MRBUILD_LDFLAGS = $(_PY_LDFLAGS) -L$(abspath .) -Wl,-rpath='$$ORIGIN'$(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(abspath $@)))
+_PY_MRBUILD_LINKER  = $(_PY_BLDSHARED) $(_PY_BLDLIBRARY)
 endef
 
-# List of variables a user Makefile could touch
+# List of variables a user Makefile could touch. These are all PY_...
 _PYVARS_API := $(foreach v,$(_PYVARS_LIST),PY_$v) PY_MRBUILD_CFLAGS PY_MRBUILD_LDFLAGS PY_MRBUILD_LINKER
 
 # The first time the user touches these variables, ask Python. Each subsequent
-# time, use the previously-returned value
+# time, use the previously-returned value. So we query Python at most once. If a
+# project isn't using the Python extension modules, we will not query Python at
+# all
+#
+# I handle all the Python API variables identically, except for PY_EXT_SUFFIX.
+# If Python gives me a suffix, I use it (this is available in python3; it has
+# ABI, architecture details). Otherwise, I try the multiarch suffix, or if even
+# THAT isn't available, just do .so. I need to handle it specially to make the
+# self-referential logic work with the memoization logic
 define _PY_DEFINE_API_VAR
-$1 = $$(or $$(_$1),$$(eval $$(query_python_extension_building_flags))$$(_$1))
+$1 = $$(or $$(_$1),$$(eval $$(value query_python_extension_building_flags))$$(_$1))
 endef
-$(foreach v,$(_PYVARS_API),$(eval $(call _PY_DEFINE_API_VAR,$v)))
+define _PY_DEFINE_API_VAR_EXTSUFFIX
+$1 = $$(or $$(_$1),$$(eval $$(value query_python_extension_building_flags))$$(or $$(_$1),$$(if $$(PY_MULTIARCH),.$$(PY_MULTIARCH)).so))
+endef
 
-# If I have a suffix, use it (this is available in python3. Has ABI,
-# architecture details). Otherwise, try the multiarch suffix, or if even THAT
-# isn't available, just do .so
-PY_EXT_SUFFIX := $(or $(PY_EXT_SUFFIX),$(if $(PY_MULTIARCH),.$(PY_MULTIARCH)).so)
+$(foreach v,$(filter-out PY_EXT_SUFFIX,$(_PYVARS_API)),$(eval $(call _PY_DEFINE_API_VAR,$v)))
+$(eval $(call _PY_DEFINE_API_VAR_EXTSUFFIX,PY_EXT_SUFFIX))
+
+
+
+# Useful to pull in a local build of some library. For testing. Sets the
+# compiler and linker (runtime and build-time) flags. Invoke like this:
+#   $(eval $(call add_local_library_path,/home/user/library))
+define add_local_library_path
+CFLAGS   += -I$1
+CXXFLAGS += -I$1
+LDFLAGS += -L$1 -Wl,-rpath=$1
+endef
