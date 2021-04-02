@@ -145,6 +145,9 @@ grid finding.
 #define FOR_ALL_ADJACENT_CELLS_END() }}} while(0)
 
 
+// for integers
+#define ABS(x) ((x) > 0 ? (x) : -(x))
+
 
 
 struct CandidateSequence
@@ -1063,28 +1066,122 @@ static int select_clockwise_cycle_and_find_top(// out
     }
 
 
-    // To find the "top", I pick the edge with the lowest y coord of its center
-    // point. Everything is assumed to be sorta square
     const outer_cycle* cycles[2] = {&cycle0, &cycle1};
     for( int icycle=0; icycle<2; icycle++)
     {
-        int ymid2_min = INT_MAX;
-        int iedge_min = -1;
+        // To find the "top", I find the pick the two edges sharing the lowest y
+        // coord vertex, and pick the most horizontal one of those.
+        //
+        // In all of these [0] is the "lowest-y-coord" edge. [1] is the
+        // second-lowest-y-coord edge. These top-2 edges will be tied for the
+        // lowest y coord, which is fine: I have extra logic to pick between
+        // them
+        int y_min[2]      = {INT_MAX, INT_MAX}; // lowest y coord
+        int iedge_min[2]  = {-1,      -1};      // edge index
+        int ipt_miny[2]   = {};                 // index of the point with the lower  y coord in this edge
+        int ipt_maxy[2]   = {};                 // index of the point with the higher y coord in this edge
 
         for(int i=0; i<4; i++)
         {
             unsigned int ipt0 = sequence_candidates[outer_edges[cycles[icycle]->e[i]]].c0   ->source_index();
             unsigned int ipt1 = sequence_candidates[outer_edges[cycles[icycle]->e[i]]].clast->source_index();
 
-            int ymid2 = (int)(points[ipt0].y + points[ipt1].y);
-            if(ymid2 < ymid2_min)
+            int y_min_this, ipt_miny_this, ipt_maxy_this;
+            if(points[ipt0].y < points[ipt1].y)
             {
-                ymid2_min = ymid2;
-                iedge_min = i;
+                y_min_this    = points[ipt0].y;
+                ipt_miny_this = ipt0;
+                ipt_maxy_this = ipt1;
+            }
+            else
+            {
+                y_min_this    = points[ipt1].y;
+                ipt_miny_this = ipt1;
+                ipt_maxy_this = ipt0;
+            }
+
+            if(y_min_this < y_min[0])
+            {
+                // Highest one seen so far. Push back the previous highest
+                y_min    [1] = y_min    [0];
+                iedge_min[1] = iedge_min[0];
+                ipt_miny [1] = ipt_miny [0];
+                ipt_maxy [1] = ipt_maxy [0];
+
+                y_min    [0] = y_min_this;
+                iedge_min[0] = i;
+                ipt_miny [0] = ipt_miny_this;
+                ipt_maxy [0] = ipt_maxy_this;
+            }
+            else if(y_min_this < y_min[1])
+            {
+                // Second-highest
+                y_min    [1] = y_min_this;
+                iedge_min[1] = i;
+                ipt_miny [1] = ipt_miny_this;
+                ipt_maxy [1] = ipt_maxy_this;
             }
         }
 
-        iedge_top[icycle] = iedge_min;
+        // I have the two edges, both of which MAY be the "top" edge. This edge
+        // should be more the more horizontal of the two. I check for an angle
+        // difference, and if it's too small return nothing: I shouldn't return
+        // low-confidence results. I want the angle difference off horizontal,
+        // so in this scenario, the angle difference I want is 0, even though
+        // diff(theta) is high:
+        //
+        //    -
+        //   | |
+        //  -   -
+        // |     |
+        //
+        // So I use abs(dx) before looking at the angle difference
+        //
+        // cos(dtheta)   = inner(v0,v1) / sqrt(norm2(v0)*norm2(v1)) ->
+        // cos(dtheta)^2 = (v0x*v1x + v0y*v1y)^2 / ((v0x*v0x + v0y*v0y)*(v1x*v1x + v1y*v1y)) ->
+        // sin(dtheta)^2 = 1 - cos(dtheta)^2 = (v0x*v1y - v0y*v1x)^2 / ((v0x*v0x + v0y*v0y)*(v1x*v1x + v1y*v1y))
+        int64_t v0y = (points[ipt_maxy[0]].y - points[ipt_miny[0]].y) / FIND_GRID_SCALE_APPROX_POWER2;
+        int64_t v0x = (points[ipt_maxy[0]].x - points[ipt_miny[0]].x) / FIND_GRID_SCALE_APPROX_POWER2;
+        int64_t v1y = (points[ipt_maxy[1]].y - points[ipt_miny[1]].y) / FIND_GRID_SCALE_APPROX_POWER2;
+        int64_t v1x = (points[ipt_maxy[1]].x - points[ipt_miny[1]].x) / FIND_GRID_SCALE_APPROX_POWER2;
+        v0x = ABS(v0x);
+        v1x = ABS(v1x);
+        int64_t cross = (v0x*v1y - v0y*v1x)*(v0x*v1y - v0y*v1x);
+        int64_t denom = (v0x*v0x + v0y*v0y)*(v1x*v1x + v1y*v1y);
+#define SINTHSQ_THRESHOLD_NUMERATOR   1 /* 20.7 deg */
+#define SINTHSQ_THRESHOLD_DENOMINATOR 8
+        if( ABS(cross)*SINTHSQ_THRESHOLD_DENOMINATOR < denom*SINTHSQ_THRESHOLD_NUMERATOR )
+        {
+            if(debug)
+            {
+                fprintf(stderr, "Highest 2 edges have a similar orientation. I can't tell clearly which is the more horizontal one\n");
+                fprintf(stderr, "  Highest edge: (%.2f,%.2f) - (%.2f,%.2f). Highest vertex: (%.2f,%.2f)\n",
+                        (double)points[sequence_candidates[outer_edges[cycles[icycle]->e[iedge_min[0]]]].c0   ->source_index()].x / (double)FIND_GRID_SCALE,
+                        (double)points[sequence_candidates[outer_edges[cycles[icycle]->e[iedge_min[0]]]].c0   ->source_index()].y / (double)FIND_GRID_SCALE,
+                        (double)points[sequence_candidates[outer_edges[cycles[icycle]->e[iedge_min[0]]]].clast->source_index()].x / (double)FIND_GRID_SCALE,
+                        (double)points[sequence_candidates[outer_edges[cycles[icycle]->e[iedge_min[0]]]].clast->source_index()].y / (double)FIND_GRID_SCALE,
+                        (double)points[ipt_miny[0]                                                                            ].x / (double)FIND_GRID_SCALE,
+                        (double)points[ipt_miny[0]                                                                            ].y / (double)FIND_GRID_SCALE);
+                fprintf(stderr, "  Second-highest edge: (%.2f,%.2f) - (%.2f,%.2f). Highest vertex: (%.2f,%.2f)\n",
+                        (double)points[sequence_candidates[outer_edges[cycles[icycle]->e[iedge_min[1]]]].c0   ->source_index()].x / (double)FIND_GRID_SCALE,
+                        (double)points[sequence_candidates[outer_edges[cycles[icycle]->e[iedge_min[1]]]].c0   ->source_index()].y / (double)FIND_GRID_SCALE,
+                        (double)points[sequence_candidates[outer_edges[cycles[icycle]->e[iedge_min[1]]]].clast->source_index()].x / (double)FIND_GRID_SCALE,
+                        (double)points[sequence_candidates[outer_edges[cycles[icycle]->e[iedge_min[1]]]].clast->source_index()].y / (double)FIND_GRID_SCALE,
+                        (double)points[ipt_miny[1]                                                                            ].x / (double)FIND_GRID_SCALE,
+                        (double)points[ipt_miny[1]                                                                            ].y / (double)FIND_GRID_SCALE);
+                fprintf(stderr, "  sin(angle difference) as computed here: %f. Threshold: %f\n",
+                        sqrt((double)ABS(cross)/(double)denom), sqrt((double)SINTHSQ_THRESHOLD_NUMERATOR/(double)SINTHSQ_THRESHOLD_DENOMINATOR));
+            }
+            return -1;
+        }
+
+        // Which is more horizontal? I want the lower abs(dy/dx), but I don't
+        // want to do any division.
+        //   abs(v0y)/abs(v0x) < abs(v1y)/abs(v1x)  ->
+        //   abs(v0y*v1x) < abs(v1y*v0x)
+
+        if( ABS(v0y*v1x) < ABS(v1y*v0x) ) iedge_top[icycle] = iedge_min[0];
+        else                              iedge_top[icycle] = iedge_min[1];
     }
 
     return i_clockwise;
