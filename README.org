@@ -363,7 +363,8 @@ DESCRIPTION
     takes in a set of images (assumed observing a chessboard, with both the
     camera and board stationary). It then outputs the 1-standard-deviation
     statistic for the distribution of detected corners. This can then be
-    passed in to mrcal: 'calibrate-cameras --observed-pixel-uncertainty ...'
+    passed in to mrcal: 'mrcal-calibrate-cameras
+    --observed-pixel-uncertainty ...'
 
     The distribution of the detected corners is assumed to be gaussian, and
     INDEPENDENT in the horizontal and vertical directions. If the x and y
@@ -386,7 +387,8 @@ OPTIONS
 
   OPTIONAL ARGUMENTS
       -h, --help            show this help message and exit
-      --show SHOW           Visualize something. Arguments can be: "geometry":
+      --show {geometry,histograms}
+                            Visualize something. Arguments can be: "geometry":
                             show the 1-stdev ellipses of the distribution for each
                             chessboard corner separately. "histograms": show the
                             distribution of all the x- and y-deviations off the
@@ -395,6 +397,13 @@ OPTIONS
                             If we're processing images, these are the arguments
                             given to mrgingham. If we are reading a pre-computed
                             file, this does nothing
+      --num-corners NUM_CORNERS
+                            How many corners to expect in each image. If this is
+                            wrong I will throw an error. Defaults to 100
+      --imagersize IMAGERSIZE IMAGERSIZE
+                            Optional imager dimensions: width and height. This is
+                            optional. If given, we use it to size the "--show
+                            geometry" plot
 
 
 #+END_EXAMPLE
