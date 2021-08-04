@@ -1,3 +1,9 @@
+mrgingham (1.19) unstable; urgency=medium
+
+  * Better logic to find the top edge of the board
+
+ -- Dima Kogan <dima@secretsauce.net>  Tue, 03 Aug 2021 17:17:01 -0700
+
 mrgingham (1.18) unstable; urgency=medium
 
   * missed detections write the correct number of -
