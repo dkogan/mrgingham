@@ -102,7 +102,7 @@ weighted by the detector response.
 
 As noted earlier, I look for a hard-coded 10x10 grid. Here that means 10x10
 I<internal corners>, meaning an 11x11 chessboard. A recommended pattern is
-available in C<chessboard.pdf> in the C<mrgingham> sources.
+available in C<chessboard.10x10.pdf> in the C<mrgingham> sources.
 
 =head3 Circles
 
