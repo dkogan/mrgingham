@@ -82,10 +82,13 @@ is less likely to fail. This would ensure that we see exactly 10 points in a row
 with the expected spacing, not 12. I haven't tried with an even 10x10 board, so
 I don't know if this is a real issue.
 
-The recommended 10x10 pattern can be printed from this file:
-[[chessboard.10x10.pdf]]. Wherever the pattern comes from, it is /strongly/
-recommended to leave a margin around the edges. This reduces the chances of a
-false corner detection interfering with the grid finder.
+A recommended 10x10 pattern can be printed from this file: [[chessboard.10x10.pdf]].
+And a recommended 14x14 pattern can be printed from this file:
+[[chessboard.14x14.pdf]]. The denser chessboard containts more data, so fewer
+observations will be required for convergence. But a higher-res camera is
+required to reliably detect the corners. Wherever the pattern comes from, it is
+/strongly/ recommended to leave a margin around the edges. This reduces the
+chances of a false corner detection interfering with the grid finder.
 
 *** Circles
 *This isn't recommended, and exists for legacy compatibility only*
