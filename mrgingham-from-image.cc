@@ -18,6 +18,7 @@ struct mrgingham_thread_context_t
     int           blur_radius;
     bool          doblobs;
     bool          do_refine;
+    int           gridn;
     bool          debug;
     debug_sequence_t debug_sequence;
     int           image_pyramid_level;
@@ -117,7 +118,7 @@ static void* worker( void* _ijob )
         if(ctx.doblobs)
         {
             result = find_circle_grid_from_image_array(points_out,
-                                                       image,
+                                                       image, ctx.gridn,
                                                        ctx.debug, ctx.debug_sequence);
             // ctx.image_pyramid_level == 0 here. cmdline parser makes sure.
             found_pyramid_level = 0;
@@ -127,6 +128,7 @@ static void* worker( void* _ijob )
             found_pyramid_level =
                 find_chessboard_from_image_array (points_out,
                                                   ctx.do_refine ? &refinement_level : NULL,
+                                                  ctx.gridn,
                                                   image,
                                                   ctx.image_pyramid_level,
                                                   ctx.debug, ctx.debug_sequence,
@@ -188,6 +190,9 @@ int main(int argc, char* argv[])
         "  --jobs N  will parallelize the processing N-ways. -j is a synonym. This is like\n"
         "  GNU make, except you're required to explicitly specify a job count.\n"
         "\n"
+        "  We detect an NxN grid of corners, where N defaults to 10. To select a different\n"
+        "  value, pass --gridn N\n"
+        "\n"
         "  The images are given as (multiple) globs. The output is a vnlog with columns\n"
         "  filename,x,y. All filenames matched in the glob will appear in the output.\n"
         "  Images for which no chessboard pattern was found appear as a single record\n"
@@ -207,6 +212,7 @@ int main(int argc, char* argv[])
         { "level",             required_argument, NULL, 'l' },
         { "no-refine",         no_argument,       NULL, 'R' },
         { "jobs",              required_argument, NULL, 'j' },
+        { "gridn",             required_argument, NULL, 'N' },
         { "debug",             no_argument,       NULL, 'd' },
         { "debug-sequence",    required_argument, NULL, 'D' },
         { "help",              no_argument,       NULL, 'h' },
@@ -223,6 +229,7 @@ int main(int argc, char* argv[])
     int         blur_radius         = 1;
     int         image_pyramid_level = -1;
     int         jobs                = 1;
+    int         gridn               = 10;
 
     int opt;
     do
@@ -267,6 +274,10 @@ int main(int argc, char* argv[])
             }
             break;
 
+        case 'N':
+            gridn = atoi(optarg);
+            break;
+
         case 'b':
             blur_radius = atoi(optarg);
             break;
@@ -301,6 +312,11 @@ int main(int argc, char* argv[])
     if( doblobs && image_pyramid_level >= 0)
     {
         fprintf(stderr, "ERROR: 'image_pyramid_level' only implemented for chessboards.\n");
+        return 1;
+    }
+    if(gridn < 2)
+    {
+        fprintf(stderr, "--gridn value must be >= 2\n");
         return 1;
     }
 
@@ -354,6 +370,7 @@ int main(int argc, char* argv[])
     ctx.blur_radius         = blur_radius;
     ctx.doblobs             = doblobs;
     ctx.do_refine           = do_refine;
+    ctx.gridn               = gridn;
     ctx.debug               = debug;
 
     ctx.debug_sequence.dodebug = debug_sequence;

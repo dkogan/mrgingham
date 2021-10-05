@@ -56,6 +56,8 @@ bool find_chessboard_from_image_array_C( // in
                                         int stride,
                                         char* imagebuffer, // this is const
 
+                                        const int gridn,
+
                                         // set to 0 to just use the image. Set
                                         // to <0 to try automatically find a
                                         // good scaling level. Try this first
@@ -72,6 +74,7 @@ bool find_chessboard_from_image_array_C( // in
     bool result =
         (find_chessboard_from_image_array( out_points,
                                            &refinement_level,
+                                           gridn,
                                            cvimage,
                                            image_pyramid_level ) >= 0);
     free(refinement_level);

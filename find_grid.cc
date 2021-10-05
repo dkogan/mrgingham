@@ -35,11 +35,6 @@ namespace boost { namespace polygon {
 
 typedef voronoi_diagram<double> VORONOI;
 
-
-// hard-coding 10x10 grids
-#define Nwant     10
-
-
 /*
 Voronoi library terminology. Each "cell" c has an edge = c->incident_edge(). The
 edge e points FROM the cell e->cell(). The edges are a linked list. e->next() is
@@ -374,7 +369,8 @@ static void output_points_along_sequence( std::vector<PointDouble>& points_out,
 
 static void output_row( std::vector<PointDouble>& points_out,
                         const CandidateSequence& row,
-                        const std::vector<PointInt>& points )
+                        const std::vector<PointInt>& points,
+                        const int gridn)
 {
     output_point(points_out, row.c0, points);
     output_point(points_out, row.c1, points);
@@ -384,7 +380,7 @@ static void output_row( std::vector<PointDouble>& points_out,
 
     PointInt delta({ pt1->x - pt0->x,
                      pt1->y - pt0->y});
-    output_points_along_sequence( points_out, &delta, row.c1, Nwant-2, points);
+    output_points_along_sequence( points_out, &delta, row.c1, gridn-2, points);
 }
 
 // dumps the voronoi diagram to a self-plotting vnlog
@@ -461,9 +457,10 @@ static void dump_intervals_along_sequence( FILE* fp,
                                            const CandidateSequence* cs,
                                            int i_candidate,
 
-                                           const std::vector<PointInt>& points)
+                                           const std::vector<PointInt>& points,
+                                           const int gridn)
 {
-    int N_remaining = Nwant-1;
+    int N_remaining = gridn-1;
 
     dump_interval(fp, i_candidate, 0, cs->c0, cs->c1, points);
 
@@ -479,7 +476,7 @@ static void dump_intervals_along_sequence( FILE* fp,
     FOR_MATCHING_ADJACENT_CELLS(-1)
     {
         dump_interval(fp, i_candidate, i+1, c,
-                      i+1 == Nwant-1 ? NULL : c_adjacent,
+                      i+1 == gridn-1 ? NULL : c_adjacent,
                       points);
     } FOR_MATCHING_ADJACENT_CELLS_END();
 }
@@ -510,7 +507,8 @@ static void get_sequence_candidates( // out
                                      const std::vector<PointInt>& points,
 
                                      // for debugging
-                                     const debug_sequence_t& debug_sequence)
+                                     const debug_sequence_t& debug_sequence,
+                                     const int gridn)
 {
     const VORONOI::cell_type* tracing_c = NULL;
 
@@ -556,7 +554,7 @@ static void get_sequence_candidates( // out
             PointDouble delta_mean;
             const VORONOI::cell_type* clast =
                 search_along_sequence( &delta_mean,
-                                       &delta, c_adjacent, Nwant-2, points,
+                                       &delta, c_adjacent, gridn-2, points,
                                        (c == tracing_c) ? debug_sequence_pointscale : -1 );
             if( clast )
             {
@@ -591,7 +589,8 @@ static void get_candidate_points_along_sequence( unsigned int* cs_points,
 }
 static void get_candidate_points( unsigned int* cs_points,
                                   const CandidateSequence* cs,
-                                  const std::vector<PointInt>& points )
+                                  const std::vector<PointInt>& points,
+                                  const int gridn)
 {
     get_candidate_point( &cs_points[0], cs->c0 );
     get_candidate_point( &cs_points[1], cs->c1 );
@@ -601,7 +600,7 @@ static void get_candidate_points( unsigned int* cs_points,
 
     PointInt delta({ pt1->x - pt0->x,
                   pt1->y - pt0->y});
-    get_candidate_points_along_sequence(&cs_points[2], &delta, cs->c1, Nwant-2, points);
+    get_candidate_points_along_sequence(&cs_points[2], &delta, cs->c1, gridn-2, points);
 }
 
 
@@ -611,14 +610,15 @@ static void get_candidate_points( unsigned int* cs_points,
 #define DUMP_BASENAME_OUTER_EDGES                 "/tmp/mrgingham-4-outer-edges"
 #define DUMP_BASENAME_OUTER_EDGE_CYCLES           "/tmp/mrgingham-5-outer-edge-cycles"
 #define DUMP_BASENAME_IDENTIFIED_OUTER_EDGE_CYCLE "/tmp/mrgingham-6-identified-outer-edge-cycle"
-#define dump_candidates(basename, sequence_candidates, outer_edges, points) \
+#define dump_candidates(basename, sequence_candidates, outer_edges, points, gridn) \
     _dump_candidates( basename".vnl", basename"-detailed.vnl",  \
-                      sequence_candidates, outer_edges, points )
+                      sequence_candidates, outer_edges, points, gridn )
 static void _dump_candidates(const char* filename_sparse,
                              const char* filename_dense,
                              const v_CS* sequence_candidates,
                              const std::vector<int>* outer_edges,
-                             const std::vector<PointInt>& points)
+                             const std::vector<PointInt>& points,
+                             const int gridn)
 {
     FILE* fp = fopen(filename_sparse, "w");
     assert(fp);
@@ -675,7 +675,8 @@ static void _dump_candidates(const char* filename_sparse,
         for( int i=0; i<N; i++ )
             dump_intervals_along_sequence( fp,
                                            &(*sequence_candidates)[i],
-                                           i, points);
+                                           i, points,
+                                           gridn);
     }
     else
     {
@@ -683,7 +684,8 @@ static void _dump_candidates(const char* filename_sparse,
         for( int i=0; i<N; i++ )
             dump_intervals_along_sequence( fp,
                                            &(*sequence_candidates)[(*outer_edges)[i]],
-                                           i, points);
+                                           i, points,
+                                           gridn);
     }
     fclose(fp);
     fprintf(stderr, "Wrote detailed sequence-candidate dump to %s\n",
@@ -1217,7 +1219,8 @@ bool mrgingham::find_grid_from_points( // out
 
                                       // in
                                       const std::vector<PointInt>& points,
-                                      bool     debug,
+                                      const int gridn,
+                                      bool  debug,
                                       const debug_sequence_t& debug_sequence)
 {
     VORONOI voronoi;
@@ -1228,12 +1231,12 @@ bool mrgingham::find_grid_from_points( // out
 
     v_CS sequence_candidates;
     get_sequence_candidates(&sequence_candidates, &voronoi, points,
-                            debug_sequence);
+                            debug_sequence, gridn);
 
     if(debug)
     {
         dump_candidates(DUMP_BASENAME_ALL_SEQUENCE_CANDIDATES,
-                        &sequence_candidates, NULL, points);
+                        &sequence_candidates, NULL, points, gridn);
 
         fprintf(stderr, "got %zd points\n", points.size());
         fprintf(stderr, "got %zd sequence candidates\n", sequence_candidates.size());
@@ -1273,7 +1276,7 @@ bool mrgingham::find_grid_from_points( // out
     }
     if(debug)
         dump_candidates(DUMP_BASENAME_OUTER_EDGES,
-                        &sequence_candidates, &outer_edges, points);
+                        &sequence_candidates, &outer_edges, points, gridn);
 
     // I won't have very many of these outer edges, so I don't worry too much
     // about efficient algorithms here.
@@ -1389,19 +1392,19 @@ bool mrgingham::find_grid_from_points( // out
     }
 
     // sequences in sequence_candidates[]
-    int horizontal_rows[Nwant];
+    int horizontal_rows[gridn];
     int vertical_left, vertical_right;
 
     horizontal_rows[0] = outer_edges[outer_cycles[outer_cycle_pair[  iclockwise]].e[  iedge_top[  iclockwise]          ]];
     vertical_left      = outer_edges[outer_cycles[outer_cycle_pair[1-iclockwise]].e[ (iedge_top[1-iclockwise] + 1) % 4 ]];
     vertical_right     = outer_edges[outer_cycles[outer_cycle_pair[  iclockwise]].e[ (iedge_top[  iclockwise] + 1) % 4 ]];
 
-    unsigned int vertical_left_points [Nwant];
-    unsigned int vertical_right_points[Nwant];
-    get_candidate_points( vertical_left_points,  &sequence_candidates[vertical_left ], points );
-    get_candidate_points( vertical_right_points, &sequence_candidates[vertical_right], points );
+    unsigned int vertical_left_points [gridn];
+    unsigned int vertical_right_points[gridn];
+    get_candidate_points( vertical_left_points,  &sequence_candidates[vertical_left ], points, gridn );
+    get_candidate_points( vertical_right_points, &sequence_candidates[vertical_right], points, gridn );
 
-    for(int i=1; i<Nwant; i++)
+    for(int i=1; i<gridn; i++)
     {
         // I fill in horizontal_rows[i]. I know each row must start at
         // vertical_left[i] and end at vertical_right[i]
@@ -1432,8 +1435,9 @@ bool mrgingham::find_grid_from_points( // out
 
     // DO AGAIN AS A TRANSPOSED THING TO CONFIRM
 
-    for(int i=0; i<Nwant; i++)
-        output_row(points_out, sequence_candidates[horizontal_rows[i]], points);
+    for(int i=0; i<gridn; i++)
+        output_row(points_out, sequence_candidates[horizontal_rows[i]], points,
+                   gridn);
 
     if(debug)
         fprintf(stderr, "Success. Found grid\n");

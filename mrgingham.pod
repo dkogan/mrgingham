@@ -48,8 +48,8 @@ are slow and not at all robust, in my experience. The implementations here are
 much faster and work much better. I I<do> use OpenCV here, but only for some
 core functionality.
 
-Currently a 10x10 grid of points is hard-coded into the implementation. Talk to
-Dima, if this is a problem for you.
+Currently mrgingham looks for a square grid of points, with some
+user-requestable width. The default is a 10x10 grid.
 
 =head2 Approach
 
@@ -100,9 +100,10 @@ these responses by looking at local neighborhoods of high responses, and
 computing the mean of the position of the points in each candidate neighborhood,
 weighted by the detector response.
 
-As noted earlier, I look for a hard-coded 10x10 grid. Here that means 10x10
-I<internal corners>, meaning an 11x11 chessboard. A recommended pattern is
-available in C<chessboard.10x10.pdf> in the C<mrgingham> sources.
+As noted earlier, I look for a square grid, 10x10 points by default. Here that
+means 10x10 I<internal corners>, meaning a chessboard with 11 I<squares> per
+side. A recommended pattern is available in C<chessboard.10x10.pdf> and
+C<chessboard.14fx14.pdf> in the C<mrgingham> sources.
 
 =head3 Circles
 

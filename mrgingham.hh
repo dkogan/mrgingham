@@ -23,11 +23,13 @@ namespace mrgingham
 
     bool find_circle_grid_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
                                             const cv::Mat& image,
-                                            bool     debug = false,
+                                            const int gridn,
+                                            bool debug = false,
                                             debug_sequence_t debug_sequence = debug_sequence_t());
     bool find_circle_grid_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
                                            const char* filename,
-                                           bool     debug = false,
+                                           const int gridn,
+                                           bool debug = false,
                                            debug_sequence_t debug_sequence = debug_sequence_t());
 
     // set image_pyramid_level=0 to just use the image as is.
@@ -49,6 +51,7 @@ namespace mrgingham
     // Returns the pyramid level where we found the grid, or <0 on failure
     int  find_chessboard_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
                                            signed char**                        refinement_level,
+                                           const int                            gridn,
                                            const cv::Mat&                       image,
                                            int                                  image_pyramid_level  = -1,
                                            bool                                 debug                = false,
@@ -74,6 +77,7 @@ namespace mrgingham
     // Returns the pyramid level where we found the grid, or <0 on failure
     int find_chessboard_from_image_file( std::vector<mrgingham::PointDouble>& points_out,
                                          signed char**                        refinement_level,
+                                         const int                            gridn,
                                          const char*                          filename,
                                          int                                  image_pyramid_level = -1,
                                          bool                                 debug               = false,
@@ -81,6 +85,7 @@ namespace mrgingham
 
     bool find_grid_from_points( std::vector<mrgingham::PointDouble>& points_out,
                                 const std::vector<mrgingham::PointInt>& points,
-                                bool     debug             = false,
+                                const int gridn,
+                                bool debug = false,
                                 const debug_sequence_t& debug_sequence = debug_sequence_t());
 };

@@ -10,24 +10,26 @@ namespace mrgingham
     __attribute__((visibility("default")))
     bool find_circle_grid_from_image_array( std::vector<PointDouble>& points_out,
                                             const cv::Mat& image,
-                                            bool     debug,
+                                            const int gridn,
+                                            bool debug,
                                             debug_sequence_t debug_sequence)
     {
         std::vector<PointInt> points;
         find_blobs_from_image_array(&points, image);
-        return find_grid_from_points(points_out, points,
+        return find_grid_from_points(points_out, points, gridn,
                                      debug, debug_sequence);
     }
 
     __attribute__((visibility("default")))
     bool find_circle_grid_from_image_file( std::vector<PointDouble>& points_out,
                                            const char* filename,
-                                           bool     debug,
+                                           const int gridn,
+                                           bool debug,
                                            debug_sequence_t debug_sequence)
     {
         std::vector<PointInt> points;
         find_blobs_from_image_file(&points, filename);
-        return find_grid_from_points(points_out, points,
+        return find_grid_from_points(points_out, points, gridn,
                                      debug, debug_sequence);
     }
 
@@ -37,7 +39,8 @@ namespace mrgingham
                                                    signed char** refinement_level,
                                                    const cv::Mat& image,
                                                    int image_pyramid_level,
-                                                   bool     debug,
+                                                   const int gridn,
+                                                   bool debug,
                                                    debug_sequence_t debug_sequence,
                                                    const char* debug_image_filename)
     {
@@ -45,7 +48,7 @@ namespace mrgingham
 
         std::vector<PointInt> points;
         find_chessboard_corners_from_image_array(&points, image, image_pyramid_level, debug, debug_image_filename);
-        if(!find_grid_from_points(points_out, points,
+        if(!find_grid_from_points(points_out, points, gridn,
                                   debug, debug_sequence))
             return false;
 
@@ -102,6 +105,7 @@ namespace mrgingham
     __attribute__((visibility("default")))
     int find_chessboard_from_image_array( std::vector<PointDouble>& points_out,
                                           signed char** refinement_level,
+                                          const int gridn,
                                           const cv::Mat& image,
                                           int image_pyramid_level,
                                           bool debug,
@@ -115,6 +119,7 @@ namespace mrgingham
                                                    refinement_level,
                                                    image,
                                                    image_pyramid_level,
+                                                   gridn,
                                                    debug, debug_sequence,
                                                    debug_image_filename)
                 ? image_pyramid_level : -1;
@@ -125,6 +130,7 @@ namespace mrgingham
                                                             refinement_level,
                                                             image,
                                                             image_pyramid_level,
+                                                            gridn,
                                                             debug, debug_sequence,
                                                             debug_image_filename)
                 ? image_pyramid_level : -1;
@@ -138,6 +144,7 @@ namespace mrgingham
     __attribute__((visibility("default")))
     int find_chessboard_from_image_file( std::vector<PointDouble>& points_out,
                                          signed char** refinement_level,
+                                         const int gridn,
                                          const char* filename,
                                          int image_pyramid_level,
                                          bool debug,
@@ -156,6 +163,7 @@ namespace mrgingham
         std::vector<PointInt> points;
         return find_chessboard_from_image_array(points_out,
                                                 refinement_level,
+                                                gridn,
                                                 image, image_pyramid_level,
                                                 debug, debug_sequence,
                                                 filename);

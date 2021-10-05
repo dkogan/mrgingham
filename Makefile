@@ -4,7 +4,7 @@ include Makefile.common.header
 
 
 PROJECT_NAME := mrgingham
-ABI_VERSION  := 1
+ABI_VERSION  := 2
 TAIL_VERSION := 1
 
 

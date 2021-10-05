@@ -42,8 +42,8 @@ and not at all robust, in my experience. The implementations here are much
 faster and work much better. I /do/ use OpenCV, but only for some core
 functionality.
 
-Currently a 10x10 grid of points is hard-coded into the implementation. Talk to
-Dima, if this is a problem for you.
+Currently mrgingham looks for a square grid of points, with some
+user-requestable width. The default is a 10x10 grid.
 
 ** Approach
 These tools work in two passes:
@@ -75,17 +75,19 @@ these responses by looking at local neighborhoods of high responses, and
 computing the mean of the position of the points in each candidate neighborhood,
 weighted by the detector response.
 
-As noted earlier, I look for a hard-coded 10x10 grid. Here that means 10x10
-/internal corners/, meaning an 11x11 chessboard. It probably doesn't matter, but
-if the outer squares have a different width than the inner squares, the detector
-is less likely to fail. This would ensure that we see exactly 10 points in a row
-with the expected spacing, not 12. I haven't tried with an even 10x10 board, so
-I don't know if this is a real issue.
+As noted earlier, I look for a square grid, 10x10 points by default. Here that
+means 10x10 /internal corners/, meaning a chessboard with 11 /squares/ per side.
+To ensure robust detections, it is recommended to make the outer squares of the
+chessboard wider than the inner squares. This would ensure that we see exactly
+10 points in a row with the expected spacing. If the outer squares have the same
+size, the edge of the board might be picked up, and we would see 11 or 12 points
+instead.
 
-The recommended 10x10 pattern can be printed from this file:
-[[chessboard.10x10.pdf]]. Wherever the pattern comes from, it is /strongly/
-recommended to leave a margin around the edges. This reduces the chances of a
-false corner detection interfering with the grid finder.
+A recommended 10x10 pattern can be printed from this file: [[chessboard.10x10.pdf]].
+And a recommended 14x14 pattern can be printed from this file:
+[[chessboard.14x14.pdf]]. The denser chessboard containts more data, so fewer
+observations will be required for convergence of the calibration algorithm. But
+a higher-res camera is required to reliably detect the corners.
 
 *** Circles
 *This isn't recommended, and exists for legacy compatibility only*

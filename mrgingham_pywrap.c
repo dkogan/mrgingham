@@ -203,17 +203,18 @@ static PyObject* find_chessboard(PyObject* NPY_UNUSED(self),
     PyArrayObject* image               = NULL;
     PyObject*      result              = NULL;
     int            image_pyramid_level = -1;
+    int            gridn               = 10;
 
     SET_SIGINT();
 
-    char* keywords[] = { "image", "image_pyramid_level",
+    char* keywords[] = { "image", "image_pyramid_level", "gridn",
                          NULL };
 
     if(!PyArg_ParseTupleAndKeywords( args, kwargs,
-                                     "O&|i",
+                                     "O&|ii",
                                      keywords,
                                      PyArray_Converter, &image,
-                                     &image_pyramid_level,
+                                     &image_pyramid_level, &gridn,
                                      NULL))
         goto done;
 
@@ -236,6 +237,11 @@ static PyObject* find_chessboard(PyObject* NPY_UNUSED(self),
         PyErr_SetString(PyExc_RuntimeError, "Image rows must live in contiguous memory");
         goto done;
     }
+    if(gridn < 2)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "gridn value must be >= 2");
+        goto done;
+    }
 
     bool add_points(double* xy, int N)
     {
@@ -253,6 +259,7 @@ static PyObject* find_chessboard(PyObject* NPY_UNUSED(self),
                                             PyArray_STRIDES(image)[0],
                                             PyArray_BYTES(image),
 
+                                            gridn,
                                             image_pyramid_level,
                                             &add_points) )
     {

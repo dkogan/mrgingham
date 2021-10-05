@@ -41,16 +41,21 @@ int main(int argc, char* argv[])
         "\n"
         "Given a set of pre-detected points, this tool finds a chessboard grid, and returns\n"
         "the ordered coordinates of this grid on standard output. The pre-detected points\n"
-        "can come from something like test-dump-chessboard-corners.\n";
+        "can come from something like test-dump-chessboard-corners.\n"
+        "\n"
+        "We detect an NxN grid of corners, where N defaults to 10. To select a different\n"
+        "value, pass --gridn N\n";
 
     struct option opts[] = {
+        { "gridn",             required_argument, NULL, 'N' },
         { "help",              no_argument,       NULL, 'h' },
         { "debug",             no_argument,       NULL, 'd' },
         {}
     };
 
 
-    bool        debug               = false;
+    int  gridn = 10;
+    bool debug = false;
 
     int opt;
     do
@@ -70,6 +75,10 @@ int main(int argc, char* argv[])
             debug = true;
             break;
 
+        case 'N':
+            gridn = atoi(optarg);
+            break;
+
         case '?':
             fprintf(stderr, "Unknown option\n");
             fprintf(stderr, usage, argv[0]);
@@ -84,13 +93,19 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    if(gridn < 2)
+    {
+        fprintf(stderr, "--gridn value must be >= 2\n");
+        return 1;
+    }
+
 
     std::vector<PointInt> points;
     if( !read_points(&points, argv[argc-1]) )
         return 1;
 
     std::vector<PointDouble> points_out;
-    bool result = find_grid_from_points(points_out, points, debug);
+    bool result = find_grid_from_points(points_out, points, gridn, debug);
 
     printf("# x y\n");
     if( result )

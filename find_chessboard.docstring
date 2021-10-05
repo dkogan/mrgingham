@@ -15,4 +15,7 @@ each dimension" and so on. image_pyramid_level < 0 means "start with a
 downsampled image, and then refine the results by repeatedly reducing the
 downsampling. This is the default.
 
+We detect an NxN grid of corners, where N defaults to 10. To select a different
+value, pass a kwarg gridn=N
+
 No broadcasting is supported by this function
