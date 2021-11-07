@@ -422,6 +422,6 @@ the terms of the GNU Lesser General Public License as published by the Free
 Software Foundation; either version 2.1 of the License, or (at your option) any
 later version.
 
-Copyright 2017-2018 California Institute of Technology
+Copyright 2017-2021 California Institute of Technology
 
-Copyright 2017-2018 Dima Kogan (=dima@secretsauce.net=)
+Copyright 2017-2021 Dima Kogan (=dima@secretsauce.net=)

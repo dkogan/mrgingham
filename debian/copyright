@@ -4,8 +4,8 @@ Upstream-Contact: Dima Kogan <dima@secretsauce.net>
 Upstream-Name: mrgingham
 
 Files: *
-Copyright: 2017-2018 California Institute of Technology
-           2017-2018 Dima Kogan <dima@secretsauce.net>
+Copyright: 2017-2021 California Institute of Technology
+           2017-2021 Dima Kogan <dima@secretsauce.net>
 License: LGPL-2.1+
 
 Files: ChESS.c
