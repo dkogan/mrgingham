@@ -1,9 +1,8 @@
-# These xxx markers are to be replaced by git_build_rpm
-Name:           xxx
-Version:        xxx
+Name:           mrgingham
+Version:        1.20
 
 Release:        1%{?dist}
-Summary:        Dot (or grid) finder for camera calibrations
+Summary:        Chessboard corner finder for camera calibrations
 
 License:        LGPL-2.1+
 URL:            https://github.com/dkogan/mrgingham/

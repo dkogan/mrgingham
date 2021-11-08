@@ -1,0 +1,5 @@
+These are sample packaging files that can be used to build your own packages.
+
+I'm about to push mrgingham into Debian, and it'll then percolate to Ubuntu. A
+.spec for rpm-based distros is provided here. Want this to be shipped in some
+other distro? Send them patches!
