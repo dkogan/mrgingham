@@ -71,7 +71,7 @@ static PyObject* py_ChESS_response_5(PyObject* NPY_UNUSED(self),
         (PyArrayObject*)PyArray_SimpleNew(ndims, dims, NPY_INT16);
     if(response == NULL)
     {
-        PyErr_SetString(PyExc_RuntimeError, "Couldn't allocate reponse");
+        PyErr_SetString(PyExc_RuntimeError, "Couldn't allocate response");
         goto done;
     }
 
