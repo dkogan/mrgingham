@@ -29,6 +29,61 @@ $ mrgingham /tmp/image.jpg |
   colored by their decimation level ]
 #+END_EXAMPLE
 
+* INSTALLATION
+As of today (2022-02-27), mrgingham is included in the bleeding-edge versions of
+Debian and Ubuntu. So if you're running at least Debian/testing or the
+not-yet-published Debian 12 (bookworm) or Ubuntu 22.04 (jammy), you can
+simply
+
+#+begin_src sh
+apt install mrgingham libmrgingham-dev
+#+end_src
+
+to install the standalone tool and the development library respectively.
+
+If running any other distro, you should build mrgingham from source. First, make
+sure all the build-time dependencies are installed. These are listed in the
+=debian/control= file:
+
+#+begin_example
+Build-Depends: ...,
+ libopencv-dev,
+ libboost-dev,
+ pkg-config,
+ mawk,
+ perl,
+ python3-all,
+ python3-all-dev,
+ python3-numpy
+#+end_example
+
+On a Debian-based distro you can:
+
+#+begin_src sh
+sudo apt install \
+ libopencv-dev   \
+ libboost-dev    \
+ pkg-config      \
+ mawk            \
+ perl            \
+ python3-all     \
+ python3-all-dev \
+ python3-numpy
+#+end_src
+
+Replace the package names with their analogues on other distros. Once the
+dependencies are installed, you
+
+#+begin_src sh
+make
+#+end_src
+
+and then the tool can be invoked with
+
+#+begin_src sh
+./mrgingham
+#+end_src
+
 * DESCRIPTION
 Both chessboard and a non-offset grid of circles are supported. Chessboard are
 the /strongly/ preferred choice, since the circles cannot produce accurate
