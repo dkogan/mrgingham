@@ -1,4 +1,4 @@
-include Makefile.common.header
+include mrbuild/Makefile.common.header
 
 
 PROJECT_NAME := mrgingham
@@ -74,7 +74,7 @@ all: README.org
 %.1: %.pod
 	pod2man --center="mrgingham: chessboard corner finder" --name=MRGINGHAM --release="mrgingham $(VERSION)" --section=1 $^ $@
 mrgingham-observe-pixel-uncertainty.pod: %.pod: %
-	./make-pod.pl $< > $@
+	mrbuild/make-pod-from-help.pl $< > $@
 	cat footer.pod >> $@
 EXTRA_CLEAN += *.1 mrgingham-observe-pixel-uncertainty.pod README.org
 
@@ -101,4 +101,4 @@ DIST_PY3_MODULES := mrgingham$(PY_EXT_SUFFIX)
 
 all: mrgingham$(PY_EXT_SUFFIX)
 
-include Makefile.common.footer
+include mrbuild/Makefile.common.footer

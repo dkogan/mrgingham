@@ -15,12 +15,10 @@ if( ! (-r $path && -x $path && -f $path) )
     die "Commandline argument must be an executable file\n$usagemessage";
 }
 
-# for proper --help formatting
-$ENV{COLUMNS}=80;
 # prepend ./ if no path given. I'm going to run this thing, so we need that
 $path = "./$path" unless $path =~ m{^/};
 my $helpstring = `$path --help`;
-
+my $helpstring0 = $helpstring;
 
 
 # I assume the following stucture. If the --help string doesn't fit this
@@ -54,14 +52,16 @@ my $helpstring = `$path --help`;
 # ...
 
 # usage is the thing up to the first blank line
-my ($usage) = $helpstring =~ m/(^usage.*?)\n\n/msp
-  or die "Couldn't parse out the usage";
+my ($usage) = $helpstring =~ m/(^usage.*?)\n\n/imsp
+  or die "Couldn't parse out the usage; helpstring='$helpstring'";
 $helpstring = ${^POSTMATCH};
+my $helpstring1 = $helpstring;
 
 # Then we have a one-line summary
 my ($summary) = $helpstring =~ m/(^.*?)\n\n/p
-  or die "Couldn't parse out the summary";
+  or die "Couldn't parse out the summary; helpstring='$helpstring'; helpstring0='$helpstring0'";
 $helpstring = ${^POSTMATCH};
+my $helpstring2 = $helpstring;
 
 # Then the synopsis
 my ($synopsis) = $helpstring =~
@@ -70,26 +70,39 @@ my ($synopsis) = $helpstring =~
        (?:(?:[ \t] .+?)? \n)+  # a bunch of lines: empty or beginning with whitespace
      )                         # That's all I want
    /xpi
-  or die "Couldn't parse out the synopsis";
+  or die "Couldn't parse out the synopsis; helpstring='$helpstring'; helpstring0='$helpstring0'; helpstring1='$helpstring1'";
 $helpstring = ${^POSTMATCH};
+my $helpstring3 = $helpstring;
 $synopsis =~ s/\n*$//g; # cull trailing whitespace
 
 # Now a description: everything until 'xxxx arguments'. I might not have a
-# description at all
-my ($description, $post) = $helpstring =~ /(^.*?)(?:\n\n)?(\w+ arguments:?\n)/ips
-  or die "Couldn't parse description";
-$helpstring = $post . ${^POSTMATCH};
+# description at all. I might also not have any "arguments" sections.
+my ($description, $post) = $helpstring =~ /(^.*?)(?:\n\n)?(\w+ arguments:?\n)/ips;
+if( defined $description)
+{
+    $helpstring = $post . ${^POSTMATCH};
+}
+else
+{
+    # no arguments. Everything is a description.
+    $description = $helpstring;
+    $helpstring = '';
+}
+my $helpstring4 = $helpstring;
+
 
 # Now the arguments
 my @args;
 while($helpstring !~ /^\s*$/)
 {
-    my ($argument_kind) = $helpstring =~ /(^\w+ arguments):?\n\n?/pi
-      or die "Couldn't parse out argument kind";
+    # I see "required arguments" or "optional arguments" or "options"
+    my ($argument_kind) = $helpstring =~ /(^\w+ arguments|options):?\n\n?/pi
+      or die "Couldn't parse out argument kind; helpstring='$helpstring'; helpstring0='$helpstring0'; helpstring1='$helpstring1'; helpstring2='$helpstring2'; helpstring3='$helpstring3'; helpstring4='$helpstring4'";
     $helpstring = ${^POSTMATCH};
+    my $helpstring5 = $helpstring;
 
     my ($argument_what) = $helpstring =~ /(^.*?)(?:\n\n|\n$)/pis
-      or die "Couldn't parse out argument what";
+      or die "Couldn't parse out argument what; helpstring='$helpstring'; helpstring0='$helpstring0'; helpstring1='$helpstring1'; helpstring2='$helpstring2'; helpstring3='$helpstring3'; helpstring4='$helpstring4'; helpstring5='$helpstring5'";
     $helpstring = ${^POSTMATCH};
 
     # I really should parse the table argparse puts out, but let's just finish
@@ -106,34 +119,48 @@ say "$programname - $summary\n";
 
 say "=head1 SYNOPSIS\n";
 
-say "$synopsis\n";
+say linkify($synopsis);
+say "";
 
 if( $description )
 {
     say "=head1 DESCRIPTION\n";
 
-    say "$description\n";
+    say linkify($description);
+    say "";
 }
 
-say "=head1 OPTIONS\n";
-for my $arg (@args)
+if(@args)
 {
-    my ($kind,$what) = @$arg;
-    say "=head2 $kind\n";
-    say "$what\n";
+    say "=head1 OPTIONS\n";
+    for my $arg (@args)
+    {
+        my ($kind,$what) = @$arg;
+        $kind = "OPTIONAL ARGUMENTS" if $kind eq "OPTIONS";
+
+        say "=head2 $kind\n";
+        say linkify($what);
+        say "";
+    }
 }
 
 
+
+sub linkify
+{
+    $_[0] =~ s{https?://\S+}{L<${^MATCH}>}gps;
+    return $_[0];
+}
 
 __END__
 
 =head1 NAME
 
-make-pod.pl - creates POD documentation from a python commandline tool
+make-pod-from-help.pl - creates POD documentation from a commandline tool
 
 =head1 SYNOPSIS
 
- $ ./make-pod.pl frobnicate > frobnicate.pod
+ $ ./make-pod-from-help.pl frobnicate > frobnicate.pod
 
 =head1 DESCRIPTION
 
@@ -147,6 +174,8 @@ C<argparse> to use the docstring in the C<--help> description.
 
 This tool generates a POD, which can then be made into a manpage with
 C<pod2man>.
+
+Some details L<here|http://notes.secretsauce.net/notes/2018/10/07_generating-manpages-from-python-and-argparse.html>.
 
 =head1 REQUIRED ARGUMENTS
 
