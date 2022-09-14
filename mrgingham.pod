@@ -140,8 +140,10 @@ came from the center of the circle on the calibration board.
 
 The general usage is
 
- mrgingham [--debug] [--jobs N] [--noclahe] [--blur radius]
-           [--level l] [--blobs] imageglobs imageglobs ...
+ mrgingham [--debug] [--debug-sequence x,y]
+           [--blobs] [--gridn N] [--noclahe] [--blur radius]
+           [--level l] [--no-refine] [--jobs N]
+           imageglobs imageglobs ...
 
 By default we look for a chessboard. By default we apply adaptive histogram
 equalization, then blur with a radius of 1. We then use an adaptive level of
@@ -150,6 +152,15 @@ downsampling when looking for the chessboard.
 The arguments are
 
 =over
+
+=item C<--blobs>
+
+Find circle centers instead of chessboard corners. Not recommended
+
+=item C<--gridn N>
+
+Optional argument to request detections of an NxN grid of corners. If omitted, N
+defaults to 10.
 
 =item C<--noclahe>
 
@@ -171,6 +182,12 @@ image (after CLAHE and C<--blur>, if those are given). Level 0 means 'use the
 original image'. Level > 0 means downsample by 2**level. Level < 0 means 'try
 several different levels until we find one that works. This is the default.
 
+=item C<--no-refine>
+
+Optional argument to disable corner refinement. By default, the coordinates of
+reported corners are re-detected at less-downsampled zoom levels to improve
+their accuracy. If we do not want to do that, pass C<--no-refine>
+
 =item C<--jobs N>
 
 Parallelizes the processing N-ways. C<-j> is a synonym. This is just like GNU
@@ -186,10 +203,6 @@ record with null C<x> and C<y>.
 If given, C<mrgingham> will dump various intermediate results into
 C</tmp> and it will report more stuff on the console. The output is
 self-documenting
-
-=item C<--blobs>
-
-Find circle centers instead of chessboard corners. Not recommended
 
 =back
 
