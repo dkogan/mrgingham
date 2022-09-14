@@ -161,8 +161,8 @@ int main(int argc, char* argv[])
 {
     const char* usage =
         "Usage: %s [--debug] [--debug-sequence x,y]\n"
-        "                   [--jobs N] [--noclahe] [--blur radius] [--gridn N]\n"
-        "                   [--level l] [--blobs] imageglobs imageglobs ...\n"
+        "                  [--jobs N] [--noclahe] [--blur radius] [--gridn N]\n"
+        "                  [--level l] [--blobs] imageglobs imageglobs ...\n"
         "\n"
         "  By default we look for a chessboard. By default we apply adaptive histogram\n"
         "  equalization, then blur with a radius of 1. We then use an adaptive level of\n"
