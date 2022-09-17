@@ -85,16 +85,16 @@ and then the tool can be invoked with
 #+end_src
 
 * DESCRIPTION
-Both chessboard and a non-offset grid of circles are supported. Chessboard are
-the /strongly/ preferred choice, since the circles cannot produce accurate
-results: we care about the center point, which we are not directly observing.
-Thus with closeup and oblique views, the reported circle center and the real
-circle center could be very far away from each other. Because of this, more work
-was put into the chessboard detector. Use that one. Really.
+Both chessboard and a square grid of circles are supported. Chessboard are the
+/strongly/ preferred choice, since the circles cannot produce accurate results:
+we care about the center point, which we are not directly observing. Thus with
+closeup and oblique views, the reported circle center and the real circle center
+could be very far away from each other. Because of this, more work was put into
+the chessboard detector. Use that one. Really.
 
 These are both nominally supported by OpenCV, but those implementations are slow
 and not at all robust, in my experience. The implementations here are much
-faster and work much better. I /do/ use OpenCV, but only for some core
+faster and work much better. I /do/ use OpenCV here, but only for some core
 functionality.
 
 Currently mrgingham looks for a square grid of points, with some
@@ -159,6 +159,35 @@ This is relatively slow, can get confused by uneven lighting (although CLAHE can
 take care of that), and is inaccurate: nothing says that the centroid of a blob
 came from the center of the circle on the calibration board.
 
+** Output representation
+The =mrgingham= tool produces its output in a [[https://github.com/dkogan/vnlog/][vnlog]] text table. The columns are:
+
+- =filename=: path to the image on disk
+- =x=, =y=: detected pixel coordinates of the chessboard corner
+- =level=: image level used in detecting this corner. Level 0 means
+  "full-resolution". Level 1 means "half-resolution" and that the noise on this
+  detection has double the standard deviation. Level 2 means
+  "quarter-resolution" and so on.
+
+If no chessboard was found in an image, a single record is output:
+
+#+begin_example
+filename - - -
+#+end_example
+
+The corners are output in a consistent order: starting at the top-left,
+traversing the grid, in the horizontal direction first. Usually, the chessboard
+is observed by multiple cameras mounted at a similar orientation, so this
+consistent order is consistent across cameras.
+
+However, if some cameras in the set are rotated, their observed chessboard
+corners will not be consistent anymore: the first corner will be "top-left" in
+pixel coordinates for both, which is at the top of the chessboard for
+rightside-up cameras, but the bottom of the chessboard for upside-down cameras.
+This situation is resolved with the =mrgingham-rotate-corners= tool. It
+post-processes =mrgingham= output to reorder detections from rotated cameras.
+See the manpage of that tool for more detail.
+
 ** API
 The user-facing functions live in =mrgingham.hh=. Everything is in C++, mostly
 because some of the underlying libraries are in C++. All functions return a
@@ -209,8 +238,9 @@ The arguments should be clear. The only one that needs an explanation is
   that produces results
 
 ** Applications
-There're several included applications that exercise the library.
-=mrgingham-...= are distributed, and their manpages appear below.
+There're several included applications that exercise the library. The
+=mrgingham-...= tools are distributed, and their manpages appear below. The
+=test-...= tools are internal.
 
 - =mrgingham= takes in images as globs (with some optional
   manipulation given on the cmdline), finds the grids, and returns them on
@@ -219,18 +249,19 @@ There're several included applications that exercise the library.
 - =mrgingham-observe-pixel-uncertainty= evaluates the distribution of corner
   detections from repeated observations of a stationary scene
 
-- =test-find-grid-from-points= takes in a file that contains an unordered set of
+- =mrgingham-rotate-corners= corrects chessboard detections produced by rotated
+  cameras by reordering the points in the detection stream
+
+- =test-find-grid-from-points= ingests a file that contains an unordered set of
   points with outliers. It the finds the grid, and returns it on stdout
 
 - =test-dump-chessboard-corners= is a lower-level tool that just finds the
   chessboard corner features and returns them on stdout. No geometric search is
   done.
 
-- =test-dump-chessboard-corners= similarly is a lower-level tool that just finds the blob
-  center features and returns them on stdout. No geometric search is done.
-
-The =mrgingham...= tools are distributed in the package, while the others are
-internal.
+- =test-dump-chessboard-corners= similarly is a lower-level tool that just finds
+  the blob center features and returns them on stdout. No geometric search is
+  done.
 
 ** Tests
 There's a test suite in =test/test.sh=. It checks all images in =test/data/*=,
@@ -282,12 +313,12 @@ DESCRIPTION
     intermediate steps. Each diagnostic file is reported on the console when
     it is written.
 
-    Both chessboard and a non-offset grid of circles are supported.
-    Chessboard are the *strongly* preferred choice; the circle detector is
-    mostly here for compatibility. Both are nominally supported by OpenCV,
-    but those implementations are slow and not at all robust, in my
-    experience. The implementations here are much faster and work much
-    better. I *do* use OpenCV here, but only for some core functionality.
+    Both chessboard and a square grid of circles are supported. Chessboard
+    are the *strongly* preferred choice; the circle detector is mostly here
+    for compatibility. Both are nominally supported by OpenCV, but those
+    implementations are slow and not at all robust, in my experience. The
+    implementations here are much faster and work much better. I *do* use
+    OpenCV here, but only for some core functionality.
 
     Currently mrgingham looks for a square grid of points, with some
     user-requestable width. The default is a 10x10 grid.
@@ -349,17 +380,57 @@ DESCRIPTION
     centroid of a blob came from the center of the circle on the calibration
     board.
 
+  OUTPUT REPRESENTATION
+    The "mrgingham" tool produces its output in a vnlog
+    <https://www.github.com/dkogan/vnlog> text table. The columns are:
+
+    *   "filename": path to the image on disk
+
+    *   "x", "y": detected pixel coordinates of the chessboard corner
+
+    *   "level": image level used in detecting this corner. Level 0 means
+        "full-resolution". Level 1 means "half-resolution" and that the
+        noise on this detection has double the standard deviation. Level 2
+        means "quarter-resolution" and so on.
+
+    If no chessboard was found in an image, a single record is output:
+
+     filename - - -
+
+    The corners are output in a consistent order: starting at the top-left,
+    traversing the grid, in the horizontal direction first. Usually, the
+    chessboard is observed by multiple cameras mounted at a similar
+    orientation, so this consistent order is consistent across cameras.
+
+    However, if some cameras in the set are rotated, their observed
+    chessboard corners will not be consistent anymore: the first corner will
+    be "top-left" in pixel coordinates for both, which is at the top of the
+    chessboard for rightside-up cameras, but the bottom of the chessboard
+    for upside-down cameras. This situation is resolved with the
+    "mrgingham-rotate-corners" tool. It post-processes "mrgingham" output to
+    reorder detections from rotated cameras. See the manpage of that tool
+    for more detail.
+
 ARGUMENTS
     The general usage is
 
-     mrgingham [--debug] [--jobs N] [--noclahe] [--blur radius]
-               [--level l] [--blobs] imageglobs imageglobs ...
+     mrgingham [--debug] [--debug-sequence x,y]
+               [--blobs] [--gridn N] [--noclahe] [--blur radius]
+               [--level l] [--no-refine] [--jobs N]
+               imageglobs imageglobs ...
 
     By default we look for a chessboard. By default we apply adaptive
     histogram equalization, then blur with a radius of 1. We then use an
     adaptive level of downsampling when looking for the chessboard.
 
     The arguments are
+
+    "--blobs"
+        Find circle centers instead of chessboard corners. Not recommended
+
+    "--gridn N"
+        Optional argument to request detections of an NxN grid of corners.
+        If omitted, N defaults to 10.
 
     "--noclahe"
         Optional argument to control image preprocessing. Unless given we
@@ -381,6 +452,12 @@ ARGUMENTS
         downsample by 2**level. Level < 0 means 'try several different
         levels until we find one that works. This is the default.
 
+    "--no-refine"
+        Optional argument to disable corner refinement. By default, the
+        coordinates of reported corners are re-detected at less-downsampled
+        zoom levels to improve their accuracy. If we do not want to do that,
+        pass "--no-refine"
+
     "--jobs N"
         Parallelizes the processing N-ways. "-j" is a synonym. This is just
         like GNU make, except you're required to explicitly specify a job
@@ -395,9 +472,6 @@ ARGUMENTS
         If given, "mrgingham" will dump various intermediate results into
         "/tmp" and it will report more stuff on the console. The output is
         self-documenting
-
-    "--blobs"
-        Find circle centers instead of chessboard corners. Not recommended
 
 
 #+END_EXAMPLE
@@ -435,34 +509,71 @@ DESCRIPTION
 
 OPTIONS
   POSITIONAL ARGUMENTS
-      input                 Either 1: A glob that matches images observing a
-                            stationary calibration target. This must be a GLOB. So
-                            in the shell pass in '*.png' and NOT *.png. These are
-                            processed by 'mrgingham' and the arguments passed in
-                            with --mrgingham. Or 2: a vnlog representing corner
-                            detections from these images. This is assumed to be a
-                            file with a filename ending in .vnl, formatted like
-                            'mrgingham' output: 3 columns: filename,x,y
+      input                 Either 1: A glob that matches images observing a stationary
+                            calibration target. This must be a GLOB. So in the shell pass
+                            in '*.png' and NOT *.png. These are processed by 'mrgingham'
+                            and the arguments passed in with --mrgingham. Or 2: a vnlog
+                            representing corner detections from these images. This is
+                            assumed to be a file with a filename ending in .vnl, formatted
+                            like 'mrgingham' output: 3 columns: filename,x,y
 
   OPTIONAL ARGUMENTS
       -h, --help            show this help message and exit
       --show {geometry,histograms}
-                            Visualize something. Arguments can be: "geometry":
-                            show the 1-stdev ellipses of the distribution for each
-                            chessboard corner separately. "histograms": show the
-                            distribution of all the x- and y-deviations off the
-                            mean
+                            Visualize something. Arguments can be: "geometry": show the
+                            1-stdev ellipses of the distribution for each chessboard
+                            corner separately. "histograms": show the distribution of all
+                            the x- and y-deviations off the mean
       --mrgingham MRGINGHAM
-                            If we're processing images, these are the arguments
-                            given to mrgingham. If we are reading a pre-computed
-                            file, this does nothing
+                            If we're processing images, these are the arguments given to
+                            mrgingham. If we are reading a pre-computed file, this does
+                            nothing
       --num-corners NUM_CORNERS
-                            How many corners to expect in each image. If this is
-                            wrong I will throw an error. Defaults to 100
+                            How many corners to expect in each image. If this is wrong I
+                            will throw an error. Defaults to 100
       --imagersize IMAGERSIZE IMAGERSIZE
                             Optional imager dimensions: width and height. This is
-                            optional. If given, we use it to size the "--show
-                            geometry" plot
+                            optional. If given, we use it to size the "--show geometry"
+                            plot
+
+
+#+END_EXAMPLE
+
+** mrgingham-rotate-corners
+#+BEGIN_EXAMPLE
+NAME
+    mrgingham-rotate-corners - Adjust mrgingham corner detections from
+    rotated cameras
+
+SYNOPSIS
+      # camera A is rightside-up
+      # camera B is mounted sideways
+      # cameras C,D are upside-down
+      mrgingham --gridn N                \
+        'frame*-cameraA.jpg'             \
+        'frame*-cameraB.jpg'             \
+        'frame*-cameraC.jpg'             \
+        'frame*-cameraD.jpg' |           \
+      mrgingham-rotate-corners --gridn N \
+        --90 cameraB --180 'camera[CD]'
+
+DESCRIPTION
+    The mrgingham chessboard detector finds a chessboard in an image, but it
+    has no way to know whether the detected chessboard was upside-down or
+    otherwise rotated: the chessboard itself has no detectable marking to
+    make this clear. In the usual case, the cameras as all mounted in the
+    same orientation, so they all detect the same orientation of the
+    chessboard, and there is no problem. However, if some cameras are
+    mounted sideways or upside-down, the sequence of corners will correspond
+    to different corners between the cameras with different orientations.
+    This can be addressed by this tool. This tool ingests mrgingham
+    detections, and outputs them after correcting the chessboard
+    observations produced by rotated cameras.
+
+    Each rotation option is an awk regular expression used to select images
+    from specific cameras. The regular expression is tested against the
+    image filenames. Each rotation option may be given multiple times. Any
+    files not matched by any rotation option are passed through unrotated.
 
 
 #+END_EXAMPLE
