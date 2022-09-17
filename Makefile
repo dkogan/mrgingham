@@ -6,7 +6,7 @@ ABI_VERSION  := 2
 TAIL_VERSION := 1
 
 
-DIST_BIN := mrgingham mrgingham-observe-pixel-uncertainty
+DIST_BIN := mrgingham mrgingham-observe-pixel-uncertainty mrgingham-rotate-corners
 DIST_MAN := $(addsuffix .1,$(DIST_BIN))
 
 # I want the tool I ship to be called "mrgingham", but I already have
@@ -38,6 +38,11 @@ CCXXFLAGS += -Wno-unused-function -Wno-missing-field-initializers -Wno-unused-pa
 ifneq ($(wildcard /usr/include/opencv4),)
 CCXXFLAGS += -D CV_LOAD_IMAGE_GRAYSCALE=cv::IMREAD_GRAYSCALE
 endif
+
+
+test:
+	test/test--mrgingham-rotate-corners
+.PHONY: test
 
 
 DIST_INCLUDE := mrgingham.hh point.hh
@@ -73,10 +78,10 @@ all: README.org
 
 %.1: %.pod
 	pod2man --center="mrgingham: chessboard corner finder" --name=MRGINGHAM --release="mrgingham $(VERSION)" --section=1 $^ $@
-mrgingham-observe-pixel-uncertainty.pod: %.pod: %
+mrgingham-observe-pixel-uncertainty.pod mrgingham-rotate-corners.pod: %.pod: %
 	mrbuild/make-pod-from-help.pl $< > $@
 	cat footer.pod >> $@
-EXTRA_CLEAN += *.1 mrgingham-observe-pixel-uncertainty.pod README.org
+EXTRA_CLEAN += *.1 mrgingham-observe-pixel-uncertainty.pod mrgingham-rotate-corners.pod README.org
 
 ########## python stuff
 

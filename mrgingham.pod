@@ -41,8 +41,8 @@ compute each corner. For diagnostics, pass in C<--debug>. This produces a number
 of self-plotting files that describe the results of the intermediate steps. Each
 diagnostic file is reported on the console when it is written.
 
-Both chessboard and a non-offset grid of circles are supported. Chessboard are
-the I<strongly> preferred choice; the circle detector is mostly here for
+Both chessboard and a square grid of circles are supported. Chessboard are the
+I<strongly> preferred choice; the circle detector is mostly here for
 compatibility. Both are nominally supported by OpenCV, but those implementations
 are slow and not at all robust, in my experience. The implementations here are
 much faster and work much better. I I<do> use OpenCV here, but only for some
@@ -135,6 +135,46 @@ Return centroid of the blobs
 This is relatively slow, can get confused by uneven lighting (although CLAHE can
 take care of that), and is inaccurate: nothing says that the centroid of a blob
 came from the center of the circle on the calibration board.
+
+=head2 OUTPUT REPRESENTATION
+
+The C<mrgingham> tool produces its output in a L<vnlog|https://www.github.com/dkogan/vnlog> text table. The columns are:
+
+=over
+
+=item *
+
+C<filename>: path to the image on disk
+
+=item *
+
+C<x>, C<y>: detected pixel coordinates of the chessboard corner
+
+=item *
+
+C<level>: image level used in detecting this corner. Level 0 means
+"full-resolution". Level 1 means "half-resolution" and that the noise on this
+detection has double the standard deviation. Level 2 means "quarter-resolution"
+and so on.
+
+=back
+
+If no chessboard was found in an image, a single record is output:
+
+ filename - - -
+
+The corners are output in a consistent order: starting at the top-left,
+traversing the grid, in the horizontal direction first. Usually, the chessboard
+is observed by multiple cameras mounted at a similar orientation, so this
+consistent order is consistent across cameras.
+
+However, if some cameras in the set are rotated, their observed chessboard
+corners will not be consistent anymore: the first corner will be "top-left" in
+pixel coordinates for both, which is at the top of the chessboard for
+rightside-up cameras, but the bottom of the chessboard for upside-down cameras.
+This situation is resolved with the C<mrgingham-rotate-corners> tool. It
+post-processes C<mrgingham> output to reorder detections from rotated cameras.
+See the manpage of that tool for more detail.
 
 =head1 ARGUMENTS
 

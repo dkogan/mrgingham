@@ -1,0 +1,231 @@
+#!/bin/zsh
+
+program=${0:h}/../mrgingham-rotate-corners
+datafile=${0:h}/data/data-for-rotate-corners.vnl
+
+numfailed=0
+
+function check {
+    name=$1
+    datapipe=$2
+    args=$3
+    data_ref=$4
+
+    data_received=$(< $datapipe $program ${(z)args} 2>/dev/null)
+
+    error_code_received=$?
+
+    if [[ "$data_ref" = "ERROR" ]] {
+           # expected error
+           if (( error_code_received )) {
+                  echo "Test OK: $name"
+              } else {
+                  echo "Test failed: $name: Expected failure, but program succeeded:"
+                  echo "Command:   < $datafile $program $args"
+                  echo ""
+                  numfailed=$((numfailed+1))
+              }
+       } else {
+
+           # did NOT expect an error
+           if (( error_code_received )) {
+                  echo "Test failed: $name: Expected success, but program failed"
+                  echo "Command:   < $datafile $program $args"
+                  echo ""
+                  numfailed=$((numfailed+1))
+              } else {
+
+                  if [[ "$data_ref" = "$data_received" ]] {
+                         echo "Test OK: $name"
+                     } else {
+                         echo "Test failed: $name:"
+                         echo "Command:   < $datafile $program $args"
+                         echo ""
+                         echo "======= expected ========"
+                         echo $data_ref
+                         echo "======= received ========"
+                         echo $data_received
+                         echo "========================="
+                         echo ""
+                         numfailed=$((numfailed+1))
+                     }
+              }
+       }
+}
+
+
+
+
+
+
+check "passthrough" <(cat $datafile) "--gridn 3" "$(cat <<EOF
+# filename x y level
+b 20 200 0
+b 21 200 0
+b 22 200 0
+b 20 201 0
+b 21 201 0
+b 22 201 0
+b 20 202 0
+b 21 202 0
+b 22 202 0
+c 30 300 0
+c 31 300 0
+c 32 300 0
+c 30 301 0
+c 31 301 0
+c 32 301 0
+c 30 302 0
+c 31 302 0
+c 32 302 0
+d - - -
+a 40 400 0
+a 41 400 0
+a 42 400 0
+a 40 401 0
+a 41 401 0
+a 42 401 0
+a 40 402 0
+a 41 402 0
+a 42 402 0
+EOF
+)"
+
+check "rot180" <(cat $datafile) "--gridn 3 --180 a" "$(cat <<EOF
+# filename x y level
+b 20 200 0
+b 21 200 0
+b 22 200 0
+b 20 201 0
+b 21 201 0
+b 22 201 0
+b 20 202 0
+b 21 202 0
+b 22 202 0
+c 30 300 0
+c 31 300 0
+c 32 300 0
+c 30 301 0
+c 31 301 0
+c 32 301 0
+c 30 302 0
+c 31 302 0
+c 32 302 0
+d - - -
+a 42 402 0
+a 41 402 0
+a 40 402 0
+a 42 401 0
+a 41 401 0
+a 40 401 0
+a 42 400 0
+a 41 400 0
+a 40 400 0
+EOF
+)"
+
+check "rot180-multiple" <(cat $datafile) "--gridn 3 --180 a --180 b" "$(cat <<EOF
+# filename x y level
+b 22 202 0
+b 21 202 0
+b 20 202 0
+b 22 201 0
+b 21 201 0
+b 20 201 0
+b 22 200 0
+b 21 200 0
+b 20 200 0
+c 30 300 0
+c 31 300 0
+c 32 300 0
+c 30 301 0
+c 31 301 0
+c 32 301 0
+c 30 302 0
+c 31 302 0
+c 32 302 0
+d - - -
+a 42 402 0
+a 41 402 0
+a 40 402 0
+a 42 401 0
+a 41 401 0
+a 40 401 0
+a 42 400 0
+a 41 400 0
+a 40 400 0
+EOF
+)"
+
+check "rot90" <(cat $datafile) "--gridn 3 --90 a --180 b" "$(cat <<EOF
+# filename x y level
+b 22 202 0
+b 21 202 0
+b 20 202 0
+b 22 201 0
+b 21 201 0
+b 20 201 0
+b 22 200 0
+b 21 200 0
+b 20 200 0
+c 30 300 0
+c 31 300 0
+c 32 300 0
+c 30 301 0
+c 31 301 0
+c 32 301 0
+c 30 302 0
+c 31 302 0
+c 32 302 0
+d - - -
+a 42 400 0
+a 42 401 0
+a 42 402 0
+a 41 400 0
+a 41 401 0
+a 41 402 0
+a 40 400 0
+a 40 401 0
+a 40 402 0
+EOF
+)"
+
+check "rot270" <(cat $datafile) "--gridn 3 --270 a" "$(cat <<EOF
+# filename x y level
+b 20 200 0
+b 21 200 0
+b 22 200 0
+b 20 201 0
+b 21 201 0
+b 22 201 0
+b 20 202 0
+b 21 202 0
+b 22 202 0
+c 30 300 0
+c 31 300 0
+c 32 300 0
+c 30 301 0
+c 31 301 0
+c 32 301 0
+c 30 302 0
+c 31 302 0
+c 32 302 0
+d - - -
+a 40 402 0
+a 40 401 0
+a 40 400 0
+a 41 402 0
+a 41 401 0
+a 41 400 0
+a 42 402 0
+a 42 401 0
+a 42 400 0
+EOF
+)"
+
+check "failure-gridn-too-low--all-data"  <(cat $datafile)  "--gridn 2" "ERROR"
+check "failure-gridn-too-high--all-data" <(cat $datafile) "--gridn 5" "ERROR"
+
+check "failure-gridn-too-low--one-file"  <(< $datafile vnl-filter 'filename=="a"')  "--gridn 2" "ERROR"
+check "failure-gridn-too-high--one-file" <(< $datafile vnl-filter 'filename=="a"')  "--gridn 5" "ERROR"
+exit $numfailed
