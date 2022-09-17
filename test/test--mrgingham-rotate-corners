@@ -7,11 +7,13 @@ numfailed=0
 
 function check {
     name=$1
-    datapipe=$2
+    data_post_pipe=$2
     args=$3
     data_ref=$4
 
-    data_received=$(< $datapipe $program ${(z)args} 2>/dev/null)
+    [[ -z "$data_post_pipe" ]] && data_post_pipe="cat"
+
+    data_received=$(< $datafile ${(z)data_post_pipe} | $program ${(z)args} 2>/dev/null)
 
     error_code_received=$?
 
@@ -21,7 +23,7 @@ function check {
                   echo "Test OK: $name"
               } else {
                   echo "Test failed: $name: Expected failure, but program succeeded:"
-                  echo "Command:   < $datafile $program $args"
+                  echo "Command:   < $datafile $data_post_pipe | $program $args"
                   echo ""
                   numfailed=$((numfailed+1))
               }
@@ -30,7 +32,7 @@ function check {
            # did NOT expect an error
            if (( error_code_received )) {
                   echo "Test failed: $name: Expected success, but program failed"
-                  echo "Command:   < $datafile $program $args"
+                  echo "Command:   < $datafile $data_post_pipe | $program $args"
                   echo ""
                   numfailed=$((numfailed+1))
               } else {
@@ -39,7 +41,7 @@ function check {
                          echo "Test OK: $name"
                      } else {
                          echo "Test failed: $name:"
-                         echo "Command:   < $datafile $program $args"
+                         echo "Command:   < $datafile $data_post_pipe | $program $args"
                          echo ""
                          echo "======= expected ========"
                          echo $data_ref
@@ -58,7 +60,7 @@ function check {
 
 
 
-check "passthrough" <(cat $datafile) "--gridn 3" "$(cat <<EOF
+check "passthrough" "" "--gridn 3" "$(cat <<EOF
 # filename x y level
 a0 - - -
 a1 40 400 0
@@ -95,7 +97,7 @@ d0 - - -
 EOF
 )"
 
-check "rot180" <(cat $datafile) "--gridn 3 --180 a" "$(cat <<EOF
+check "rot180" "" "--gridn 3 --180 a" "$(cat <<EOF
 # filename x y level
 a0 - - -
 a1 42 402 0
@@ -132,7 +134,7 @@ d0 - - -
 EOF
 )"
 
-check "rot180-multiple" <(cat $datafile) "--gridn 3 --180 a --180 b" "$(cat <<EOF
+check "rot180-multiple" "" "--gridn 3 --180 a --180 b" "$(cat <<EOF
 # filename x y level
 a0 - - -
 a1 42 402 0
@@ -169,7 +171,7 @@ d0 - - -
 EOF
 )"
 
-check "rot90" <(cat $datafile) "--gridn 3 --90 a --180 b" "$(cat <<EOF
+check "rot90" "" "--gridn 3 --90 a --180 b" "$(cat <<EOF
 # filename x y level
 a0 - - -
 a1 42 400 0
@@ -206,7 +208,7 @@ d0 - - -
 EOF
 )"
 
-check "rot270" <(cat $datafile) "--gridn 3 --270 a" "$(cat <<EOF
+check "rot270" "" "--gridn 3 --270 a" "$(cat <<EOF
 # filename x y level
 a0 - - -
 a1 40 402 0
@@ -243,10 +245,10 @@ d0 - - -
 EOF
 )"
 
-check "failure-gridn-too-low--all-data"  <(cat $datafile)  "--gridn 2" "ERROR"
-check "failure-gridn-too-high--all-data" <(cat $datafile) "--gridn 5" "ERROR"
+check "failure-gridn-too-low--all-data"  ""  "--gridn 2" "ERROR"
+check "failure-gridn-too-high--all-data" "" "--gridn 5" "ERROR"
 
-check "failure-gridn-too-low--one-file"  <(< $datafile vnl-filter 'filename=="a1"')  "--gridn 2" "ERROR"
-check "failure-gridn-too-high--one-file" <(< $datafile vnl-filter 'filename=="a1"')  "--gridn 5" "ERROR"
+check "failure-gridn-too-low--one-file"  "vnl-filter filename==\"a1\""  "--gridn 2" "ERROR"
+check "failure-gridn-too-high--one-file" "vnl-filter filename==\"a1\""  "--gridn 5" "ERROR"
 
 exit $numfailed
