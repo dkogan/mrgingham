@@ -1,0 +1,112 @@
+Usage: %s \
+         [--blobs] [--gridn N] [--noclahe] [--blur radius] \
+         [--level l] [--no-refine] [--jobs N] \
+         [--debug] [--debug-sequence x,y] \
+         imageglobs imageglobs ...
+
+Extract chessboard corners from a set of images
+
+SYNOPSIS
+
+  $ mrgingham image*.jpg
+
+  # filename x y level
+  image1.jpg - -
+  image2.jpg 1385.433000 1471.719000 0
+  image2.jpg 1483.597000 1469.825000 0
+  image2.jpg 1582.086000 1467.561000 1
+  ...
+
+
+  $ mrgingham image.jpg |
+    vnl-filter -p x,y,level |
+    feedgnuplot --domain \
+                --with 'linespoints pt 7 ps 2 palette' \
+                --tuplesizeall 3 \
+                --image image.jpg
+
+  [ image pops up with the detected grid plotted on top, detections color-coded
+    by their decimation level ]
+
+The mrgingham tool detects chessboard corners from images stored on disk. The
+images are given on the commandline, as globs. Each glob is expanded, and each
+image is processed, possibly in parallel if -j was given.
+
+The output is a vnlog text table (https://www.github.com/dkogan/vnlog)
+containing columns:
+
+- filename: path to the image on disk
+
+- x, y: detected pixel coordinates of the chessboard corner
+
+- level: image level used in detecting this corner. Level 0 means
+"full-resolution". Level 1 means "half-resolution" and that the noise on this
+detection has double the standard deviation. Level 2 means "quarter-resolution"
+and so on.
+
+If no chessboard was found in an image, a single record is output:
+
+  filename - - -
+
+The corners are output in a consistent order: starting at the top-left,
+traversing the grid, in the horizontal direction first. Usually, the chessboard
+is observed by multiple cameras mounted at a similar orientation, so this
+consistent order is consistent across cameras.
+
+By default we look for a CHESSBOARD, not a grid of circles or Apriltags or
+anything else. By default we apply adaptive histogram equalization (CLAHE), then
+blur with a radius of 1. We then use an adaptive level of downsampling when
+looking for the chessboard. These defaults work very well in practice.
+
+For debugging, pass in --debug. This will dump the various intermediate results
+into /tmp and it will report more stuff on the console. Most of the intermediate
+results are self-plotting data files. Run them. For debugging sequence
+candidates, pass in --debug-sequence x,y where 'x,y' are the approximate image
+coordinates of the start of a given sequence (corner on the edge of a
+chessboard. This doesn't need to be exact; mrgingham will report on the nearest
+corner
+
+See the mrgingham project documentation for more detail:
+
+https://github.com/dkogan/mrgingham/
+
+POSITIONAL ARGUMENTS
+
+  imageglobs
+    Globs specifying the images to process. May be given more than once
+
+OPTIONAL ARGUMENTS
+
+  --blobs
+    Finds circle centers instead of chessboard corners. Not recommended
+  --gridn N
+    Requests detections of an NxN grid of corners. If omitted, N defaults to 10
+  --noclahe
+    Controls image preprocessing. Unless given, we will apply adaptive histogram
+    equalization (CLAHE algorithm) to the images. This is EXTREMELY helpful if
+    the images aren't illuminated evenly; which applies to most real-world
+    images.
+  --blur RADIUS
+    Controls image preprocessing. Applies a gaussian blur to the image after the
+    histogram equalization. A light blurring is very helpful with CLAHE, since
+    it produces noisy images. By default we will blur with radius = 1. Set to <=
+    0 to disable
+  --level LEVEL
+    Controls image preprocessing. Applies a downsampling to the image (after
+    CLAHE and --blur, if those are given). Level 0 means 'use the original
+    image'. Level > 0 means downsample by 2**level. Level < 0 means 'try several
+    different levels until we find one that works. This is the default.
+  --no-refine
+    Disables corner refinement. By default, the coordinates of reported corners
+    are re-detected at less-downsampled zoom levels to improve their accuracy.
+    If we do not want to do that, pass --no-refine
+  --jobs N
+    Parallelizes the processing N-ways. -j is a synonym. This is just like GNU
+    make, except you're required to explicitly specify a job count.
+  --debug
+    If given, mrgingham will dump various intermediate results into /tmp and it
+    will report more stuff on the console. The output is self-documenting
+  --debug-sequence
+    If given, we report details about sequence matching. Do this if --debug
+    reports correct-looking corners (all corners detected, no doubled-up
+    detections, no detections inside the chessboard but not on a corner)

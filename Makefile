@@ -50,8 +50,8 @@ DIST_INCLUDE := mrgingham.hh point.hh
 # I construct the README.org from the template. The only thing I do is to insert
 # the manpages. Note that this is more complicated than it looks:
 #
-# 1. The documentation lives in a POD
-# 2. This documentation is stripped out here with pod2text, and included in the
+# 1. The documentation is extracted into a .pod by make-pod-from-help.pl
+# 2. This documentation is stripped out here wih pod2text, and included in the
 #    README. This README is an org-mode file, and the README.template.org
 #    container included the manpage text inside a #+BEGIN_EXAMPLE/#+END_EXAMPLE.
 #    So the manpages are treated as a verbatim, unformatted text blob
@@ -78,10 +78,17 @@ all: README.org
 
 %.1: %.pod
 	pod2man --center="mrgingham: chessboard corner finder" --name=MRGINGHAM --release="mrgingham $(VERSION)" --section=1 $^ $@
-mrgingham-observe-pixel-uncertainty.pod mrgingham-rotate-corners.pod: %.pod: %
-	mrbuild/make-pod-from-help.pl $< > $@
-	cat footer.pod >> $@
-EXTRA_CLEAN += *.1 mrgingham-observe-pixel-uncertainty.pod mrgingham-rotate-corners.pod README.org
+%.pod: %
+	mrbuild/make-pod-from-help.pl $< > $@.tmp
+	cat footer.pod >> $@.tmp
+	mv $@.tmp $@
+EXTRA_CLEAN += *.1 $(addsuffix .pod,$(DIST_BIN)) README.org
+
+%.usage.h: %.usage
+	< $^ sed 's/\\/\\\\/g; s/"/\\"/g; s/^/"/; s/$$/\\n"/;' > $@
+EXTRA_CLEAN += *.usage.h
+
+mrgingham-from-image.o: mrgingham.usage.h
 
 ########## python stuff
 
