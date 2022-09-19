@@ -118,6 +118,9 @@ If we return /any/ data, that means we found a full grid. The geometric search
 is fairly anal, so if we found a full grid, it's extremely likely that it is
 "right".
 
+Once again: *the current implementation of mrgingham detects only complete
+chessboards*.
+
 *** Chessboards
 This is based on the feature detector described in this paper:
 https://arxiv.org/abs/1301.5491
@@ -186,7 +189,9 @@ pixel coordinates for both, which is at the top of the chessboard for
 rightside-up cameras, but the bottom of the chessboard for upside-down cameras.
 This situation is resolved with the =mrgingham-rotate-corners= tool. It
 post-processes =mrgingham= output to reorder detections from rotated cameras.
-See the manpage of that tool for more detail.
+See the manpage of that tool for more detail. Eventually the implementation
+could be extended to be able to uniquely identify each corner, obviating the
+need for =mrgingham-rotate-corners=, but we're not there today.
 
 ** API
 The user-facing functions live in =mrgingham.hh=. Everything is in C++, mostly
