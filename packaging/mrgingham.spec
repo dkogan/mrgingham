@@ -1,5 +1,5 @@
 Name:           mrgingham
-Version:        1.20
+Version:        1.22
 
 Release:        1%{?dist}
 Summary:        Chessboard corner finder for camera calibrations
@@ -11,7 +11,9 @@ Source0:        https://github.com/dkogan/mrgingham/archive/%{version}.tar.gz#/%
 BuildRequires:  opencv-devel >= 3.2
 BuildRequires:  boost-devel
 BuildRequires:  chrpath
-
+# for test--mrgingham-rotate-corners
+BuildRequires:  zsh
+BuildRequires:  vnlog
 
 # to build the manpages I need to run 'mrgingham-observe-pixel-uncertainty
 # --help'
@@ -23,6 +25,9 @@ BuildRequires: python36-devel
 BuildRequires: python36-libs
 
 Conflicts: mrgingham-tools <= 1.10
+
+# for mrgingham-rotate-corners
+Requires:  vnlog
 
 %description
 Library to find a grid of points; used for calibration routines
