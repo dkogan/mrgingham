@@ -1,4 +1,6 @@
-include mrbuild/Makefile.common.header
+include choose_mrbuild.mk
+include $MRBUILD_DIR/mrbuild/Makefile.common.header
+
 
 
 PROJECT_NAME := mrgingham
@@ -113,4 +115,4 @@ DIST_PY3_MODULES := mrgingham$(PY_EXT_SUFFIX)
 
 all: mrgingham$(PY_EXT_SUFFIX)
 
-include mrbuild/Makefile.common.footer
+include $MRBUILD_DIR/Makefile.common.footer
