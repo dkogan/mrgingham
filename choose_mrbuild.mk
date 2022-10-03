@@ -2,9 +2,11 @@
 # it
 
 ifneq (,$(wildcard mrbuild/))
-  MRBUILD_DIR=.
+  MRBUILD_MK=mrbuild
+  MRBUILD_BIN=mrbuild
 else ifneq (,$(wildcard /usr/include/mrbuild/Makefile.common.header))
-  MRBUILD_DIR=/usr/include
+  MRBUILD_MK=/usr/include/mrbuild
+  MRBUILD_BIN=/usr/bin
 else
   MRBUILD_VER := 1.1
   URL         := https://github.com/dkogan/mrbuild/archive/refs/tags/v${MRBUILD_VER}.tar.gz

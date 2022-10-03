@@ -1,5 +1,5 @@
 include choose_mrbuild.mk
-include $MRBUILD_DIR/mrbuild/Makefile.common.header
+include $(MRBUILD_MK)/Makefile.common.header
 
 
 
@@ -52,7 +52,7 @@ DIST_INCLUDE := mrgingham.hh point.hh
 # I construct the README.org from the template. The only thing I do is to insert
 # the manpages. Note that this is more complicated than it looks:
 #
-# 1. The documentation is extracted into a .pod by make-pod-from-help.pl
+# 1. The documentation is extracted into a .pod by make-pod-from-help
 # 2. This documentation is stripped out here wih pod2text, and included in the
 #    README. This README is an org-mode file, and the README.template.org
 #    container included the manpage text inside a #+BEGIN_EXAMPLE/#+END_EXAMPLE.
@@ -81,7 +81,7 @@ all: README.org
 %.1: %.pod
 	pod2man --center="mrgingham: chessboard corner finder" --name=MRGINGHAM --release="mrgingham $(VERSION)" --section=1 $^ $@
 %.pod: %
-	mrbuild/make-pod-from-help.pl $< > $@.tmp
+	$(MRBUILD_BIN)/make-pod-from-help $< > $@.tmp
 	cat footer.pod >> $@.tmp
 	mv $@.tmp $@
 EXTRA_CLEAN += *.1 $(addsuffix .pod,$(DIST_BIN)) README.org
@@ -115,4 +115,5 @@ DIST_PY3_MODULES := mrgingham$(PY_EXT_SUFFIX)
 
 all: mrgingham$(PY_EXT_SUFFIX)
 
-include $MRBUILD_DIR/Makefile.common.footer
+include $(MRBUILD_MK)/Makefile.common.footer
+
