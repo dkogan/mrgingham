@@ -97,8 +97,8 @@ and not at all robust, in my experience. The implementations here are much
 faster and work much better. I /do/ use OpenCV here, but only for some core
 functionality.
 
-Currently mrgingham looks for a square grid of points, with some
-user-requestable width. The default is a 10x10 grid.
+Currently mrgingham looks for a /square/ grid of points, with some
+user-requestable width. Rectangular grids are /not/ supported at this time.
 
 ** Approach
 These tools work in two passes:
