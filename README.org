@@ -39,11 +39,13 @@ simply
 apt install mrgingham libmrgingham-dev
 #+end_src
 
-to install the standalone tool and the development library respectively.
+to install the standalone tool and the development library respectively. For
+older Debian and Ubuntu distros, packages are available in the mrcal
+repositories. Please see the [[http://mrcal.secretsauce.net/install.html][mrcal installation page.]]
 
 If running any other distro, you should build mrgingham from source. First, make
 sure all the build-time dependencies are installed. These are listed in the
-=debian/control= file:
+[[https://salsa.debian.org/science-team/mrgingham/-/blob/master/debian/control][=debian/control=]] file:
 
 #+begin_example
 Build-Depends: ...,
