@@ -103,12 +103,12 @@ mrgingham_pywrap.o: CCXXFLAGS += $(PY_MRBUILD_CFLAGS)
 mrgingham_pywrap_cplusplus_bridge.o: CCXXFLAGS += -fPIC
 mrgingham_pywrap.o: $(addsuffix .h,$(wildcard *.docstring))
 
-# The python library is called "mrgingham.so". This is confusing, but is the
+# The python library is called "mrgingham.$(SO)". This is confusing, but is the
 # best I could do. Because I want to be able to "import mrgingham"; and the
 # normal way of creating a "mrgingham" subdirectory for all the python stuff
 # doesn't work here: I already have a directory entry called "mrgingham"; it's
 # the main commandline tool.
-mrgingham$(PY_EXT_SUFFIX): mrgingham_pywrap.o mrgingham_pywrap_cplusplus_bridge.o libmrgingham.so
+mrgingham$(PY_EXT_SUFFIX): mrgingham_pywrap.o mrgingham_pywrap_cplusplus_bridge.o libmrgingham.$(SO)
 	$(PY_MRBUILD_LINKER) $(PY_MRBUILD_LDFLAGS) $^ -o $@
 
 DIST_PY3_MODULES := mrgingham$(PY_EXT_SUFFIX)
