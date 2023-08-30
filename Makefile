@@ -92,6 +92,16 @@ EXTRA_CLEAN += *.usage.h
 
 mrgingham-from-image.o: mrgingham.usage.h
 
+########## chessboard-generating rules
+########## I can "make chessboard.10x14.pdf" and it'll do the right thing
+chessboard.%.fig: generate-chessboard-fig.py
+	./$< $(subst x, ,$*) > $@.tmp
+	mv $@.tmp $@
+%.pdf: %.fig
+	fig2dev -L pdf $< > $@.tmp
+	mv $@.tmp $@
+
+
 ########## python stuff
 
 # In the python api I have to cast a PyCFunctionWithKeywords to a PyCFunction,
