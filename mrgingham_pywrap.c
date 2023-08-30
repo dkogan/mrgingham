@@ -251,7 +251,7 @@ static PyObject* find_chessboard(PyObject* NPY_UNUSED(self),
         if(result == NULL) return false;
 
         double* out_data = (double*)PyArray_BYTES((PyArrayObject*)result);
-        memcpy(out_data, xy, 2*sizeof(double));
+        memcpy(out_data, xy, 2*N*sizeof(double));
         return true;
     }
     if(! find_chessboard_from_image_array_C(PyArray_DIMS(image)[0],
