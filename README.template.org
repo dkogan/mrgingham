@@ -147,7 +147,11 @@ A recommended 10x10 pattern can be printed from this file: [[chessboard.10x10.pd
 And a recommended 14x14 pattern can be printed from this file:
 [[chessboard.14x14.pdf]]. The denser chessboard containts more data, so fewer
 observations will be required for convergence of the calibration algorithm. But
-a higher-res camera is required to reliably detect the corners.
+a higher-res camera is required to reliably detect the corners. A simple tool to
+generate these =.pdf= files is included in the mrgingham repository. To make an
+NxM chessboard figure do =make chessboard.NxM.pdf= in the mrgingham source tree.
+=N= and =M= must be even integers. Note: today mrgingham requires that =N == M=,
+but eventually this may be lifted, so this tool does not have this requirement.
 
 *** Circles
 *This isn't recommended, and exists for legacy compatibility only*
