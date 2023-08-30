@@ -15,7 +15,7 @@ bool find_chessboard_corners_from_image_array_C( // in
                                                 // set to 0 to just use the image
                                                 int image_pyramid_level,
 
-                                                bool (*add_pointss)(int* xy, int N, double scale) );
+                                                bool (*add_points)(int* xy, int N, double scale) );
 
 bool find_chessboard_from_image_array_C( // in
                                         int Nrows, int Ncols,
