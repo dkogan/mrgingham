@@ -63,7 +63,6 @@ square_size = 100
 def black_cell(x,y, *,
                double_width  = False,
                double_height = False):
-    print("2 2 0 0 0 0 50 -1 20 0.000 0 0 -1 0 0 5")
 
     X0 = (x+0)*square_size
     X1 = (x+1)*square_size
@@ -74,6 +73,7 @@ def black_cell(x,y, *,
     if double_height:
         Y1 += square_size
 
+    print("2 2 0 0 0 0 50 -1 20 0.000 0 0 -1 0 0 5")
     print(f"  {X0} {Y0} {X1} {Y0} {X1} {Y1} {X0} {Y1} {X0} {Y0}")
 
 if (args.Wcorners // 2) * 2 != args.Wcorners or \
