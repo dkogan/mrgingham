@@ -16,9 +16,9 @@ bool find_blobs_from_image_array( std::vector<PointInt>* points,
                                   bool dodump )
 {
     cv::SimpleBlobDetector::Params blobDetectorParams;
-    blobDetectorParams.minArea             = 40;
+    blobDetectorParams.minArea             = 20;
     blobDetectorParams.maxArea             = 80000;
-    blobDetectorParams.minDistBetweenBlobs = 15;
+    blobDetectorParams.minDistBetweenBlobs = 5;
     blobDetectorParams.blobColor           = 0; // black-on-white dots
 
     std::vector<cv::KeyPoint> keypoints;
