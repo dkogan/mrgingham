@@ -70,7 +70,7 @@ Single
 
 # Arbitrary units. fig2dev appears to compute the bounding box in integer units,
 # so if this is too small, the bounding box will be off
-square_size = 10000
+square_size = 1000
 
 def black_cell(x,y, *,
                double_width  = False,
