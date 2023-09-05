@@ -625,7 +625,7 @@ static void _dump_candidates(const char* filename_sparse,
 
     // the kernel limits the #! line to 127 characters, so I abbreviate
     fprintf(fp, "#!/usr/bin/feedgnuplot --dom --aut --square --rangesizea 3 --w 'vec size screen 0.01,20 fixed fill' --set 'yr [:] rev'\n");
-    fprintf(fp, "# fromx type fromy deltax deltay\n");
+    fprintf(fp, "# fromx fromy deltax deltay\n");
 
     if(outer_edges == NULL)
         for( auto it = sequence_candidates->begin(); it != sequence_candidates->end(); it++ )
