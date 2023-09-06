@@ -18,4 +18,7 @@ downsampling. This is the default.
 We detect an NxN grid of corners, where N defaults to 10. To select a different
 value, pass a kwarg gridn=N
 
+An optional kwarg "blobs" is used to look for blobs instead of chessboard
+corners. This requires that image_pyramid_level==0.
+
 No broadcasting is supported by this function

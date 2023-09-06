@@ -204,19 +204,27 @@ static PyObject* find_chessboard(PyObject* NPY_UNUSED(self),
     PyObject*      result              = NULL;
     int            image_pyramid_level = -1;
     int            gridn               = 10;
+    int            blobs               = 0;
 
     SET_SIGINT();
 
-    char* keywords[] = { "image", "image_pyramid_level", "gridn",
+    char* keywords[] = { "image", "image_pyramid_level", "gridn", "blobs",
                          NULL };
 
     if(!PyArg_ParseTupleAndKeywords( args, kwargs,
-                                     "O&|ii",
+                                     "O&|iip",
                                      keywords,
                                      PyArray_Converter, &image,
                                      &image_pyramid_level, &gridn,
+                                     &blobs,
                                      NULL))
         goto done;
+
+    if(blobs && image_pyramid_level != 0)
+    {
+        PyErr_Format(PyExc_RuntimeError, "blob detector requires that image_pyramid_level == 0");
+        goto done;
+    }
 
     npy_intp* dims    = PyArray_DIMS   (image);
     npy_intp* strides = PyArray_STRIDES(image);
@@ -261,6 +269,7 @@ static PyObject* find_chessboard(PyObject* NPY_UNUSED(self),
 
                                             gridn,
                                             image_pyramid_level,
+                                            blobs,
                                             &add_points) )
     {
         // This is allowed to fail. We possibly found no chessboard. This is

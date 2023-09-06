@@ -63,6 +63,8 @@ bool find_chessboard_from_image_array_C( // in
                                         // good scaling level. Try this first
                                         int image_pyramid_level,
 
+                                        bool doblobs,
+
                                         bool (*add_points)(double* xy, int N) )
 {
     cv::Mat cvimage(Nrows, Ncols, CV_8UC1,
@@ -70,14 +72,26 @@ bool find_chessboard_from_image_array_C( // in
 
     std::vector<mrgingham::PointDouble> out_points;
 
-    signed char* refinement_level = NULL;
-    bool result =
-        (find_chessboard_from_image_array( out_points,
-                                           &refinement_level,
-                                           gridn,
-                                           cvimage,
-                                           image_pyramid_level ) >= 0);
-    free(refinement_level);
+    bool result;
+    if(doblobs)
+    {
+        if(image_pyramid_level != 0)
+            return false;
+
+        result = find_circle_grid_from_image_array(out_points,
+                                                   cvimage, gridn);
+    }
+    else
+    {
+        signed char* refinement_level = NULL;
+        result =
+            (find_chessboard_from_image_array( out_points,
+                                               &refinement_level,
+                                               gridn,
+                                               cvimage,
+                                               image_pyramid_level ) >= 0);
+        free(refinement_level);
+    }
     if( !result ) return false;
 
     static_assert( sizeof(mrgingham::PointDouble) == 2*sizeof(double),

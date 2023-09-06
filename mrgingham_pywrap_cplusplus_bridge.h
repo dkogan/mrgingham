@@ -29,6 +29,8 @@ bool find_chessboard_from_image_array_C( // in
                                         // good scaling level. Try this first
                                         int image_pyramid_level,
 
+                                        bool doblobs,
+
                                         bool (*add_points)(double* xy, int N) );
 #ifdef __cplusplus
 }
