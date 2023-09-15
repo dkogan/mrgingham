@@ -5,8 +5,8 @@
 #include "point.hh"
 
 
-// I look for white-on-black dots
-
+// This is currently hard-coded to find black-on-white blobs (look at
+// blobColor in find_blobs.cc)
 
 namespace mrgingham
 {

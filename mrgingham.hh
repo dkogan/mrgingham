@@ -5,9 +5,6 @@
 #include "point.hh"
 
 
-// I look for white-on-black dots
-
-
 namespace mrgingham
 {
 
@@ -21,6 +18,8 @@ namespace mrgingham
         {}
     };
 
+    // This is currently hard-coded to find black-on-white blobs (look at
+    // blobColor in find_blobs.cc)
     bool find_circle_grid_from_image_array( std::vector<mrgingham::PointDouble>& points_out,
                                             const cv::Mat& image,
                                             const int gridn,
