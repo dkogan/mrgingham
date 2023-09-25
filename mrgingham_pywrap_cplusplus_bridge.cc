@@ -1,4 +1,5 @@
 #include "find_chessboard_corners.hh"
+#include "find_blobs.hh"
 #include "mrgingham.hh"
 
 #include "mrgingham_pywrap_cplusplus_bridge.h"
@@ -30,8 +31,11 @@ bool find_chessboard_corners_from_image_array_C( // in
                                                 int stride,
                                                 char* imagebuffer, // this is const
 
-                                                // set to 0 to just use the image
+                                                // set to 0 to just use the image. Set
+                                                // to <0 to try automatically find a
+                                                // good scaling level. Try this first
                                                 int image_pyramid_level,
+                                                bool doblobs,
 
                                                 bool (*add_points)(int* xy, int N, double scale) )
 {
@@ -40,7 +44,18 @@ bool find_chessboard_corners_from_image_array_C( // in
 
     std::vector<mrgingham::PointInt> out_points;
 
-    bool result = find_chessboard_corners_from_image_array( &out_points, cvimage, image_pyramid_level );
+    bool result;
+    if(doblobs)
+    {
+        if(image_pyramid_level != 0)
+            return false;
+
+        result = find_blobs_from_image_array( &out_points, cvimage );
+    }
+    else
+    {
+        result = find_chessboard_corners_from_image_array( &out_points, cvimage, image_pyramid_level );
+    }
     if( !result ) return false;
 
     static_assert( sizeof(mrgingham::PointInt) == 2*sizeof(int),
@@ -62,7 +77,6 @@ bool find_chessboard_from_image_array_C( // in
                                         // to <0 to try automatically find a
                                         // good scaling level. Try this first
                                         int image_pyramid_level,
-
                                         bool doblobs,
 
                                         bool (*add_points)(double* xy, int N) )

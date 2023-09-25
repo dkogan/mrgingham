@@ -14,4 +14,7 @@ downsampled version of the image. 0 means "original image", 1 means "downsample
 by a factor of 2 in each dimension", 2 means "downsample by a factor of 4 in
 each dimension" and so on. The default is 0.
 
+An optional kwarg "blobs" is used to look for blobs instead of chessboard
+corners. This requires that image_pyramid_level==0.
+
 No broadcasting is supported by this function

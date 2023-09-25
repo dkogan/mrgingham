@@ -118,19 +118,27 @@ static PyObject* find_chessboard_corners(PyObject* NPY_UNUSED(self),
     PyArrayObject* image               = NULL;
     PyObject*      result              = NULL;
     int            image_pyramid_level = 0;
+    int            blobs               = 0;
 
     SET_SIGINT();
 
-    char* keywords[] = { "image", "image_pyramid_level",
+    char* keywords[] = { "image", "image_pyramid_level", "blobs",
                          NULL };
 
     if(!PyArg_ParseTupleAndKeywords( args, kwargs,
-                                     "O&|i",
+                                     "O&|ip",
                                      keywords,
                                      PyArray_Converter, &image,
                                      &image_pyramid_level,
+                                     &blobs,
                                      NULL))
         goto done;
+
+    if(blobs && image_pyramid_level != 0)
+    {
+        PyErr_Format(PyExc_RuntimeError, "blob detector requires that image_pyramid_level == 0");
+        goto done;
+    }
 
     npy_intp* dims    = PyArray_DIMS   (image);
     npy_intp* strides = PyArray_STRIDES(image);
@@ -170,6 +178,7 @@ static PyObject* find_chessboard_corners(PyObject* NPY_UNUSED(self),
                                                     PyArray_BYTES(image),
 
                                                     image_pyramid_level,
+                                                    blobs,
                                                     &add_points) )
     {
         if(result == NULL)
