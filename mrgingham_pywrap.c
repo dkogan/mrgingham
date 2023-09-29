@@ -111,7 +111,7 @@ static PyObject* py_ChESS_response_5(PyObject* NPY_UNUSED(self),
     return result;
 }
 
-static PyObject* find_chessboard_corners(PyObject* NPY_UNUSED(self),
+static PyObject* find_points(PyObject* NPY_UNUSED(self),
                                          PyObject* args,
                                          PyObject* kwargs)
 {
@@ -205,7 +205,7 @@ static PyObject* find_chessboard_corners(PyObject* NPY_UNUSED(self),
     return result;
 }
 
-static PyObject* find_chessboard(PyObject* NPY_UNUSED(self),
+static PyObject* find_board(PyObject* NPY_UNUSED(self),
                                  PyObject* args,
                                  PyObject* kwargs)
 {
@@ -298,20 +298,34 @@ static PyObject* find_chessboard(PyObject* NPY_UNUSED(self),
     return result;
 }
 
-static const char py_ChESS_response_5_docstring[] =
+static const char ChESS_response_5_docstring[] =
 #include "ChESS_response_5.docstring.h"
     ;
+static const char find_points_docstring[] =
+#include "find_points.docstring.h"
+    ;
+static const char find_board_docstring[] =
+#include "find_board.docstring.h"
+    ;
+
 static const char find_chessboard_corners_docstring[] =
 #include "find_chessboard_corners.docstring.h"
     ;
 static const char find_chessboard_docstring[] =
 #include "find_chessboard.docstring.h"
     ;
+
+
 static PyMethodDef methods[] =
     {
-     PYMETHODDEF_ENTRY(ChESS_response_5,          py_ChESS_response_5,     METH_VARARGS),
-     PYMETHODDEF_ENTRY(find_chessboard_corners,   find_chessboard_corners, METH_VARARGS | METH_KEYWORDS),
-     PYMETHODDEF_ENTRY(find_chessboard,           find_chessboard,         METH_VARARGS | METH_KEYWORDS),
+     PYMETHODDEF_ENTRY(ChESS_response_5,        py_ChESS_response_5, METH_VARARGS),
+     PYMETHODDEF_ENTRY(find_points,             find_points,         METH_VARARGS | METH_KEYWORDS),
+     PYMETHODDEF_ENTRY(find_board,              find_board,          METH_VARARGS | METH_KEYWORDS),
+
+     // These are compatibility functions. Same implementation as the above, but
+     // different names. Meant to keep old code running
+     PYMETHODDEF_ENTRY(find_chessboard_corners, find_points,         METH_VARARGS | METH_KEYWORDS),
+     PYMETHODDEF_ENTRY(find_chessboard,         find_board,          METH_VARARGS | METH_KEYWORDS),
      {}
     };
 

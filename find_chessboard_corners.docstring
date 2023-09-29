@@ -1,20 +1,4 @@
-Finds corner features in an image
+Finds discrete points in an image
 
-Synopsis:
-
-    corners = mrgingham.find_chessboard_corners(image)
-
-The input is the image, as a numpy array. The output is a numpy array of shape
-(...,2) containing pixel coordinates of corners we found. This is part of the
-full mrgingham processing. A full run would then take these corners and try to
-find a set of corners that comprise a chessboard grid.
-
-An optional argument "image_pyramid_level" can be given to operate on a
-downsampled version of the image. 0 means "original image", 1 means "downsample
-by a factor of 2 in each dimension", 2 means "downsample by a factor of 4 in
-each dimension" and so on. The default is 0.
-
-An optional kwarg "blobs" is used to look for blobs instead of chessboard
-corners. This requires that image_pyramid_level==0.
-
-No broadcasting is supported by this function
+This is a compatibility alias for mrgingham.find_points(). See the documentation
+for that function for details
