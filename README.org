@@ -427,32 +427,34 @@ DESCRIPTION
 
 OPTIONS
   POSITIONAL ARGUMENTS
-      input                 Either 1: A glob that matches images observing a stationary
-                            calibration target. This must be a GLOB. So in the shell pass
-                            in '*.png' and NOT *.png. These are processed by 'mrgingham'
-                            and the arguments passed in with --mrgingham. Or 2: a vnlog
-                            representing corner detections from these images. This is
-                            assumed to be a file with a filename ending in .vnl,
-                            formatted like 'mrgingham' output: 3 columns: filename,x,y
+      input                 Either 1: A glob that matches images observing a
+                            stationary calibration target. This must be a GLOB. So
+                            in the shell pass in '*.png' and NOT *.png. These are
+                            processed by 'mrgingham' and the arguments passed in
+                            with --mrgingham. Or 2: a vnlog representing corner
+                            detections from these images. This is assumed to be a
+                            file with a filename ending in .vnl, formatted like
+                            'mrgingham' output: 3 columns: filename,x,y
 
   OPTIONAL ARGUMENTS
       -h, --help            show this help message and exit
       --show {geometry,histograms}
-                            Visualize something. Arguments can be: "geometry": show the
-                            1-stdev ellipses of the distribution for each chessboard
-                            corner separately. "histograms": show the distribution of all
-                            the x- and y-deviations off the mean
+                            Visualize something. Arguments can be: "geometry":
+                            show the 1-stdev ellipses of the distribution for each
+                            chessboard corner separately. "histograms": show the
+                            distribution of all the x- and y-deviations off the
+                            mean
       --mrgingham MRGINGHAM
-                            If we're processing images, these are the arguments given to
-                            mrgingham. If we are reading a pre-computed file, this does
-                            nothing
+                            If we're processing images, these are the arguments
+                            given to mrgingham. If we are reading a pre-computed
+                            file, this does nothing
       --num-corners NUM_CORNERS
-                            How many corners to expect in each image. If this is wrong I
-                            will throw an error. Defaults to 100
+                            How many corners to expect in each image. If this is
+                            wrong I will throw an error. Defaults to 100
       --imagersize IMAGERSIZE IMAGERSIZE
                             Optional imager dimensions: width and height. This is
-                            optional. If given, we use it to size the "--show geometry"
-                            plot
+                            optional. If given, we use it to size the "--show
+                            geometry" plot
 
 
 #+END_EXAMPLE
