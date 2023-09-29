@@ -1,12 +1,8 @@
 Runs the ChESS detector to compute a "cornerness" response
 
-Synopsis:
+SYNOPSIS
 
     response = mrgingham.ChESS_response_5(image)
-
-The input is expected to be a numpy array containing unsigned 8-bit integers.
-The response has the same dimensions as the input, but contains signed 16-bit
-integers. Broadcasting is fully supported.
 
 This wraps the reference implementation described in this paper:
 
@@ -17,3 +13,15 @@ Implementation obtained here:
   http://www-sigproc.eng.cam.ac.uk/Main/SB476Chess
 
 Copyright 2010-2012 Stuart Bennett
+
+This function supports broadcasting fully.
+
+ARGMENTS
+
+- image: numpy array of shape (H,W) and dtype np.uint8. This is the image we're
+  processing. Must be densely-stored, grayscale image
+
+RETURNED VALUE
+
+A numpy array of shape (H,W): the same shape as the input. Unlike the input,
+this has dtype np.uint16

@@ -1,24 +1,42 @@
 Runs the full mrgingham chessboard detector on an image
 
-Synopsis:
+SYNOPSIS
 
-    chessboard_points = mrgingham.find_board(image)
+    points = mrgingham.find_board(image)
 
-The input is the image, as a numpy array. The output is a numpy array of shape
-(N*N,2) containing ordered pixel coordinates of the chessboard. If no chessboard
-was found, None is returned.
+    [ points is an array of shape (N*N,2), the ordered list of ]
+    [ pixel coordinates in the grid ]
 
-An optional argument "image_pyramid_level" can be given to operate on a
-downsampled version of the image. 0 means "original image", 1 means "downsample
-by a factor of 2 in each dimension", 2 means "downsample by a factor of 4 in
-each dimension" and so on. image_pyramid_level < 0 means "start with a
-downsampled image, and then refine the results by repeatedly reducing the
-downsampling. This is the default.
+This function runs the full mrgingham sequence:
 
-We detect an NxN grid of corners, where N defaults to 10. To select a different
-value, pass a kwarg gridn=N
-
-An optional kwarg "blobs" is used to look for blobs instead of chessboard
-corners. This requires that image_pyramid_level==0.
+- pre-process image
+- find chessboard corners (or blobs)
+- find an NxN grid in the set of corners
+- refine
 
 No broadcasting is supported by this function
+
+ARGUMENTS
+
+- image: numpy array of shape (H,W) and dtype np.uint8. This is the image we're
+  processing. Must be densely-stored, grayscale image
+
+- blobs: optional boolean, defaulting to False. If True, we look for
+  black-on-white blobs, instead of chessboard corners. If blobs: we MUST have
+  image_pyramid_level==0
+
+- image_pyramid_level: optional integer defaulting to -1. This can be given to
+  operate on a downsampled version of the image. 0 means "original image", 1
+  means "downsample by a factor of 2 in each dimension", 2 means "downsample by
+  a factor of 4 in each dimension" and so on. image_pyramid_level < 0 (the
+  default) means "start with a downsampled image, and then refine the results by
+  repeatedly reducing the downsampling. If blobs: image_pyramid_level==0 is the
+  only allowed option
+
+- gridn: optional integer defaulting to 10. We detect an NxN grid of corners,
+  where N is given by this argument
+
+RETURNED VALUE
+
+A numpy array of shape (N*N,2) containing ordered pixel coordinates of the grid
+found in the image. If no grid was found, None is returned.
