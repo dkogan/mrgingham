@@ -31,10 +31,10 @@ do {                                                                    \
         PyErr_SetString(PyExc_RuntimeError, "sigaction-restore failed"); \
 } while(0)
 
-#define PYMETHODDEF_ENTRY(function_prefix, name, args) {#name,          \
-                                                        (PyCFunction)function_prefix ## name, \
+#define PYMETHODDEF_ENTRY(name, c_function_name, args) {#name,          \
+                                                        (PyCFunction)c_function_name, \
                                                         args,           \
-                                                        function_prefix ## name ## _docstring}
+                                                        name ## _docstring}
 
 
 static PyObject* py_ChESS_response_5(PyObject* NPY_UNUSED(self),
@@ -309,9 +309,9 @@ static const char find_chessboard_docstring[] =
     ;
 static PyMethodDef methods[] =
     {
-     PYMETHODDEF_ENTRY(py_,ChESS_response_5,        METH_VARARGS),
-     PYMETHODDEF_ENTRY(,   find_chessboard_corners, METH_VARARGS | METH_KEYWORDS),
-     PYMETHODDEF_ENTRY(,   find_chessboard,         METH_VARARGS | METH_KEYWORDS),
+     PYMETHODDEF_ENTRY(ChESS_response_5,          py_ChESS_response_5,     METH_VARARGS),
+     PYMETHODDEF_ENTRY(find_chessboard_corners,   find_chessboard_corners, METH_VARARGS | METH_KEYWORDS),
+     PYMETHODDEF_ENTRY(find_chessboard,           find_chessboard,         METH_VARARGS | METH_KEYWORDS),
      {}
     };
 
