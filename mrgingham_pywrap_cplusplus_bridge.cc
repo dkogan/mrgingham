@@ -36,6 +36,7 @@ bool find_chessboard_corners_from_image_array_C( // in
                                                 // good scaling level. Try this first
                                                 int image_pyramid_level,
                                                 bool doblobs,
+                                                bool debug,
 
                                                 bool (*add_points)(int* xy, int N, double scale) )
 {
@@ -54,7 +55,8 @@ bool find_chessboard_corners_from_image_array_C( // in
     }
     else
     {
-        result = find_chessboard_corners_from_image_array( &out_points, cvimage, image_pyramid_level );
+        result = find_chessboard_corners_from_image_array( &out_points, cvimage, image_pyramid_level,
+                                                           debug );
     }
     if( !result ) return false;
 
@@ -78,6 +80,9 @@ bool find_chessboard_from_image_array_C( // in
                                         // good scaling level. Try this first
                                         int image_pyramid_level,
                                         bool doblobs,
+                                        bool debug,
+                                        int debug_sequence_x,
+                                        int debug_sequence_y,
 
                                         bool (*add_points)(double* xy, int N) )
 {
@@ -86,6 +91,15 @@ bool find_chessboard_from_image_array_C( // in
 
     std::vector<mrgingham::PointDouble> out_points;
 
+    mrgingham::debug_sequence_t debug_sequence = {};
+    if(debug_sequence_x >= 0 &&
+       debug_sequence_y >= 0)
+    {
+        debug_sequence.dodebug = true;
+        debug_sequence.pt.x = debug_sequence_x;
+        debug_sequence.pt.y = debug_sequence_y;
+    }
+
     bool result;
     if(doblobs)
     {
@@ -93,7 +107,9 @@ bool find_chessboard_from_image_array_C( // in
             return false;
 
         result = find_circle_grid_from_image_array(out_points,
-                                                   cvimage, gridn);
+                                                   cvimage, gridn,
+                                                   debug,
+                                                   debug_sequence);
     }
     else
     {
@@ -103,7 +119,10 @@ bool find_chessboard_from_image_array_C( // in
                                                &refinement_level,
                                                gridn,
                                                cvimage,
-                                               image_pyramid_level ) >= 0);
+                                               image_pyramid_level,
+                                               debug,
+                                               debug_sequence,
+                                               NULL ) >= 0);
         free(refinement_level);
     }
     if( !result ) return false;

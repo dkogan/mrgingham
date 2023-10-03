@@ -36,6 +36,18 @@ ARGUMENTS
 - gridn: optional integer defaulting to 10. We detect an NxN grid of corners,
   where N is given by this argument
 
+- debug: optional boolean, defaulting to False. If True, this will dump various
+  intermediate results into /tmp and it will report more stuff on standard out.
+  Most of the intermediate results are self-plotting data files. Run them. This
+  does the same thing as "mrgingham --debug"; the Python output is unaffected.
+
+- debug_sequence: optional string "X,Y" where X and Y are integers. In addition
+  to "debug", this produces diagnostics when searching for sequence candidates.
+  X,Y are the approximate image coordinates of the start of a given sequence
+  (corner on the edge of a chessboard. This doesn't need to be exact; mrgingham
+  will report on the nearest corner. This does the same thing as "mrgingham
+  --debug-sequence"; the Python output is unaffected.
+
 RETURNED VALUE
 
 A numpy array of shape (N*N,2) containing ordered pixel coordinates of the grid

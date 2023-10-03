@@ -119,18 +119,21 @@ static PyObject* find_points(PyObject* NPY_UNUSED(self),
     PyObject*      result              = NULL;
     int            image_pyramid_level = 0;
     int            blobs               = 0;
+    int            debug               = 0;
 
     SET_SIGINT();
 
     char* keywords[] = { "image", "image_pyramid_level", "blobs",
+                         "debug",
                          NULL };
 
     if(!PyArg_ParseTupleAndKeywords( args, kwargs,
-                                     "O&|ip",
+                                     "O&|ipp",
                                      keywords,
                                      PyArray_Converter, &image,
                                      &image_pyramid_level,
                                      &blobs,
+                                     &debug,
                                      NULL))
         goto done;
 
@@ -179,6 +182,7 @@ static PyObject* find_points(PyObject* NPY_UNUSED(self),
 
                                                     image_pyramid_level,
                                                     blobs,
+                                                    debug,
                                                     &add_points) )
     {
         if(result == NULL)
@@ -214,18 +218,25 @@ static PyObject* find_board(PyObject* NPY_UNUSED(self),
     int            image_pyramid_level = -1;
     int            gridn               = 10;
     int            blobs               = 0;
+    int            debug               = 0;
+    const char*    debug_sequence_string = NULL;
+    int debug_sequence_x = -1;
+    int debug_sequence_y = -1;
 
     SET_SIGINT();
 
     char* keywords[] = { "image", "image_pyramid_level", "gridn", "blobs",
+                         "debug", "debug_sequence",
                          NULL };
 
     if(!PyArg_ParseTupleAndKeywords( args, kwargs,
-                                     "O&|iip",
+                                     "O&|iipps",
                                      keywords,
                                      PyArray_Converter, &image,
                                      &image_pyramid_level, &gridn,
                                      &blobs,
+                                     &debug,
+                                     &debug_sequence_string,
                                      NULL))
         goto done;
 
@@ -234,6 +245,25 @@ static PyObject* find_board(PyObject* NPY_UNUSED(self),
         PyErr_Format(PyExc_RuntimeError, "blob detector requires that image_pyramid_level == 0");
         goto done;
     }
+
+    if(debug_sequence_string != NULL)
+    {
+        // parse string into INTEGER,INTEGER
+        int nbytesread;
+        int res = sscanf(debug_sequence_string,
+                         "%d,%d%n",
+                         &debug_sequence_x,
+                         &debug_sequence_x,
+                         &nbytesread);
+
+        if(!(res == 2 && debug_sequence_string[nbytesread] == '\0'))
+        {
+            PyErr_Format(PyExc_RuntimeError, "Couldn't parse debug_sequence as an 'INTEGER,INTEGER' string");
+            goto done;
+
+        }
+    }
+
 
     npy_intp* dims    = PyArray_DIMS   (image);
     npy_intp* strides = PyArray_STRIDES(image);
@@ -279,6 +309,10 @@ static PyObject* find_board(PyObject* NPY_UNUSED(self),
                                             gridn,
                                             image_pyramid_level,
                                             blobs,
+                                            debug,
+                                            debug_sequence_x,
+                                            debug_sequence_y,
+
                                             &add_points) )
     {
         // This is allowed to fail. We possibly found no chessboard. This is

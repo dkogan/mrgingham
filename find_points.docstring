@@ -33,6 +33,11 @@ ARGUMENTS
   repeatedly reducing the downsampling. If blobs: image_pyramid_level==0 is the
   only allowed option
 
+- debug: optional boolean, defaulting to False. If True, this will dump various
+  intermediate results into /tmp and it will report more stuff on standard out.
+  Most of the intermediate results are self-plotting data files. Run them. This
+  does the same thing as "mrgingham --debug"; the Python output is unaffected.
+
 RETURNED VALUE
 
 A numpy array of shape (N,2) containing unordered pixel coordinates of the
