@@ -46,10 +46,11 @@ static void* worker( void* _ijob )
     {
         const char* filename = ctx._glob->gl_pathv[i_image];
 
-        cv::Mat image = cv::imread(filename,
-                                   cv::IMREAD_IGNORE_ORIENTATION |
-                                   cv::IMREAD_GRAYSCALE);
-        if( image.data == NULL )
+        cv::Mat image0 = cv::imread(filename,
+                                    cv::IMREAD_IGNORE_ORIENTATION |
+                                    cv::IMREAD_GRAYSCALE |
+                                    cv::IMREAD_ANYDEPTH);
+        if( image0.data == NULL )
         {
             fprintf(stderr, "Couldn't open image '%s'\n", filename);
             flockfile(stdout);
@@ -61,16 +62,45 @@ static void* worker( void* _ijob )
             break;
         }
 
-        if( ctx.doclahe )
+        cv::Mat image1;
+        if(image0.depth() == CV_8U)
         {
-            // CLAHE doesn't by itself use the full dynamic range all the time.
-            // I explicitly apply histogram equalization and then CLAHE
-            cv::equalizeHist(image, image);
-            clahe->apply(image, image);
+            if( ctx.doclahe )
+            {
+                // CLAHE doesn't by itself use the full dynamic range all the time,
+                // so I explicitly normalize the image and then CLAHE
+                cv::normalize(image0, image0, 0, 65535, cv::NORM_MINMAX);
+                clahe->apply(image0, image1);
+            }
+            else
+                image1 = image0;
         }
+        else if(image0.depth() == CV_16U)
+        {
+            if( ctx.doclahe )
+            {
+                // CLAHE doesn't by itself use the full dynamic range all the time,
+                // so I explicitly normalize the image and then CLAHE
+                cv::normalize(image0, image0, 0, 65535, cv::NORM_MINMAX);
+                clahe->apply(image0, image0);
+            }
+            image0.convertTo(image1, CV_8U, 255./65535.);
+        }
+        else
+        {
+            fprintf(stderr, "Couldn't process image '%s', I only know how to handle 8-bit and 16-bit unsigned images\n", filename);
+            flockfile(stdout);
+            {
+                printf("## Couldn't process image '%s', I only know how to handle 8-bit and 16-bit unsigned images\n", filename);
+                printf("%s - - -\n", filename);
+            }
+            funlockfile(stdout);
+            break;
+        }
+
         if( ctx.blur_radius > 0 )
         {
-            cv::blur( image, image,
+            cv::blur( image1, image1,
                       cv::Size(1 + 2*ctx.blur_radius,
                                1 + 2*ctx.blur_radius));
         }
@@ -106,7 +136,7 @@ static void* worker( void* _ijob )
                     break;
                 }
 
-                cv::imwrite(filename_out, image);
+                cv::imwrite(filename_out, image1);
                 fprintf(stderr, "Wrote preprocessed image to %s\n", filename_out);
 
             } while(0);
@@ -118,7 +148,7 @@ static void* worker( void* _ijob )
         if(ctx.doblobs)
         {
             result = find_circle_grid_from_image_array(points_out,
-                                                       image, ctx.gridn,
+                                                       image1, ctx.gridn,
                                                        ctx.debug, ctx.debug_sequence);
             // ctx.image_pyramid_level == 0 here. cmdline parser makes sure.
             found_pyramid_level = 0;
@@ -129,7 +159,7 @@ static void* worker( void* _ijob )
                 find_chessboard_from_image_array (points_out,
                                                   ctx.do_refine ? &refinement_level : NULL,
                                                   ctx.gridn,
-                                                  image,
+                                                  image1,
                                                   ctx.image_pyramid_level,
                                                   ctx.debug, ctx.debug_sequence,
                                                   filename);
