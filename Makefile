@@ -104,11 +104,6 @@ chessboard.%.fig: generate-chessboard-fig.py
 
 ########## python stuff
 
-# In the python api I have to cast a PyCFunctionWithKeywords to a PyCFunction,
-# and the compiler complains. But that's how Python does it! So I tell the
-# compiler to chill
-mrgingham_pywrap.o: CFLAGS += -Wno-cast-function-type
-
 mrgingham_pywrap.o: CCXXFLAGS += $(PY_MRBUILD_CFLAGS)
 mrgingham_pywrap_cplusplus_bridge.o: CCXXFLAGS += -fPIC
 mrgingham_pywrap.o: $(addsuffix .h,$(wildcard *.docstring))
