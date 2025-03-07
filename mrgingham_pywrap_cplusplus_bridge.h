@@ -19,7 +19,8 @@ bool find_chessboard_corners_from_image_array_C( // in
                                                 bool doblobs,
                                                 bool debug,
 
-                                                bool (*add_points)(int* xy, int N, double scale) );
+                                                bool (*add_points)(int* xy, int N, double scale, void* cookie),
+                                                void* cookie );
 
 bool find_chessboard_from_image_array_C( // in
                                         int Nrows, int Ncols,
@@ -37,7 +38,9 @@ bool find_chessboard_from_image_array_C( // in
                                         int debug_sequence_x,
                                         int debug_sequence_y,
 
-                                        bool (*add_points)(double* xy, int N) );
+                                        bool (*add_points)(double* xy, int N, void* cookie),
+                                        void* cookie );
+
 #ifdef __cplusplus
 }
 #endif

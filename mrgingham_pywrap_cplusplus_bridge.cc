@@ -38,7 +38,8 @@ bool find_chessboard_corners_from_image_array_C( // in
                                                 bool doblobs,
                                                 bool debug,
 
-                                                bool (*add_points)(int* xy, int N, double scale) )
+                                                bool (*add_points)(int* xy, int N, double scale, void* cookie),
+                                                void* cookie )
 {
     cv::Mat cvimage(Nrows, Ncols, CV_8UC1,
                     imagebuffer, stride);
@@ -64,7 +65,8 @@ bool find_chessboard_corners_from_image_array_C( // in
                    "add_points() assumes PointInt is simply 2 ints");
     return
         (*add_points)( &out_points[0].x, (int)out_points.size(),
-                       1. / (double)FIND_GRID_SCALE);
+                       1. / (double)FIND_GRID_SCALE,
+                       cookie);
 }
 
 extern "C"
@@ -84,7 +86,8 @@ bool find_chessboard_from_image_array_C( // in
                                         int debug_sequence_x,
                                         int debug_sequence_y,
 
-                                        bool (*add_points)(double* xy, int N) )
+                                        bool (*add_points)(double* xy, int N, void* cookie),
+                                        void* cookie )
 {
     cv::Mat cvimage(Nrows, Ncols, CV_8UC1,
                     imagebuffer, stride);
@@ -130,5 +133,6 @@ bool find_chessboard_from_image_array_C( // in
     static_assert( sizeof(mrgingham::PointDouble) == 2*sizeof(double),
                    "add_points() assumes PointDouble is simply 2 doubles");
     return
-        (*add_points)( &out_points[0].x, (int)out_points.size() );
+        (*add_points)( &out_points[0].x, (int)out_points.size(),
+                       cookie);
 }
