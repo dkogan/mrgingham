@@ -69,7 +69,7 @@ static void* worker( void* _ijob )
             {
                 // CLAHE doesn't by itself use the full dynamic range all the time,
                 // so I explicitly normalize the image and then CLAHE
-                cv::normalize(image0, image0, 0, 65535, cv::NORM_MINMAX);
+                cv::normalize(image0, image0, 0, 255, cv::NORM_MINMAX);
                 clahe->apply(image0, image1);
             }
             else
