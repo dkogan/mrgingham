@@ -78,29 +78,32 @@ static PyObject* py_ChESS_response_5(PyObject* NPY_UNUSED(self),
     // broadcast through all the slices
     { // need a block to pacify the compiler
         npy_intp islice[ndims];
-        islice[ndims - 1] = 0;
-        islice[ndims - 2] = 0;
+        memset(0, islice, sizeof islice);
+        int idim = 0;
 
-        void loop_dim(int idim)
+        // idim will be negative when islice overflows
+        while (idim >= 0)
         {
-            if(idim < 0)
-            {
-                int16_t* data_response = (int16_t*)PyArray_GetPtr(response, islice);
-                uint8_t* data_image    = (uint8_t*)PyArray_GetPtr(image,    islice);
+            int16_t* data_response = (int16_t*)PyArray_GetPtr(response, islice);
+            uint8_t* data_image    = (uint8_t*)PyArray_GetPtr(image,    islice);
 
-                mrgingham_ChESS_response_5( data_response, data_image,
-                                            dims[ndims-1], dims[ndims-2],
-                                            strides[ndims-2]);
-                return;
+            mrgingham_ChESS_response_5( data_response, data_image,
+                                        dims[ndims-1], dims[ndims-2],
+                                        strides[ndims-2]);
+
+            // The last 2 dimensions index each slice (x,y inside each image). The
+            // dimensions before that are for broadcasting
+            for (idim = ndims - 3; idim >= 0; idim--) {
+                if (islice[idim] < dims[idim]) {
+                    // Increment and continue main loop
+                    islice[idim]++;
+                    break;
+                } else {
+                    // Carry to next index
+                    islice[idim] = 0;
+                }
             }
-
-            for(islice[idim]=0; islice[idim] < dims[idim]; islice[idim]++)
-                loop_dim(idim-1);
         }
-
-        // The last 2 dimensions index each slice (x,y inside each image). The
-        // dimensions before that are for broadcasting
-        loop_dim(ndims-3);
     }
 
     result = (PyObject*)response;
