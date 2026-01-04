@@ -10,6 +10,11 @@
 
 using namespace mrgingham;
 
+#ifndef GLOB_TILDE_CHECK
+// GLOB_TILDE_CHECK doesn't exist on macOS, but GLOB_TILDE will usually work instead.
+#define GLOB_TILDE_CHECK GLOB_TILDE
+#endif
+
 struct mrgingham_thread_context_t
 {
     const glob_t* _glob;
