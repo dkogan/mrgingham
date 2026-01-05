@@ -52,6 +52,11 @@ rotation option are passed through unrotated.
 --gridn defaults to 10, for a 10x10 board
 "
 
+if [ $(uname -s) = "Darwin" ] && [ $(getopt -V) = "--" ] && command -v brew > /dev/null 2>&1; then
+  # Brew does not add GNU getopt to PATH by default, so it is added here if BSD getopt is detected
+  PATH="$(brew --prefix)/opt/gnu-getopt/bin:$PATH"
+fi
+
 ARGS=$(getopt -n $0 -l help,gridn:,90:,180:,270: -o "h" -- "$@")
 
 if [ $? -ne 0 ]; then
