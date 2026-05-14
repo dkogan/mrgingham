@@ -2,17 +2,26 @@ Runs the full mrgingham chessboard detector on an image
 
 SYNOPSIS
 
+    import mrgingham
+    import cv2
+
+    clahe = cv2.createCLAHE(clipLimit = 8)
+    image = clahe.apply(image)
+    image = cv2.blur(image,3)
+
     points = mrgingham.find_board(image)
 
     [ points is an array of shape (N*N,2), the ordered list of ]
     [ pixel coordinates in the grid ]
 
-This function runs the full mrgingham sequence:
+This function runs the mrgingham sequence AFTER the image preprocessing:
 
-- pre-process image
 - find chessboard corners (or blobs)
 - find an NxN grid in the set of corners
 - refine
+
+The default preprocessing sequence implemented by the "mrgingham" commandline
+tool is shown in the sample above.
 
 No broadcasting is supported by this function
 
