@@ -499,6 +499,8 @@ DESCRIPTION
     image filenames. Each rotation option may be given multiple times. Any
     files not matched by any rotation option are passed through unrotated.
 
+    --gridn defaults to 10, for a 10x10 board
+
 
 #+END_EXAMPLE
 
