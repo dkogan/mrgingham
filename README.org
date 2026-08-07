@@ -153,6 +153,10 @@ NxM chessboard figure do =make chessboard.NxM.pdf= in the mrgingham source tree.
 =N= and =M= must be even integers. Note: today mrgingham requires that =N == M=,
 but eventually this may be lifted, so this tool does not have this requirement.
 
+Note: these pdf files are meant to be scaled, and printed to whatever size is
+desired. The size of each square should then be measured, and communicated to
+the calibration tool.
+
 *** Circles
 *This isn't recommended, and exists for legacy compatibility only*
 
