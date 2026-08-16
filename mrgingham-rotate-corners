@@ -103,8 +103,8 @@ while true; do
 done
 
 if (( $# )); then
-    echo "Extra arguments given" > /dev/stderr
-    echo "Usage: $usage"         > /dev/stderr
+    echo "Extra arguments given: '$*'" > /dev/stderr
+    echo "Usage: $usage"               > /dev/stderr
     exit 1
 fi
 
