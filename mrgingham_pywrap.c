@@ -37,6 +37,37 @@ do {                                                                    \
                                                         name ## _docstring}
 
 
+static
+void loop_dim(int idim,
+
+              PyArrayObject*  response,
+              PyArrayObject*  image,
+              const npy_intp* dims,
+              const npy_intp* strides,
+              const int       ndims,
+              npy_intp*       islice)
+{
+    if(idim < 0)
+    {
+        int16_t* data_response = (int16_t*)PyArray_GetPtr(response, islice);
+        uint8_t* data_image    = (uint8_t*)PyArray_GetPtr(image,    islice);
+
+        mrgingham_ChESS_response_5( data_response, data_image,
+                                    dims[ndims-1], dims[ndims-2],
+                                    strides[ndims-2]);
+    }
+    else
+        for(islice[idim]=0; islice[idim] < dims[idim]; islice[idim]++)
+            loop_dim(idim-1,
+
+                     response,
+                     image,
+                     dims,
+                     strides,
+                     ndims,
+                     islice);
+}
+
 static PyObject* py_ChESS_response_5(PyObject* NPY_UNUSED(self),
                                      PyObject* args)
 {
@@ -81,26 +112,16 @@ static PyObject* py_ChESS_response_5(PyObject* NPY_UNUSED(self),
         islice[ndims - 1] = 0;
         islice[ndims - 2] = 0;
 
-        void loop_dim(int idim)
-        {
-            if(idim < 0)
-            {
-                int16_t* data_response = (int16_t*)PyArray_GetPtr(response, islice);
-                uint8_t* data_image    = (uint8_t*)PyArray_GetPtr(image,    islice);
-
-                mrgingham_ChESS_response_5( data_response, data_image,
-                                            dims[ndims-1], dims[ndims-2],
-                                            strides[ndims-2]);
-                return;
-            }
-
-            for(islice[idim]=0; islice[idim] < dims[idim]; islice[idim]++)
-                loop_dim(idim-1);
-        }
-
         // The last 2 dimensions index each slice (x,y inside each image). The
         // dimensions before that are for broadcasting
-        loop_dim(ndims-3);
+        loop_dim(ndims-3,
+
+                 response,
+                 image,
+                 dims,
+                 strides,
+                 ndims,
+                 islice);
     }
 
     result = (PyObject*)response;
