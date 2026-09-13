@@ -38,6 +38,7 @@ bool find_chessboard_from_image_array_C( // in
                                         int debug_sequence_x,
                                         int debug_sequence_y,
 
+                                        signed char** refinement_level,
                                         bool (*add_points)(double* xy, int N, void* cookie),
                                         void* cookie );
 

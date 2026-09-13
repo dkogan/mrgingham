@@ -69,6 +69,7 @@ bool find_chessboard_corners_from_image_array_C( // in
                        cookie);
 }
 
+// The caller is responsible for free(refinement_level)
 extern "C"
 bool find_chessboard_from_image_array_C( // in
                                         int Nrows, int Ncols,
@@ -86,6 +87,7 @@ bool find_chessboard_from_image_array_C( // in
                                         int debug_sequence_x,
                                         int debug_sequence_y,
 
+                                        signed char** refinement_level,
                                         bool (*add_points)(double* xy, int N, void* cookie),
                                         void* cookie )
 {
@@ -103,6 +105,8 @@ bool find_chessboard_from_image_array_C( // in
         debug_sequence.pt.y = debug_sequence_y;
     }
 
+    *refinement_level = NULL;
+
     bool result;
     if(doblobs)
     {
@@ -116,17 +120,15 @@ bool find_chessboard_from_image_array_C( // in
     }
     else
     {
-        signed char* refinement_level = NULL;
         result =
             (find_chessboard_from_image_array( out_points,
-                                               &refinement_level,
+                                               refinement_level,
                                                gridn,
                                                cvimage,
                                                image_pyramid_level,
                                                debug,
                                                debug_sequence,
                                                NULL ) >= 0);
-        free(refinement_level);
     }
     if( !result ) return false;
 

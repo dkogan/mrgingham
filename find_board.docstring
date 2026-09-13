@@ -57,7 +57,17 @@ ARGUMENTS
   will report on the nearest corner. This does the same thing as "mrgingham
   --debug-sequence"; the Python output is unaffected.
 
+- report_refinement_level: optional boolean, defaulting to False. If True: we
+  return a tuple (points, refinement_level). If no point grid was found, points
+  and refinement_level are both reported as None
+
 RETURNED VALUE
 
-A numpy array of shape (N*N,2) containing ordered pixel coordinates of the grid
-found in the image. If no grid was found, None is returned.
+if not report_refinement_level:
+  A numpy array of shape (N*N,2) containing ordered pixel coordinates of the
+  grid found in the image. If no grid was found, None is returned.
+else:
+  A tuple (points,refinement_level). The points are the pixel coordinates, as
+  above. The refinement_level is the decimation level used to compute the
+  points. If no point grid was found, points and refinement_level are both
+  reported as None

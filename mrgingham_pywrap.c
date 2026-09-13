@@ -35,7 +35,11 @@ do {                                                                    \
                                                         (PyCFunction)c_function_name, \
                                                         args,           \
                                                         name ## _docstring}
-
+static void capsule_free(PyObject* capsule)
+{
+    void* ptr = PyCapsule_GetPointer(capsule, NULL);
+    free(ptr);
+}
 
 static
 void loop_dim(int idim,
@@ -258,21 +262,29 @@ static PyObject* find_board(PyObject* NPY_UNUSED(self),
     const char*    debug_sequence_string = NULL;
     int debug_sequence_x = -1;
     int debug_sequence_y = -1;
+    int            report_refinement_level = 0;
+
+    PyObject*    py_points                   = NULL;
+    signed char* refinement_level            = NULL;
+    PyObject*    py_refinement_level         = NULL;
+    PyObject*    py_refinement_level_capsule = NULL;
 
     SET_SIGINT();
 
     char* keywords[] = { "image", "image_pyramid_level", "gridn", "blobs",
                          "debug", "debug_sequence",
+                         "report_refinement_level",
                          NULL };
 
     if(!PyArg_ParseTupleAndKeywords( args, kwargs,
-                                     "O&|iipps",
+                                     "O&|iippsp",
                                      keywords,
                                      PyArray_Converter, &image,
                                      &image_pyramid_level, &gridn,
                                      &blobs,
                                      &debug,
                                      &debug_sequence_string,
+                                     &report_refinement_level,
                                      NULL))
         goto done;
 
@@ -338,21 +350,79 @@ static PyObject* find_board(PyObject* NPY_UNUSED(self),
                                             debug_sequence_x,
                                             debug_sequence_y,
 
-                                            &add_points__find_board, &result) )
+                                            &refinement_level,
+                                            &add_points__find_board, &py_points) )
     {
         // This is allowed to fail. We possibly found no chessboard. This is
         // sloppy since it ignore other potential errors, but there shouldn't be
         // any in this path
-        Py_XDECREF(result);
-        if( result == NULL )
+        Py_XDECREF(py_points);
+        if( py_points == NULL )
         {
-            result = Py_None;
-            Py_INCREF(result);
+            py_points = Py_None;
+            Py_INCREF(py_points);
         }
     }
 
+    if(!report_refinement_level)
+    {
+        // Not reporting the refinement_level
+        result    = py_points;
+        py_points = NULL;
+    }
+    else
+    {
+        if(py_points == Py_None)
+        {
+            // Reporting the refinement_level, but there were no detections: return (None,None)
+            py_refinement_level = Py_None;
+            Py_INCREF(py_refinement_level);
+
+            result = Py_BuildValue("(OO)",
+                                   py_points,
+                                   py_refinement_level);
+        }
+        else
+        {
+            // Reporting the refinement_level, and there are detections: return
+            // (points,refinement_level)
+            py_refinement_level =
+                PyArray_SimpleNewFromData(1, (npy_intp[]){PyArray_DIMS((PyArrayObject*)py_points)[0]},
+                                          NPY_INT8,
+                                          (void *)refinement_level);
+            if (py_refinement_level == NULL)
+                goto done;
+
+            py_refinement_level_capsule = PyCapsule_New((void *)refinement_level, NULL, capsule_free);
+            if (py_refinement_level_capsule == NULL)
+                goto done;
+
+            // The capsule now owns the C pointer. I do not free() it myself
+            refinement_level = NULL;
+
+            // Tell numpy this capsule is what owns the memory. We make sure we free(refinement_level) when done
+            if (PyArray_SetBaseObject((PyArrayObject *)py_refinement_level, py_refinement_level_capsule) < 0)
+                goto done;
+
+            // PyArray_SetBaseObject() succeeded, and stole the reference to the
+            // capsule. I make sure we don't try to free it
+            py_refinement_level_capsule = NULL;
+
+            result = Py_BuildValue("(OO)",
+                                   py_points,
+                                   py_refinement_level);
+        }
+    }
+
+
+
  done:
     Py_XDECREF(image);
+    free(refinement_level);
+    Py_XDECREF(py_points);
+    Py_XDECREF(py_refinement_level);
+    Py_XDECREF(py_refinement_level_capsule);
+
     RESET_SIGINT();
     return result;
 }
