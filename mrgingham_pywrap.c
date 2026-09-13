@@ -372,9 +372,10 @@ static PyObject* find_board(PyObject* NPY_UNUSED(self),
     }
     else
     {
-        if(py_points == Py_None)
+        if(py_points == Py_None || refinement_level == NULL)
         {
-            // Reporting the refinement_level, but there were no detections: return (None,None)
+            // Reporting the refinement_level, but there were no detections or no refinement_level.
+            // return (py_points,None). py_points may be None too
             py_refinement_level = Py_None;
             Py_INCREF(py_refinement_level);
 
