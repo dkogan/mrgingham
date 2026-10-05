@@ -87,7 +87,7 @@ import vnlog
 
 
 corners_output_process = None
-if re.match('.*\.vnl$', args.input):
+if re.match(r'.*\.vnl$', args.input):
     pipe_corners_read = open(args.input, 'r')
 else:
 
