@@ -1,0 +1,37 @@
+#!/usr/bin/python3
+
+r'''Checks mrgingham-observe-pixel-uncertainty on noisy images of one board'''
+
+import sys
+import os
+import subprocess
+import tempfile
+import numpy as np
+
+testdir = os.path.dirname(os.path.realpath(__file__))
+# The tool runs mrgingham from the PATH. Use the LOCAL one
+os.environ['PATH'] = f"{testdir}/..:" + os.environ['PATH']
+tool = f"{testdir}/../mrgingham-observe-pixel-uncertainty"
+
+import testutils
+import synthetic
+
+image, _ = synthetic.chessboard(10, 50)
+rng = np.random.default_rng(0)
+
+with tempfile.TemporaryDirectory() as d:
+    for i in range(8):
+        noisy = np.clip(image + rng.normal(0, 3, image.shape), 0, 255).astype(np.uint8)
+        with open(f"{d}/{i}.pgm", 'wb') as f:
+            f.write(b'P5 %d %d 255\n' % (noisy.shape[1], noisy.shape[0]) + noisy.tobytes())
+
+    from_images = subprocess.run([tool, f"{d}/*.pgm"], capture_output=True, text=True)
+    testutils.confirm('Have 8 observations' in from_images.stdout, msg="from images")
+
+    subprocess.run(f"mrgingham {d}/*.pgm > {d}/corners.vnl", shell=True, check=True)
+    from_vnl = subprocess.run([tool, f"{d}/corners.vnl"], capture_output=True, text=True)
+    testutils.confirm_equal(from_vnl.stdout, from_images.stdout, msg="same result from a .vnl")
+
+    testutils.confirm('Warning' not in from_images.stderr + from_vnl.stderr, msg="no warnings")
+
+testutils.finish()
