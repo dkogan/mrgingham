@@ -44,6 +44,7 @@ endif
 
 test:
 	test/test--mrgingham-rotate-corners
+	test/test--mrgingham-find-board
 .PHONY: test
 
 

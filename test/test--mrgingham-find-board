@@ -1,0 +1,30 @@
+#!/usr/bin/python3
+
+r'''Checks find_board() on synthetic chessboards'''
+
+import sys
+import os
+import numpy as np
+
+testdir = os.path.dirname(os.path.realpath(__file__))
+# I import the LOCAL mrgingham since that's what I'm testing
+sys.path[:0] = f"{testdir}/..",
+import mrgingham
+
+import testutils
+import synthetic
+
+# No CLAHE here, so some square sizes (40, 60 pixels) aren't found
+for gridn, square, shape in ((10, 35, None),
+                             (10, 50, None),
+                             (10, 70, None),
+                             (6,  50, (600, 900))):
+    image, corners = synthetic.chessboard(gridn, square, shape)
+    testutils.confirm_equal(mrgingham.find_board(image, gridn=gridn), corners,
+                            eps=0.1, worstcase=True,
+                            msg=f"{gridn}x{gridn} board, {square}-pixel squares")
+
+testutils.confirm(mrgingham.find_board(np.full((400, 400), 128, dtype=np.uint8)) is None,
+                  msg="no board")
+
+testutils.finish()
