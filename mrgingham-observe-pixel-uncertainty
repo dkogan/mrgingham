@@ -97,7 +97,8 @@ else:
     sys.stderr.write("Computing chessboard corners by running:\n   {}\n". \
                      format(args_mrgingham))
 
-    corners_output_process = subprocess.Popen(args_mrgingham, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    corners_output_process = subprocess.Popen(args_mrgingham, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True,
+                                              text=True)
     pipe_corners_read = corners_output_process.stdout
 
 
