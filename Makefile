@@ -26,8 +26,8 @@ LIB_SOURCES := find_grid.cc find_blobs.cc find_chessboard_corners.cc mrgingham.c
 # The opencv people (or maybe the Debian people?) have renamed the opencv.pc
 # file in opencv 4. So now I look for both version 4 and the default. What will
 # happen with opencv5? We'll see!
-CXXFLAGS_CV := $(shell pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv 2>/dev/null)
-LDLIBS_CV   := $(shell pkg-config --libs   opencv4 2>/dev/null || pkg-config --libs   opencv 2>/dev/null)
+CXXFLAGS_CV := $(shell pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv5 2>/dev/null || pkg-config --cflags opencv 2>/dev/null)
+LDLIBS_CV   := $(shell pkg-config --libs   opencv4 2>/dev/null || pkg-config --libs   opencv5 2>/dev/null || pkg-config --libs   opencv 2>/dev/null)
 CCXXFLAGS += $(CXXFLAGS_CV)
 LDLIBS    += $(LDLIBS_CV) -lpthread
 

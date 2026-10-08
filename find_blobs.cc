@@ -1,4 +1,10 @@
-#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/core/version.hpp>
+
+#if defined CV_VERSION_MAJOR && CV_VERSION_MAJOR >= 5
+  #include <opencv2/features/features.hpp>
+#else
+  #include <opencv2/features2d/features2d.hpp>
+#endif
 #include <opencv2/highgui/highgui.hpp>
 
 #include "point.hh"
